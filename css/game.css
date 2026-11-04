@@ -1,0 +1,43 @@
+:root {
+  --hanji: #FBF5E6;
+  --meok: #2B2622;
+  --meok-gal: #5A4636;
+  --gold: #F2C14E;
+  --gold-light: #FFE7A3;
+  --green: #5FAE5A;
+  --red: #E0584F;
+  --gray-1: #B9BBBE;
+  --gray-2: #8A8D91;
+  --gray-3: #5E6266;
+  --blue: #3B5BA5;
+  --purple: #8E4A7A;
+  --font-body: 'Gowun Dodum', system-ui, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-title: 'Jua', var(--font-body);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--hanji);
+  color: var(--meok);
+  font-family: var(--font-body);
+  font-size: 18px;
+  word-break: keep-all;
+}
+
+#app {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+}
+
+canvas, img {
+  image-rendering: pixelated;
+}
+
+[data-scene='boot'] {
+  font-family: var(--font-title);
+  font-size: 32px;
+}
