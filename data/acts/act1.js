@@ -220,7 +220,7 @@ const CH_1_2 = {
     {
       id: 'laundry', slot: 'b', name: '빨래터 아주머니', color: '#C9A97E',
       chat: [
-        npc('laundry', 'base', '안개가 걷혀야 빨래가 마를 텐데 걱정이구나.'),
+        npc('laundry', 'base', '빨래 너는 곳은 잘 살펴봤니?'),
         npc('laundry', 'base', '빨래터 일은 걱정 말고 네 일부터 보렴.'),
       ],
       reveal: [
