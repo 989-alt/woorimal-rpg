@@ -64,6 +64,8 @@ function drawTiles(ctx, map, camera, view, open, hasArt) {
       if (c === '#') {
         ctx.fillStyle = WALL;
         ctx.fillRect(px, py, TILE, TILE);
+      } else if (c === 'F' && !open && hasArt) {
+        drawMist(ctx, px, py, x, y);
       } else if (c === 'F' && !open) {
         for (let cy = 0; cy < 4; cy++) {
           for (let cx = 0; cx < 4; cx++) {
@@ -76,6 +78,21 @@ function drawTiles(ctx, map, camera, view, open, hasArt) {
         ctx.fillRect(px, py, TILE, TILE);
       }
     }
+  }
+}
+
+// 닫힌 안개 칸(맵 그림 위): 바둑판 대신 뭉게뭉게 잿빛 안개. 칸마다 정해진 모양이라 다시 그려도 같다.
+const MIST = ['rgba(198, 201, 206, .9)', 'rgba(222, 224, 228, .85)', 'rgba(170, 174, 181, .8)'];
+function drawMist(ctx, px, py, tx, ty) {
+  ctx.fillStyle = 'rgba(176, 180, 187, .82)';
+  ctx.fillRect(px, py, TILE, TILE);
+  let seed = (tx * 73856093) ^ (ty * 19349663);
+  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  for (let i = 0; i < 4; i++) {
+    ctx.fillStyle = MIST[i % MIST.length];
+    ctx.beginPath();
+    ctx.arc(px + 2 + rnd() * 12, py + 2 + rnd() * 12, 4 + rnd() * 4, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 
