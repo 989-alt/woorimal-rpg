@@ -3,7 +3,7 @@
 // 이름 규칙: assets/pixel|illust/종류_장_이름_변형.확장자, UI 키트는 assets/ui/이름.v1.png (art-bible 8절)
 export const ASSETS = {
   // 탐험 맵(1536×1152, 칸당 48, 장 id)
-  maps: { '1-1': 'assets/pixel/map_ch1-1_saebyeokgol.png', '1-2': 'assets/pixel/map_ch1-2_maeul-eogwi.png', '2-1': null, '2-2': null },
+  maps: { '1-1': 'assets/pixel/map_ch1-1_saebyeokgol.png', '1-2': 'assets/pixel/map_ch1-2_maeul-eogwi.png', '2-1': null, '2-2': null, '3-1': null, '3-2': null },
   // 주인공 걷기 시트 144×384: 48×96칸 × 3프레임(서기·왼발·오른발) × 4방향(아래·왼·오·위) (f 여 · m 남)
   walk: { f: 'assets/pixel/walk_hero_f.png', m: 'assets/pixel/walk_hero_m.png' },
   // 인물 도트 48×96(그림 48×72쯤, 발이 맨 아래 줄 가운데) (인물 id)
@@ -15,12 +15,13 @@ export const ASSETS = {
     laundry: 'assets/pixel/npc_laundry.png',
     gate: 'assets/pixel/npc_gate.png',
     haesol: null, fruit: null, guard: null, shopper: null, chestnut: null, flower: null, northgate: null, // 2막
+    narae: null, woodcutter: null, miru: null, yeoul: null, skygran: null, ferryman: null, // 3막
   },
   // 물건 아이콘 48×48 (물건 id)
-  items: { water: 'assets/pixel/icon_water.png', firewood: 'assets/pixel/icon_firewood.png', letter: 'assets/pixel/icon_letter.png', 'price-board': null, weight: null, bundle: null },
+  items: { water: 'assets/pixel/icon_water.png', firewood: 'assets/pixel/icon_firewood.png', letter: 'assets/pixel/icon_letter.png', 'price-board': null, weight: null, bundle: null, 'trail-ribbon': null, lunchbox: null, 'rain-bowl': null },
   // 꼬마 몬스터 도트 48×96(발이 맨 아래 줄)·보스 도트 96×96(2×2칸, 발이 보스 칸 아래 줄 가운데) (막 번호)
-  small: { 1: 'assets/pixel/monster_small_act1.png', 2: null },
-  bossPixel: { 1: 'assets/pixel/monster_boss_act1.png', 2: null },
+  small: { 1: 'assets/pixel/monster_small_act1.png', 2: null, 3: null },
+  bossPixel: { 1: 'assets/pixel/monster_boss_act1.png', 2: null, 3: null },
   // 대화 상반신: 인물 × 표정. 표정 그림이 없으면 base로 대신한다.
   busts: {
     hero_f: { base: 'assets/illust/bust_hero_f_base.webp', surprise: 'assets/illust/bust_hero_f_surprise.webp', joy: 'assets/illust/bust_hero_f_joy.webp' },
@@ -39,11 +40,18 @@ export const ASSETS = {
     chestnut: { base: null, joy: null },
     flower: { base: null, joy: null },
     northgate: { base: null },
+    // 3막
+    narae: { base: null, sad: null, surprise: null, light: null },
+    woodcutter: { base: null, joy: null },
+    miru: { base: null, joy: null },
+    yeoul: { base: null, joy: null },
+    skygran: { base: null, joy: null },
+    ferryman: { base: null, joy: null },
   },
-  dialogueBg: { '1-1': 'assets/illust/bg_ch1-1.webp', '1-2': 'assets/illust/bg_ch1-2.webp', '2-1': null, '2-2': null }, // 장 id (2560×1440)
-  battleBg: { 1: 'assets/illust/battle_bg_act1.webp', 2: null }, // 막 번호 (2560×1440, 잿빛)
+  dialogueBg: { '1-1': 'assets/illust/bg_ch1-1.webp', '1-2': 'assets/illust/bg_ch1-2.webp', '2-1': null, '2-2': null, '3-1': null, '3-2': null }, // 장 id (2560×1440)
+  battleBg: { 1: 'assets/illust/battle_bg_act1.webp', 2: null, 3: null }, // 막 번호 (2560×1440, 잿빛)
   battleHero: { f: 'assets/illust/battle_hero_f.webp', m: 'assets/illust/battle_hero_m.webp' }, // 1080×1440, 오른쪽(몬스터 쪽)을 봄
-  monster: { 1: 'assets/illust/monster_act1.webp', 2: null }, // 보스(막 번호), 1440×1440
+  monster: { 1: 'assets/illust/monster_act1.webp', 2: null, 3: null }, // 보스(막 번호), 1440×1440
   title: 'assets/illust/title.webp', // 2560×1440, 글자 없음(제목은 HTML)
   // UI 키트(8비트 색표 PNG + 투명, 2배로 만들어 절반 크기로 보임). 크기·조각 값은 아래 UI_KIT.
   ui: {
