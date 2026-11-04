@@ -6,7 +6,7 @@ import { bindInput, createTouchControls, isCoarsePointer } from '../explore/inpu
 import { drawExplore, cameraFor } from '../explore/render.js';
 import { createHud, createToast, fogMessage, HUD_HEIGHT } from '../explore/hud.js';
 import { chapterOf, chapterComplete, fogOpen, setPos, markTip } from '../rules/game.js';
-import { talkTo, inspect } from '../rules/quests.js';
+import { talkTo, inspect, fightGate } from '../rules/quests.js';
 import { openCodex } from './codex.js';
 import { openTasks } from './quests.js';
 import { formatLine } from '../rules/josa.js';
@@ -146,10 +146,10 @@ export const explore = {
         } else {
           go('dialogue', { script: r.script, words: r.words, from: obj.name });
         }
-      } else if (target.kind === 'small') {
-        go('battle', { mode: 'review' });
-      } else if (target.kind === 'boss') {
-        go('battle', { mode: 'boss' });
+      } else if (target.kind === 'small' || target.kind === 'boss') {
+        const gate = fightGate(state, chapter, target.kind);
+        if (gate.ok) go('battle', { mode: target.kind === 'boss' ? 'boss' : 'review' });
+        else if (gate.message) toast.show(gate.message);
       } else if (target.kind === 'fog') {
         toast.show(fogMessage(state, chapter));
       }

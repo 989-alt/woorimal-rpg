@@ -121,6 +121,27 @@ export function winSmall(state, chapter) {
   return { ...next, smallGone: { ...next.smallGone, [chapter.id]: true } };
 }
 
+// 몬스터에게 다가갔을 때 싸움을 시작해도 되는지. kind: 'small'(꼬마 안개 복습전) | 'boss'(막 보스전)
+// 꼬마 안개는 그 장의 쫓기 부탁이 진행 중일 때만, 막 보스는 아직 끝내지 않은 막에서만 싸운다.
+export function fightGate(state, chapter, kind) {
+  const act = actOfChapter(chapter.id);
+  if (kind === 'boss') {
+    if (state.clearedActs.includes(act.id)) {
+      return { ok: false, message: `${act.id}막은 이미 끝냈어. 다음 막은 준비 중이에요.` };
+    }
+    return { ok: true, message: null };
+  }
+  const chase = chapter.quests.find((q) => q.kind === 'chase');
+  if (!chase) return { ok: false, message: null };
+  const stage = stageOf(state, chase);
+  if (stage === 'active') return { ok: true, message: null };
+  if (stage === 'open' || stage === 'locked') {
+    const giver = chapter.npcs.find((n) => n.id === chase.giver)?.name ?? '마을 사람';
+    return { ok: false, message: `${attachJosa(act.small.name, '이')} 길을 막고 있어. ${giver}에게 먼저 이야기해 보자.` };
+  }
+  return { ok: false, message: null };
+}
+
 export function npcMarker(state, chapter, npcId) {
   let marker = null;
   for (const q of chapter.quests) {

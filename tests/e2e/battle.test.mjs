@@ -2,6 +2,8 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
 import { launchBrowser, collectErrors, finishDialogue } from './browser.mjs';
+import { parseMap, isWalkable } from '../../js/explore/grid.js';
+import ACT1 from '../../data/acts/act1.js';
 
 let server, browser;
 before(async () => {
@@ -261,6 +263,120 @@ test('장 클리어: 1장 클리어! + 낱말 5장 → 다음 장으로 → 2장
   assert.equal(s.chapter, '1-2');
   assert.deepEqual(s.clearedChapters, ['1-1']);
   assert.equal(s.quests.q3.stage, 'open');
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+// ── 싸움 막기: 부탁 순서와 끝낸 막 ──
+const KEYS = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
+const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+function pathTo(map, from, to, opts) {
+  const prev = new Map([[`${from.x},${from.y}`, null]]);
+  const queue = [from];
+  while (queue.length) {
+    const p = queue.shift();
+    if (p.x === to.x && p.y === to.y) break;
+    for (const [dir, [dx, dy]] of Object.entries(DIRS)) {
+      const n = { x: p.x + dx, y: p.y + dy };
+      const k = `${n.x},${n.y}`;
+      if (!prev.has(k) && isWalkable(map, n.x, n.y, opts)) { prev.set(k, { from: p, dir }); queue.push(n); }
+    }
+  }
+  const dirs = [];
+  for (let k = `${to.x},${to.y}`; prev.get(k); ) {
+    const { from: p, dir } = prev.get(k);
+    dirs.unshift(dir);
+    k = `${p.x},${p.y}`;
+  }
+  return dirs;
+}
+// target 칸 아래에 서서 위를 바라보고 스페이스
+async function faceFromBelow(page, map, target, opts) {
+  const s = await page.evaluate(() => window.__test.state());
+  const below = { x: target.x, y: target.y + 1 };
+  for (const dir of pathTo(map, s.pos, below, opts)) await page.keyboard.press(KEYS[dir]);
+  await page.keyboard.press('ArrowUp');
+  const now = await page.evaluate(() => window.__test.state());
+  assert.deepEqual(now.pos, below);
+  assert.equal(now.facing, 'up');
+  await page.keyboard.press('Space');
+}
+
+test('꼬마 안개: 다온의 부탁(q2)이 open이면 안내만 뜨고 전투는 없다, 규칙 카드도 쓰지 않는다', async () => {
+  const { page, errors } = await openNewGame();
+  // q1을 끝내고 q2가 열린 상태(낱말 2개)
+  await page.evaluate(() => {
+    const s = window.__test.state();
+    s.quests.q1 = { stage: 'done', gathered: [] };
+    s.quests.q2 = { stage: 'open', gathered: [] };
+    window.__test.acquire(['어스름', '아침나절'], '도담 할머니');
+  });
+  await page.waitForSelector('[data-scene="explore"]');
+  const map = parseMap(ACT1.chapters[0].map.rows);
+  await faceFromBelow(page, map, map.smallMonster, {});
+  await page.waitForSelector('.toast:not([hidden])');
+  assert.equal(await page.locator('.toast').innerText(), '꼬마 안개가 길을 막고 있어. 다온에게 먼저 이야기해 보자.');
+  await page.waitForTimeout(200);
+  assert.equal(await page.locator('[data-scene="battle"]').count(), 0);
+  const s = await page.evaluate(() => window.__test.state());
+  assert.equal(s.seenTips.includes('tip-review'), false);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('막 보스: 이긴 뒤 처음 화면 → 이어하기 → 보스 앞에서 스페이스면 안내만 뜨고 전투는 없다', async () => {
+  const { page, errors } = await openNewGame();
+  await startBattle(page, 'boss');
+  for (let i = 0; i < 6; i++) await answer(page, true);
+  await page.waitForSelector('[data-scene="clear"]');
+  await page.getByRole('button', { name: '처음 화면으로' }).click();
+  await page.waitForSelector('[data-scene="title"]');
+  await page.fill('#nickname', '하늘');
+  await page.getByRole('button', { name: '이어하기' }).first().click();
+  await page.waitForSelector('[data-scene="explore"]');
+  const s = await page.evaluate(() => window.__test.state());
+  assert.equal(s.chapter, '1-2');
+  assert.deepEqual(s.clearedActs, [1]);
+  const map = parseMap(ACT1.chapters[1].map.rows);
+  await faceFromBelow(page, map, map.boss, { fogOpen: true });
+  await page.waitForSelector('.toast:not([hidden])');
+  assert.equal(await page.locator('.toast').innerText(), '1막은 이미 끝냈어. 다음 막은 준비 중이에요.');
+  await page.waitForTimeout(200);
+  assert.equal(await page.locator('[data-scene="battle"]').count(), 0);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('전투 장면 방어: 낱말을 모두 낸 막의 보스전은 열지 않고 탐험으로 돌아간다', async () => {
+  const { page, errors } = await openNewGame();
+  await page.evaluate(() => {
+    const s = window.__test.state();
+    s.askedWordIds = ['어스름', '아침나절', '해거름', '부리나케', '매무새', '짬', '곰비임비', '얼추', '손사래', '오롯이'];
+    window.__test.startBattle('boss', 1);
+  });
+  await page.waitForSelector('[data-scene="explore"]');
+  assert.equal(await page.locator('[data-scene="battle"]').count(), 0);
+  const s = await page.evaluate(() => window.__test.state());
+  assert.equal(s.seenTips.includes('tip-boss'), false);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('전투 장면 방어: 쫓기 부탁이 진행 중이 아니면 복습전을 이겨도 "쫓아냈다"를 띄우지 않는다', async () => {
+  const { page, errors } = await openNewGame();
+  await startBattle(page, 'review', 2);
+  await page.evaluate(() => {
+    window.__sawWin = false;
+    new MutationObserver(() => { if (document.querySelector('.battle-win')) window.__sawWin = true; })
+      .observe(document.body, { childList: true, subtree: true });
+    window.__test.state().quests.q2.stage = 'open'; // 전투 도중 부탁 단계가 바뀐 경우
+  });
+  for (let i = 0; i < 3; i++) await answer(page, true);
+  await page.waitForSelector('[data-scene="explore"]');
+  assert.equal(await page.evaluate(() => window.__sawWin), false);
+  const s = await page.evaluate(() => window.__test.state());
+  assert.equal(s.quests.q2.stage, 'open');
+  assert.equal(s.smallGone['1-1'], undefined);
   assert.deepEqual(errors, []);
   await page.close();
 });

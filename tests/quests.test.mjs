@@ -5,6 +5,7 @@ import { newGame, chapterOf, chapterWords, acquireWords } from '../js/rules/game
 import { ACTS, actOfChapter } from '../data/acts/index.js';
 import {
   talkTo, inspect, winSmall, npcMarker, currentTask, hiddenGlow, questList,
+  fightGate,
 } from '../js/rules/quests.js';
 
 const deepFreeze = (o) => {
@@ -344,4 +345,25 @@ test('막은 넘겨 받은 장에서 찾는다 (1막 하드코딩 금지)', () =
     ACTS.pop();
   }
   assert.throws(() => actOfChapter('2-2'));
+});
+
+test('fightGate small: chase 부탁이 active일 때만 싸운다, 아니면 주는 인물 이름으로 안내', () => {
+  const ch = ACT.chapters[0];
+  let s = newGame({ nickname: '하늘', avatar: 'f' });
+  const msg = '꼬마 안개가 길을 막고 있어. 다온에게 먼저 이야기해 보자.';
+  assert.deepEqual(fightGate(s, ch, 'small'), { ok: false, message: msg }); // q2 locked
+  s = { ...s, quests: { ...s.quests, q1: { stage: 'done', gathered: [] }, q2: { stage: 'open', gathered: [] } } };
+  assert.deepEqual(fightGate(s, ch, 'small'), { ok: false, message: msg });
+  s = { ...s, quests: { ...s.quests, q2: { stage: 'active', gathered: [] } } };
+  assert.deepEqual(fightGate(s, ch, 'small'), { ok: true, message: null });
+  s = { ...s, quests: { ...s.quests, q2: { stage: 'ready', gathered: [] } } };
+  assert.equal(fightGate(s, ch, 'small').ok, false);
+});
+
+test('fightGate boss: 이미 끝낸 막이면 막는다', () => {
+  const ch = ACT.chapters[1];
+  const s = { ...newGame({ nickname: '하늘', avatar: 'f' }), chapter: '1-2' };
+  assert.deepEqual(fightGate(s, ch, 'boss'), { ok: true, message: null });
+  assert.deepEqual(fightGate({ ...s, clearedActs: [1] }, ch, 'boss'),
+    { ok: false, message: '1막은 이미 끝냈어. 다음 막은 준비 중이에요.' });
 });

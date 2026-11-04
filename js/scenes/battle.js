@@ -67,13 +67,20 @@ export const battle = {
       return () => { leaving = true; timers.forEach(clearTimeout); scene.remove(); };
     }
 
+    // 막 낱말을 이미 모두 보스전에 냈으면(막을 끝낸 뒤) 보스전을 열지 않는다.
+    const words = actWords(act);
+    if (mode === 'boss' && words.every((id) => state.askedWordIds.includes(id))) {
+      queueMicrotask(() => { if (scene.isConnected) go('explore'); });
+      return () => { leaving = true; scene.remove(); };
+    }
+
     // ── 전투 규칙 상태 ──
     let b = null; // 보스전
     let r = null; // 복습전
     let streak = 0;
     let wrongCount = 0; // 복습전 틀린 수(검사용 요약)
     if (mode === 'boss') {
-      b = params.retryOf ? retry(params.retryOf, seed) : createBattle({ wordIds: actWords(act), seed, finalWordId: act.finalWordId ?? null });
+      b = params.retryOf ? retry(params.retryOf, seed) : createBattle({ wordIds: words, seed, finalWordId: act.finalWordId ?? null });
     } else {
       r = createReview({ pool, act: act.id, seed });
     }
@@ -167,10 +174,13 @@ export const battle = {
         go('clear', { kind: 'act' });
         return;
       }
-      state = winSmall(ctx.getState(), chapter);
+      const before = ctx.getState();
+      state = winSmall(before, chapter);
+      setPhase('won');
+      // 쫓기 부탁이 진행 중이 아니었으면(바뀐 것이 없으면) 쫓아냈다는 말 없이 돌아간다.
+      if (state === before) { go('explore'); return; }
       ctx.setState(state);
       ctx.store?.save?.(state);
-      setPhase('won');
       const msg = el('div', 'battle-win panel', `${attachJosa(act.small.name, '을')} 쫓아냈다!`);
       msg.setAttribute('role', 'status');
       scene.appendChild(msg);
