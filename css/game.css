@@ -213,8 +213,14 @@ canvas, img {
 :root.ui-medallion .hud-initial { inset: 15px; border-radius: 50%; font-size: 32px; }
 .hud-face-clip.has-art ~ .hud-initial { display: none; }
 
+/* 좁은 화면(1024 안팎): 틈을 줄여 할 일 두루마리 글이 두 줄 안에 다 보이게 한다 */
+@media (max-width: 1100px) {
+  .hud { gap: 4px; }
+  .hud-words { gap: 8px; }
+}
+
 /* 동료 초상: 메달 오른쪽에 작은 메달(지름 48, 놋쇠 테)을 늘어놓는다. 동료가 없으면 자리도 없다 */
-.hud-companions { flex: none; display: flex; gap: 6px; margin-top: 26px; z-index: 2; }
+.hud-companions { flex: none; display: flex; gap: 4px; margin-top: 26px; z-index: 2; }
 .hud-companions:empty { display: none; }
 .hud-companion.medallion {
   flex: none;
@@ -246,21 +252,20 @@ canvas, img {
 .hud-companion-clip.has-art ~ .hud-companion-initial { display: none; }
 /* 동료 초상이 있으면 두루마리는 그 오른쪽에서 시작한다(메달 밑으로 말려 들어가지 않는다) */
 .hud-companions:not(:empty) + .hud-task { margin-left: 0; }
-.hud-companions:not(:empty) + .hud-task .hud-dot { margin-left: 22px; }
+.hud-companions:not(:empty) + .hud-task .hud-dot { margin-left: 4px; }
 
 /* 지금 할 일 두루마리: 메달 오른쪽에 물린다 */
 .hud-task {
   flex: 1 1 auto;
   min-width: 160px;
   max-width: 460px;
-  height: 60px;
+  min-height: 60px; /* 긴 글은 두 줄로 늘어난다(할 일 글은 잘리지 않는다) */
   margin: 18px 0 0 -48px; /* 메달 밑으로 말려 들어간다(사이 8px 포함) */
   display: flex;
   align-items: center;
   gap: 10px;
   font-size: 20px;
   line-height: 24px;
-  white-space: nowrap;
   filter: drop-shadow(0 3px 2px rgba(20, 10, 0, .4));
 }
 .hud-dot {
@@ -272,7 +277,7 @@ canvas, img {
   background: radial-gradient(circle at 35% 30%, #D6F5B0, var(--gem-green) 55%, #3E7A2C);
   box-shadow: 0 0 0 2px rgba(43, 38, 34, .6);
 }
-.hud-task-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.hud-task-text { flex: 1 1 auto; min-width: 0; word-break: keep-all; overflow-wrap: break-word; } /* 낱말 단위로 줄을 바꾼다. 줄임표로 자르지 않는다 */
 
 /* 낱말 수와 가방 */
 .hud-words {

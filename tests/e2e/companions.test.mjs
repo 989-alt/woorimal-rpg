@@ -6,6 +6,7 @@ import { launchBrowser } from './browser.mjs';
 import { openGame, state, playDialogue } from './play.mjs';
 import { ACTS } from '../../data/acts/index.js';
 import { actWords } from '../../js/rules/game.js';
+import { attachJosa } from '../../js/rules/josa.js';
 
 let server, browser;
 before(async () => {
@@ -154,3 +155,62 @@ test('5-2: 나래는 보스 뒤에야 초상과 지도에 나타난다', async (
   assert.deepEqual(errors, []);
   await page.close();
 });
+
+// 길잡이 글(nextGoal)이 될 수 있는 모든 글: 부탁 목표, 돌아가 알리기·다시 받기, 숨은 낱말 안내, 출구, 보스.
+function allGoalTexts() {
+  const out = new Set(['반짝이는 곳을 찾아 조사해 보자', '아직 못 찾은 낱말을 찾아보자']);
+  for (const act of ACTS) {
+    out.add(`${attachJosa(act.boss.name, '와')} 맞서자`);
+    for (const ch of act.chapters) {
+      const nameOf = (id) => ch.npcs.find((n) => n.id === id)?.name ?? '마을 사람';
+      if (ch.exit) out.add(ch.exit.goal);
+      if (ch.hidden.revealGoal) out.add(ch.hidden.revealGoal);
+      if (ch.hidden.revealedBy) out.add(`${nameOf(ch.hidden.revealedBy)}에게 말을 걸어 보자`);
+      for (const q of ch.quests) {
+        const goal = q.goal ?? q.title;
+        out.add(goal);
+        if (q.kind === 'gather') out.add(`${goal} (${q.targets.length - 1}/${q.targets.length})`);
+        out.add(`${nameOf(q.giver)}에게 돌아가 알려 주자`);
+        out.add(`${nameOf(q.giver)}에게 말을 걸어 보자`);
+        if (q.item) out.add(`${nameOf(q.giver)}에게 ${attachJosa(q.item.name, '을')} 다시 받자`);
+        if (q.kind === 'deliver') out.add(q.goal ?? `${nameOf(q.targets[0])}에게 전하러 가자`);
+      }
+    }
+  }
+  return [...out];
+}
+
+for (const size of [{ width: 1366, height: 768 }, { width: 1024, height: 768 }]) {
+  test(`할 일 두루마리 글은 어떤 길잡이 글이든 잘리지 않고 두 줄 안에 다 보인다 (${size.width}×${size.height})`, async () => {
+    const goals = allGoalTexts();
+    const longest = goals.reduce((a, b) => ([...b].length > [...a].length ? b : a));
+    assert.ok([...longest].length >= 22, '가장 긴 글을 포함한다');
+    const { page, errors } = await openGame(browser, server, { size });
+    for (const ch of ['1-1', '2-1', '3-2', '4-2']) { // 동료 0·1·2·2
+      await enterChapter(page, ch);
+      const bad = await page.evaluate((list) => {
+        const text = document.querySelector('.hud-task-text');
+        const cs = getComputedStyle(text);
+        const problems = [];
+        if (parseFloat(cs.fontSize) < 18) problems.push(`글자 ${cs.fontSize}`);
+        if (cs.textOverflow === 'ellipsis') problems.push('줄임표');
+        for (const g of list) {
+          text.textContent = g;
+          const lines = Math.round(text.getBoundingClientRect().height / parseFloat(cs.lineHeight));
+          if (text.scrollWidth > text.clientWidth) problems.push(`가로로 넘침: ${g}`);
+          if (lines > 2) problems.push(`${lines}줄: ${g}`);
+        }
+        return problems;
+      }, goals);
+      assert.deepEqual(bad, [], `${ch} ${size.width}`);
+      // 가장 긴 글을 두고도 두루마리가 동료 초상·낱말 명판과 겹치지 않고 화면 안에 있다
+      await page.evaluate((g) => { document.querySelector('.hud-task-text').textContent = g; }, longest);
+      const task = await boxOf(page, '.hud-task');
+      for (const sel of ['.hud-words']) assert.equal(overlap(task, await boxOf(page, sel)), false, `${ch} ${sel}`);
+      if ((await companions(page)).length) assert.equal(overlap(task, await boxOf(page, '.hud-companions')), false, `${ch} 동료`);
+      assert.ok(task.x >= 0 && task.x + task.width <= size.width && task.y + task.height <= size.height);
+    }
+    assert.deepEqual(errors, []);
+    await page.close();
+  });
+}
