@@ -7,7 +7,7 @@ const LABEL = { locked: '?', open: '받기 전', active: '하는 중', ready: '�
 
 function row(title, label, done) {
   const li = document.createElement('li');
-  li.className = `task-row${done ? ' done' : ''}`;
+  li.className = `task-row frame-plate${done ? ' done' : ''}`;
   li.tabIndex = 0;
   const name = document.createElement('span');
   name.className = 'task-title';
@@ -16,10 +16,9 @@ function row(title, label, done) {
   st.className = 'task-stage';
   if (done) {
     const check = document.createElement('span');
-    check.className = 'task-check';
+    check.className = 'task-check icon icon-check';
     check.setAttribute('aria-hidden', 'true');
-    check.textContent = '✓';
-    st.append(check, ' ');
+    st.append(check);
   }
   st.append(label);
   li.append(name, st);
@@ -30,10 +29,11 @@ export function openTasks(root, state, chapter, { onClose, focusAfter } = {}) {
   const el = document.createElement('div');
   el.className = 'overlay tasks';
   const panel = document.createElement('div');
-  panel.className = 'overlay-panel';
+  panel.className = 'overlay-panel frame-panel';
   const head = document.createElement('div');
   head.className = 'overlay-head';
   const title = document.createElement('h2');
+  title.className = 'overlay-title frame-plate';
   title.textContent = `할 일: ${chapter.title}`;
   const closeBtn = document.createElement('button');
   closeBtn.type = 'button';

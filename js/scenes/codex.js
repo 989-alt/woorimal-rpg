@@ -8,10 +8,11 @@ export function openCodex(root, state, { actTab = state.act, onClose, focusAfter
   const el = document.createElement('div');
   el.className = 'overlay codex';
   const panel = document.createElement('div');
-  panel.className = 'overlay-panel';
+  panel.className = 'overlay-panel frame-panel';
   const head = document.createElement('div');
   head.className = 'overlay-head';
   const title = document.createElement('h2');
+  title.className = 'overlay-title frame-plate';
   title.textContent = '도감';
   const closeBtn = document.createElement('button');
   closeBtn.type = 'button';
@@ -28,7 +29,7 @@ export function openCodex(root, state, { actTab = state.act, onClose, focusAfter
   grid.className = 'codex-grid';
   grid.setAttribute('role', 'tabpanel');
   const detail = document.createElement('div');
-  detail.className = 'codex-detail';
+  detail.className = 'codex-detail frame-plate';
   detail.setAttribute('aria-live', 'polite');
   body.append(grid, detail);
   panel.append(head, tabs, body);
@@ -58,6 +59,9 @@ export function openCodex(root, state, { actTab = state.act, onClose, focusAfter
     tabBtns.forEach((b, i) => {
       b.setAttribute('aria-selected', String(i + 1 === act));
       b.classList.toggle('on', i + 1 === act);
+      // 고른 탭은 초록 면, 나머지는 나무 면
+      b.classList.toggle('btn-green', i + 1 === act);
+      b.classList.toggle('btn-wood', i + 1 !== act);
     });
     grid.replaceChildren();
     const words = WORDS.filter((w) => w.act === act);
@@ -74,15 +78,15 @@ export function openCodex(root, state, { actTab = state.act, onClose, focusAfter
       card.tabIndex = 0;
       card.setAttribute('role', 'button');
       if (got) {
-        card.className = 'codex-card found';
+        card.className = 'codex-card frame-card found';
         const name = document.createElement('p');
         name.className = 'codex-word';
         name.textContent = w.word;
         card.append(name);
       } else {
-        card.className = 'codex-card unknown';
+        card.className = 'codex-card frame-card unknown';
         const q = document.createElement('p');
-        q.className = 'codex-q';
+        q.className = 'codex-q coin';
         q.setAttribute('aria-hidden', 'true');
         q.textContent = '?';
         const t = document.createElement('p');
@@ -105,7 +109,7 @@ export function openCodex(root, state, { actTab = state.act, onClose, focusAfter
   for (let a = 1; a <= ACT_COUNT; a++) {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'codex-tab';
+    b.className = 'codex-tab btn btn-wood btn-sm';
     b.setAttribute('role', 'tab');
     b.textContent = `${a}막`;
     b.addEventListener('click', () => show(a));

@@ -47,8 +47,17 @@ for (const avatar of ['f', 'm']) {
     near(hero.height, 620, 10, '주인공 높이');
     assert.equal(hero.height, npc.height, '두 인물 같은 높이');
     assert.equal(hero.y, npc.y, '두 인물 같은 자리 높이');
-    near(dlg.width, 1366 - 80, 1, '상자 폭(좌우 40px)');
-    near(dlg.height, 190, 1, '상자 높이');
+    near(dlg.width, 1366 - 48, 1, '상자 폭(좌우 24px)');
+    near(dlg.height, 200, 1, '상자 높이');
+    near(768 - (dlg.y + dlg.height), 16, 1, '상자 아래 틈');
+    near(await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.dialogue-text')).fontSize)), 28, 0.5, '대사 글자');
+    // 이름 리본: 상자 위 테에 걸친다(세로 가운데가 상자 위끝 근처), 주인공 줄은 왼쪽 절반
+    const tag = await box(page, '.name-tag');
+    assert.ok(tag.y < dlg.y && dlg.y < tag.y + tag.height, `리본이 상자 위끝에 걸침 (tag ${tag.y}+${tag.height}, box ${dlg.y})`);
+    near(tag.y + tag.height / 2, dlg.y, 12, '리본 세로 가운데');
+    assert.ok(tag.x + tag.width < 683, '주인공 줄 리본은 왼쪽 절반');
+    near(tag.x, 56, 2, '주인공 리본 왼쪽 자리(x 56)');
+    assert.ok(tag.width >= 200 && tag.height >= 52, `리본 크기 ${tag.width}x${tag.height}`);
     assert.ok(hero.y + hero.height > dlg.y + 40, '상반신 아래는 상자 뒤로 가려진다');
     assert.ok(hero.x < 683 && npc.x > 683, '주인공 왼쪽, 마을 사람 오른쪽');
     // 상자가 그림 위에 그려진다(상자 안 한 점을 누르면 상자)

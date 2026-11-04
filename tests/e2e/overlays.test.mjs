@@ -173,3 +173,48 @@ for (const [label, sel, closeSel] of [['도감', '.codex', '.codex-close'], ['�
     await page.close();
   });
 }
+
+test('도감·할 일: 누르는 것은 모두 48px 이상, 찾은 칸 글자 18px 이상, 완료 줄에 글자와 체크', async () => {
+  const { page, errors } = await start();
+  await page.keyboard.press('KeyE');
+  await page.waitForSelector('.codex');
+  await page.waitForTimeout(300);
+  const small = await page.evaluate(() => [...document.querySelectorAll('.codex button, .codex .codex-card')]
+    .map((b) => { const r = b.getBoundingClientRect(); return [b.className, Math.round(r.width), Math.round(r.height)]; })
+    .filter(([, w, h]) => w < 48 || h < 48));
+  assert.deepEqual(small, []);
+  const sizes = await page.evaluate(() => [...document.querySelectorAll('.codex-card *')]
+    .filter((n) => n.textContent.trim()).map((n) => parseFloat(getComputedStyle(n).fontSize)));
+  assert.ok(sizes.length > 0 && sizes.every((n) => n >= 18), `칸 글자 ${sizes}`);
+  const found = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.codex-card.found .codex-word')).fontSize));
+  assert.equal(found, 24);
+  assert.equal(await page.locator('.codex-card.unknown .coin').count(), 9);
+  assert.equal(await page.locator('.codex-tab.on').count(), 1);
+  assert.equal(await page.locator('.codex-card.selected').count(), 1);
+  assert.equal(await page.locator('.codex-detail.frame-plate').count(), 1);
+  await page.keyboard.press('KeyQ');
+  await page.waitForSelector('.tasks');
+  await page.waitForTimeout(300);
+  const small2 = await page.evaluate(() => [...document.querySelectorAll('.tasks button, .tasks .task-row')]
+    .map((b) => { const r = b.getBoundingClientRect(); return [b.className, Math.round(r.height)]; }).filter(([, h]) => h < 48));
+  assert.deepEqual(small2, []);
+  await page.close();
+  const p2 = await start();
+  const done = await p2.page.evaluate(async () => {
+    const { openTasks } = await import('/js/scenes/quests.js');
+    const { ACTS } = await import('/data/acts/index.js');
+    const c1 = ACTS[0].chapters[0];
+    const quests = {};
+    c1.quests.forEach((q) => { quests[q.id] = { stage: 'done', gathered: [] }; });
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    openTasks(host, { quests, hiddenFound: {}, clearedActs: [] }, c1);
+    const row = host.querySelector('.task-row.done');
+    return { text: row.innerText, icon: !!row.querySelector('.icon-check'), plate: row.classList.contains('frame-plate'), h: row.getBoundingClientRect().height };
+  });
+  assert.match(done.text, /완료/);
+  assert.ok(done.icon && done.plate && done.h >= 48);
+  assert.deepEqual(p2.errors, []);
+  await p2.page.close();
+  assert.deepEqual(errors, []);
+});

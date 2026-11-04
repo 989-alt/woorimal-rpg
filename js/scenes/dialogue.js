@@ -8,11 +8,15 @@ import { blockColor, initial, labelBlockEl } from '../ui/placeholder.js';
 import { openMeaningCard } from '../ui/meaning-card.js';
 import { ASSETS, bustFor } from '../../data/assets.js';
 import { setArt, preloadChapter } from '../ui/images.js';
+import { ribbonInk } from '../ui/ink.js';
+import { igniteWord, prefersReducedMotion } from '../ui/word-glow.js';
 
 export const TIP_WORD = 'tip-word';
 const HERO_COLOR = '#3B5BA5'; // 쪽빛
 const GUARD_MS = 200;
 const MS_PER_CHAR = 30;
+// 줄이 다 찍힌 뒤 낱말이 잿빛에서 금빛이 되는 것을 눈으로 보게 하는 시간(ms). 이 동안은 누름을 받지 않고, 지나면 뜻풀이 카드가 열린다.
+export const GLOW_MS = 700;
 
 // 글자가 나오는 빠르기(ms). 검사용(?test=1) fastText만 바꾼다.
 let typeSpeed = MS_PER_CHAR;
@@ -77,7 +81,6 @@ export function newWordsOf(rawText, words, shown = new Set()) {
   return [...new Set(extractWords(rawText))].filter((w) => words.includes(w) && !shown.has(w));
 }
 
-const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const el = (tag, className, text) => {
   const e = document.createElement(tag);
   if (className) e.className = className;
@@ -99,12 +102,12 @@ export const dialogue = {
     scene.dataset.scene = 'dialogue';
     const heroBust = labelBlockEl(initial(nickname), HERO_COLOR, 'bust bust-hero');
     const npcBust = el('span', 'bust bust-npc');
-    const box = el('div', 'dialogue-box');
+    const box = el('div', 'dialogue-box frame-dialogue');
     box.setAttribute('role', 'button');
     box.tabIndex = 0;
-    const tag = el('div', 'name-tag');
+    const tag = el('div', 'name-tag ribbon');
     const text = el('p', 'dialogue-text');
-    const arrow = el('span', 'dialogue-arrow', '▼');
+    const arrow = el('span', 'dialogue-arrow');
     arrow.setAttribute('aria-hidden', 'true');
     box.append(tag, text, arrow);
     scene.append(heroBust, npcBust, box);
@@ -120,7 +123,8 @@ export const dialogue = {
     let index = -1;
     let tw = null;
     let card = null; // 열려 있는 뜻풀이 카드
-    let busy = false; // 이 줄의 낱말 카드를 다 보여 주는 동안
+    let busy = false; // 이 줄의 낱말 카드를 다 보여 주는 동안(낱말이 빛나는 동안 포함)
+    let glowTimer = 0; // 낱말이 빛을 되찾는 동안(이 동안 누름은 받지 않는다)
     let leaving = false;
     let raf = 0;
     let running = false; // 타자 효과 고리가 도는 중
@@ -151,10 +155,6 @@ export const dialogue = {
         s.on.textContent = s.chars.slice(0, n).join('');
         s.off.textContent = s.chars.slice(n).join('');
         used += s.len;
-        if (s.hl && n === s.len && !s.sparked) {
-          s.sparked = true;
-          if (!reducedMotion()) s.hl.classList.add('sparkle');
-        }
       }
     }
 
@@ -165,6 +165,8 @@ export const dialogue = {
       const plain = splitHighlights(raw).map((seg) => seg.text).join('');
       tw = createTypewriter({ full: plain, msPerChar: typeSpeed });
       busy = false;
+      clearTimeout(glowTimer);
+      glowTimer = 0;
       scene.removeAttribute('data-ready');
       tipEl?.remove();
       tipEl = null;
@@ -178,7 +180,7 @@ export const dialogue = {
         if (seg.word) { hl = wrap; hl.dataset.word = seg.word; }
         wrap.append(on, off);
         text.appendChild(wrap);
-        return { on, off, hl, chars: Array.from(seg.text), len: Array.from(seg.text).length, sparked: false };
+        return { on, off, hl, chars: Array.from(seg.text), len: Array.from(seg.text).length };
       });
       const sp = resolveSpeaker(line, npcs, from, nickname);
       const narration = !sp;
@@ -189,7 +191,10 @@ export const dialogue = {
       if (!narration) {
         tag.textContent = sp.name;
         tag.dataset.side = sp.side;
-        tag.style.setProperty('--band', sp.color);
+        tag.style.setProperty('--speaker-color', sp.color);
+        const ink = ribbonInk(sp.color);
+        tag.style.setProperty('--speaker-ink', ink);
+        tag.style.setProperty('--speaker-outline', ink === '#FFFFFF' ? '#2B2622' : 'transparent');
         const np = npcFor(i);
         if (np && np !== lastNpc && (!lastNpc || np.name !== lastNpc.name)) {
           lastNpc = np;
@@ -205,9 +210,13 @@ export const dialogue = {
         heroBust.classList.toggle('listener', sp.side !== 'hero');
         npcBust.classList.toggle('listener', sp.side !== 'npc');
       }
-      for (const w of newWordsOf(raw, words, shownCards)) {
-        const s = spans.find((x) => x.hl?.dataset.word === w);
-        s?.hl.classList.add('new');
+      // 새 낱말은 잿빛으로 찍힌다(줄이 다 찍히면 금빛). 이미 아는 낱말과 움직임 줄이기에서는 처음부터 금빛.
+      const fresh = new Set(newWordsOf(raw, words, shownCards));
+      for (const s of spans) {
+        if (!s.hl) continue;
+        const isNew = fresh.has(s.hl.dataset.word);
+        if (isNew) s.hl.classList.add('new');
+        s.hl.classList.add(isNew && !prefersReducedMotion() ? 'word-dim' : 'word-lit');
       }
       maybeTip();
       render();
@@ -236,9 +245,12 @@ export const dialogue = {
       tipEl?.remove();
       tipEl = null;
       const cards = [...pending];
+      let ignited = false;
+      for (const s of spans) if (s.hl?.classList.contains('word-dim')) { igniteWord(s.hl); ignited = true; }
       const next = () => {
         const w = cards.shift();
         if (!w) { busy = false; arrow.hidden = false; syncReady(); return; }
+        glowTimer = 0;
         card = openMeaningCard(scene, w, () => {
           card = null;
           kick(); // 카드가 열린 동안 멈췄던 시간(다음 줄로 넘어가기 전 기다림)을 다시 흘린다
@@ -249,11 +261,12 @@ export const dialogue = {
           next();
         });
       };
-      next();
+      if (ignited) glowTimer = window.setTimeout(next, GLOW_MS);
+      else next();
     }
 
     function press() {
-      if (card || leaving || !tw) return;
+      if (card || leaving || !tw || glowTimer) return;
       const r = tw.press();
       if (r === 'reveal') { render(); sentenceShown(); syncReady(); kick(); }
       else if (r === 'next') advance();
@@ -277,7 +290,7 @@ export const dialogue = {
     box.addEventListener('click', press);
     text.addEventListener('click', (e) => {
       const hl = e.target.closest?.('.hl.new');
-      if (!hl || card || tw.done()) return;
+      if (!hl || card || glowTimer || tw.done()) return;
       e.stopPropagation();
       tw.press();
       render();
@@ -321,6 +334,7 @@ export const dialogue = {
 
     return () => {
       leaving = true;
+      clearTimeout(glowTimer);
       cancelAnimationFrame(raf);
       window.removeEventListener('keydown', onKey);
       scene.remove();

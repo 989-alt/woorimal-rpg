@@ -62,6 +62,16 @@ test('끝난 부탁 대사: 대화를 열 때 이미 낱말을 얻어 저장했�
   await reveal(page);
   await advance(page); // 카드가 있는 줄로
   assert.equal(await page.locator('.name-tag').innerText(), '도담 할머니');
+  // 연타 검사는 카드가 생기는 순간 화면 안에서 바로 한다(검사 쪽 왕복이 느려도 기다림 300ms를 넘기지 않도록)
+  await page.evaluate(() => {
+    const mo = new MutationObserver(() => {
+      if (!document.querySelector('.word-card')) return;
+      mo.disconnect();
+      for (const key of [' ', 'Enter']) window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+      window.__mashed = document.querySelectorAll('.word-card').length;
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+  });
   // '새벽 [[어스름]]' 줄이 다 보이면 카드
   await reveal(page);
   await page.waitForSelector('.word-card');
@@ -76,8 +86,7 @@ test('끝난 부탁 대사: 대화를 열 때 이미 낱말을 얻어 저장했�
   await page.locator('.dialogue-box').click({ force: true });
   assert.equal(await page.locator('.word-card').count(), 1);
   // 연타: 카드가 열린 직후의 키 누름은 카드를 닫지 못한다
-  await page.keyboard.press('Space');
-  await page.keyboard.press('Enter');
+  assert.equal(await page.evaluate(() => window.__mashed), 1, '연타 직후 카드가 열려 있어야 한다');
   assert.equal(await page.locator('.word-card').count(), 1, '연타로 카드가 닫히면 안 된다');
   await page.waitForTimeout(350); // 카드의 키보드 확인 기다림(300ms) 자체를 검사한다
   await page.keyboard.press('Enter'); // 확인
@@ -169,6 +178,100 @@ test('대화: 줄이 다 보이고 기다림이 끝나면 화면 고리(requestA
   await page.waitForSelector('.dialogue-arrow:not([hidden])');
   assert.ok(await page.evaluate(() => window.__rafs) > n, '다음 줄에서 다시 돌지 않았다');
   assert.equal(await page.locator('.dialogue-text').innerText(), '둘째 줄이다.');
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+// 이름 리본: 말하는 인물 색, 글자는 색에 맞춰 흰색/먹색, 긴 이름도 넘치지 않는다.
+test('이름 리본: 인물 색에 맞춘 글자색, 긴 이름도 넘치지 않는다', async () => {
+  const { page, errors } = await openNewGame();
+  await page.evaluate(() => window.__test.nextChapter());
+  await page.waitForSelector('[data-scene="explore"]');
+  const script = [
+    { who: 'npc', npc: 'laundry', face: 'base', text: '안개에 젖은 빨래가 잿빛이 됐어.' },
+    { who: 'npc', npc: 'baker', face: 'joy', text: '갓 구운 빵 냄새가 참 좋지?' },
+    { who: 'hero', face: 'base', text: '네!' },
+  ];
+  await page.evaluate((sc) => window.__test.dialogue(sc, [], '빨래터 아주머니'), script);
+  await page.waitForSelector('[data-scene="dialogue"]');
+  const look = () => page.evaluate(() => {
+    const t = document.querySelector('.name-tag');
+    return { text: t.textContent, color: getComputedStyle(t).color, fit: t.scrollWidth <= t.clientWidth, side: t.dataset.side };
+  });
+  let r = await look();
+  assert.equal(r.text, '빨래터 아주머니');
+  assert.equal(r.color, 'rgb(255, 255, 255)');
+  assert.ok(r.fit, '리본 글자가 넘치지 않는다');
+  await advance(page);
+  r = await look();
+  assert.equal(r.text, '빵집 아저씨');
+  assert.equal(r.color, 'rgb(43, 38, 34)');
+  assert.ok(r.fit);
+  assert.equal(r.side, 'npc');
+  await advance(page);
+  r = await look();
+  assert.equal(r.side, 'hero');
+  assert.equal(r.color, 'rgb(255, 255, 255)');
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+// 낱말이 빛을 되찾는 연출: 잿빛(.word-dim)으로 찍히고, 줄이 끝나면 금빛(.word-lit).
+const GOLD = 'rgb(242, 193, 78)';
+test('[[낱말]]은 처음 잿빛으로 찍히고 줄이 끝난 뒤 금빛이 된다', async () => {
+  const { page, errors } = await openNewGame();
+  const script = [{ who: 'npc', npc: 'dodam', face: 'base', text: '나는 날마다 새벽 [[어스름]]에 물을 긷는단다.' }];
+  await page.evaluate((sc) => window.__test.dialogue(sc, ['어스름'], '도담 할머니'), script);
+  await page.waitForSelector('.dialogue-text .hl');
+  const wordState = () => page.evaluate(() => {
+    const h = document.querySelector('.dialogue-text .hl');
+    return { dim: h.classList.contains('word-dim'), lit: h.classList.contains('word-lit'), color: getComputedStyle(h).color };
+  });
+  const first = await wordState();
+  assert.ok(first.dim && !first.lit, '처음에는 잿빛');
+  assert.notEqual(first.color, GOLD);
+  await page.waitForSelector('.word-card'); // 줄이 다 찍히면 카드
+  await page.waitForFunction(() => document.querySelector('.dialogue-text .hl')?.classList.contains('word-lit'));
+  const lit = await page.evaluate(() => {
+    const h = document.querySelector('.dialogue-text .hl');
+    return { color: getComputedStyle(h).color, dim: h.classList.contains('word-dim') };
+  });
+  assert.equal(lit.dim, false);
+  // 카드의 낱말도 금빛으로 끝나고, 뜻 줄이 보인다.
+  await page.waitForFunction(() => document.querySelector('.word-card-word')?.classList.contains('word-lit'));
+  await page.waitForFunction(() => {
+    const m = document.querySelector('.word-card-meaning');
+    return m && getComputedStyle(m).opacity === '1';
+  });
+  // 색은 0.8초에 걸쳐 바뀌므로 다 바뀔 때까지 기다린다
+  await page.waitForFunction((g) => getComputedStyle(document.querySelector('.word-card-word')).color === g, GOLD);
+  assert.match(await page.locator('.word-card-meaning').innerText(), /어둑한 때/);
+  // 연출 중에도 확인은 누를 수 있다
+  await page.locator('.word-card .btn').click();
+  await page.waitForSelector('.word-card', { state: 'detached' });
+  await page.waitForFunction((g) => getComputedStyle(document.querySelector('.dialogue-text .hl')).color === g, GOLD);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('움직임 줄이기: 처음부터 금빛, 알갱이 없음', async () => {
+  const page = await browser.newPage({ viewport: { width: 1366, height: 768 }, reducedMotion: 'reduce' });
+  const errors = collectErrors(page);
+  await page.goto(server.url + '/?test=1');
+  await page.waitForFunction(() => window.__test);
+  await page.evaluate(() => window.__test.newGame('하늘', 'f'));
+  await page.waitForSelector('[data-scene="explore"]');
+  const script = [{ who: 'npc', npc: 'dodam', face: 'base', text: '나는 날마다 새벽 [[어스름]]에 물을 긷는단다.' }];
+  await page.evaluate((sc) => window.__test.dialogue(sc, ['어스름'], '도담 할머니'), script);
+  await page.waitForSelector('.dialogue-text .hl');
+  const hl = await page.evaluate(() => {
+    const h = document.querySelector('.dialogue-text .hl');
+    return { lit: h.classList.contains('word-lit'), dim: h.classList.contains('word-dim'), motes: document.querySelectorAll('.word-mote').length };
+  });
+  assert.ok(hl.lit && !hl.dim);
+  await page.waitForSelector('.word-card');
+  assert.equal(await page.locator('.word-card-word.word-lit').count(), 1);
+  assert.equal(await page.locator('.word-mote').count(), 0);
   assert.deepEqual(errors, []);
   await page.close();
 });
