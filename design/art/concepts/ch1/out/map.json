@@ -1,0 +1,12 @@
+{
+ "model": "gpt-image-2-5-flare-text-to-image",
+ "input": {
+  "prompt": "16px pixel art map for a top-down 3/4 view RPG, a cozy fantasy village in the early morning. Crisp hard-edged pixels on a 16-pixel tile grid, limited palette of about 30 colours, 1px darker-hue outlines on objects (never black), flat ground shading with 2-3 shades and no outline on the ground, light from the upper left.\nContent: rounded puffy roofs in warm ochre and slate blue with arched doors and round-topped windows; the landmark is a round-roofed cottage with chimney smoke on the left side; large clay storage jars beside it and a clothesline with laundry; round dark-green tree canopies around the edges; a teal stream with a darker teal outline curving through the bottom right with a small arched wooden bridge; sandy light paths at least two tiles wide connecting the houses; grass ledges; a few flowers.\nAt the north edge one narrow alley and the laundry there are desaturated grey with thin dithered grey fog creeping in.\nNo characters, no text, no UI.",
+  "aspect_ratio": "16:9",
+  "resolution": "1K"
+ },
+ "taskId": "b8af0889aec37e3afbc5f8f020c9f141",
+ "credits": 6.0,
+ "costTime": 60,
+ "source_url": "https://tempfile.aiquickdraw.com/images/chatgpt/file_00000000491081f5a06634478029b9cd.png"
+}

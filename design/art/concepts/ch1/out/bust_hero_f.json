@@ -1,0 +1,12 @@
+{
+ "model": "gpt-image-2-5-flare-text-to-image",
+ "input": {
+  "prompt": "Modern anime illustration with soft cel shading (two tones plus one gentle gradient), delicate hair highlights, large expressive eyes, light coming from the upper left, child-friendly, modest and practical clothing, no bloom, no bokeh, no text, no logos.\nUpper-body bust portrait cropped from the top of the head to the waist, a 12-year-old girl adventurer with brown hair tied in a single high ponytail, wearing a short indigo-blue (#3B5BA5) hooded cape jacket over a cream shirt and a brown belt, a small cream-coloured cloth pouch hanging on her right hip clearly visible, body turned three-quarters toward the viewer's right, cheerful determined smile, one hand raised in a small wave.\nPlain flat solid magenta (#FF00FF) background with no shadows or gradients.",
+  "aspect_ratio": "3:4",
+  "resolution": "2K"
+ },
+ "taskId": "ba04d66a13e877419c633aa93132e957",
+ "credits": 10.0,
+ "costTime": 181,
+ "source_url": "https://tempfile.aiquickdraw.com/gpt-image-2-5/1793755819902-u70h6wbea1d.png"
+}

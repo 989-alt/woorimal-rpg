@@ -1,0 +1,12 @@
+{
+ "model": "gpt-image-2-5-flare-text-to-image",
+ "input": {
+  "prompt": "Anime background art painting, eye-level view of a cozy fantasy village in the early morning with warm pale golden light from the upper left and low contrast. On the left side a round puffy-roofed cottage with an arched door and chimney smoke, large clay storage jars beside it, a clothesline with laundry, round green trees, a sandy path leading into the distance; far to the north the sky above the hills is faintly grey and hazy. Soft gentle blur over the whole scene (background for dialogue), no bokeh, no lens flare, no people, no text. The bottom third of the image is a simple, calm ground area with little detail.",
+  "aspect_ratio": "16:9",
+  "resolution": "2K"
+ },
+ "taskId": "c9963b8ee67a469a316acc9f6dd85026",
+ "credits": 10.0,
+ "costTime": 51,
+ "source_url": "https://tempfile.aiquickdraw.com/gpt-image-2-5/1793755690893-b6wxxmnol69.png"
+}
