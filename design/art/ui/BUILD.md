@@ -52,8 +52,8 @@ python3 tools/kie-gen.py --prompt-file $P/logo.txt --out $R/logo_1.png --resolut
 | dialogue | frame_dialogue.v1.png | dialogue_1 | brass | frame, src-corner 200 |
 | card | frame_card.v1.png | card_1 | brass | frame, src-corner 230 |
 | scroll | frame_scroll.v1.png | scroll_2 | — | bar --asym-right |
-| btnGreen | btn_green.v1.png | btn_green_1 | unchecker → brass | bar |
-| btnWood | btn_wood.v1.png | btn_wood_1 | — | bar |
+| btnGreen | btn_green.v1.png | btn_green_1 | unchecker → brass | bar --flat-middle |
+| btnWood | btn_wood.v1.png | btn_wood_1 | — | bar --flat-middle |
 | btnIcon | btn_icon.v1.png | btn_icon_1 | — | bar |
 | ribbon | ribbon_mask.v1.png | ribbon_1 | — | bar --mask |
 | medallion | medallion.v1.png | medallion_1 | brass | fit |
@@ -87,8 +87,8 @@ $SL frame $W/dialogue_1.png $OUT/frame_dialogue.v1.png --size 192x192 --slice 64
 $SL frame $W/card_1.png     $OUT/frame_card.v1.png     --size 144x144 --slice 48,48,48,48 --src-corner 230
 # 가로 3조각(높이에 맞춰 줄이고, 위아래 뒤집기 없음)
 $SL bar $R/scroll_2.png     $OUT/frame_scroll.v1.png   --size 336x120 --slice 36,96,36,36 --asym-right
-$SL bar $W/btn_green_1.png  $OUT/btn_green.v1.png      --size 192x144 --slice 48,64,32,64
-$SL bar $R/btn_wood_1.png   $OUT/btn_wood.v1.png       --size 192x144 --slice 48,64,32,64
+$SL bar $W/btn_green_1.png  $OUT/btn_green.v1.png      --size 192x144 --slice 48,64,32,64 --flat-middle
+$SL bar $R/btn_wood_1.png   $OUT/btn_wood.v1.png       --size 192x144 --slice 48,64,32,64 --flat-middle
 $SL bar $R/btn_icon_1.png   $OUT/btn_icon.v1.png       --size 144x160 --slice 40,40,40,40
 $SL bar $R/ribbon_1.png     $OUT/ribbon_mask.v1.png    --size 400x104 --slice 0,80,0,80 --mask
 $SL bar $W/icons/hp_cell.png $OUT/hp_cell.v1.png       --size 64x40   --slice 0,20,0,20
@@ -101,6 +101,10 @@ for n in heart_full heart_empty check; do $SL fit $W/icons/$n.png $OUT/$n.v1.png
 ```
 
 ## 다음 과제가 알아 둘 것
+
+- 버튼(`btn_green`, `btn_wood`)은 `bar --flat-middle`로 자른다. 처음에는 원본 가운데 띠를 그대로 썼는데, 그 띠의 윤기·아랫단이 끝 조각과 맞지 않아
+  CSS `border-image ... fill`로 가운데를 늘이면 가운데에 밝은(위)·어두운(아래) 네모가 이음매로 보였다(초록 단추 전부). `--flat-middle`은 가운데 띠를
+  왼 끝 맨 오른쪽 열(63)의 되풀이로 채워 이음매를 없앤다(오른 끝은 왼 끝의 거울이라 같은 열이다). 3배 확대로 확인했다.
 
 - 틀의 나무 테는 조각 폭보다 얇다(모서리 장식이 테 두께의 두 배쯤 안쪽까지 들어와서). 화면 px로 panel 약 9/24, dialogue 약 9/32, card 약 8/24.
   `background: padding-box`만 쓰면 나무와 한지 사이가 비어 보이므로, 한지를 테 안쪽 일부까지 깔아야 한다(가상 요소를 나무 폭만큼 안으로 들여 놓기 등).

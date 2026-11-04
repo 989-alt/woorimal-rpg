@@ -17,6 +17,7 @@
       버튼(가로 3조각, 가운데 채움): 알파 상자로 자른 원본을 높이 H에 맞춰 비율대로 줄이고, 왼쪽 L열을 왼 끝,
       가운데 W-L-R열을 가운데 띠로 쓴다. 오른쪽은 왼쪽의 거울이다. 위아래는 뒤집지 않는다(윤기 띠·아랫단 유지).
       --asym-right: 오른쪽 R열을 원본 오른쪽 끝에서 떼어 온다(두루마리 나무 축).
+      --flat-middle: 가운데 띠를 왼 끝 맨 오른쪽 열의 되풀이로 채운다(원본 가운데 띠가 끝 조각과 안 맞아 이음매가 보일 때).
       --mask: RGB를 모두 흰색으로, 알파만 모양(리본 가면. 위아래 조각이 0이라 mask 명령 대신 쓴다).
       T·B는 CSS 조각 값이라 그림에는 쓰지 않는다. 줄인 원본의 너비가 W보다 좁으면 멈춘다.
 """
@@ -171,7 +172,7 @@ def reading_order(boxes):
     return [b for row in rows for b in sorted(row, key=lambda b: b[0])]
 
 
-def build_bar(src, size, sl, asym_right=False):
+def build_bar(src, size, sl, asym_right=False, flat_middle=False):
     w, h = size
     _, r, _, l = sl
     sw = round(src.width * h / src.height)
@@ -181,7 +182,12 @@ def build_bar(src, size, sl, asym_right=False):
     mid = w - l - r
     out = Image.new("RGBA", size, (0, 0, 0, 0))
     out.alpha_composite(scaled.crop((0, 0, l, h)), (0, 0))
-    if mid > 0:
+    if mid > 0 and flat_middle:
+        # 가운데 띠를 왼 끝 맨 오른쪽 한 열의 되풀이로 채운다: 끝 조각과 이음매 없이 이어지고(오른 끝은 거울이라 같은 열),
+        # border-image가 가운데를 가로로 늘려도 그대로다. 원본 가운데 띠의 윤기·무늬가 끝 조각과 안 맞을 때 쓴다.
+        col = scaled.crop((l - 1, 0, l, h))
+        out.alpha_composite(col.resize((mid, h), Image.Resampling.NEAREST), (l, 0))
+    elif mid > 0:
         x0 = (sw - mid) // 2
         out.alpha_composite(scaled.crop((x0, 0, x0 + mid, h)), (l, 0))
     if asym_right:
@@ -201,8 +207,8 @@ def cmd_frame(a, white=False):
 
 
 def cmd_bar(a):
-    save_palette_png(build_bar(load_cropped(a.src), parse_size(a.size), parse_slice(a.slice), a.asym_right), a.dst,
-                     white=a.mask)
+    save_palette_png(build_bar(load_cropped(a.src), parse_size(a.size), parse_slice(a.slice), a.asym_right,
+                               a.flat_middle), a.dst, white=a.mask)
 
 
 def cmd_fit(a):
@@ -248,6 +254,7 @@ def main():
     b.add_argument("--slice", required=True)
     b.add_argument("--asym-right", action="store_true")
     b.add_argument("--mask", action="store_true")
+    b.add_argument("--flat-middle", action="store_true")
 
     t = sub.add_parser("fit")
     t.add_argument("src"); t.add_argument("dst")

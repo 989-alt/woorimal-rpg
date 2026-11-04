@@ -118,7 +118,7 @@ test('보스전: 오답만 5번 → 게임 오버 → 도감 다시 보기 → �
   await waitAsk(page);
   for (let i = 0; i < 4; i++) await answer(page, false);
   await page.waitForSelector('[data-scene="gameover"]');
-  assert.match(await page.locator('[data-scene="gameover"]').innerText(), /안개에 휩싸였다…/);
+  assert.match(await page.locator('[data-scene="gameover"]').innerText(), /안개에 휩싸였다\.\.\./);
   assert.equal(await page.evaluate(() => document.activeElement?.textContent), '다시 도전');
   // 게임 오버에서는 출제 기록이 남지 않는다
   let s = await page.evaluate(() => window.__test.state());

@@ -18,3 +18,4 @@
 
 ## 검사
 - `npm test` (node --test), `npm run test:e2e` (Playwright)
+- 글(`data/`·`js/`·`css/`·`index.html`)을 더하거나 고치면 글꼴 서브셋을 다시 만든다: `/root/.local/share/sprite-gen/.venv/bin/python -I tools/subset-fonts.py --gowun design/art/ui/raw/fonts-dl-gowun/GowunDodum-Regular.ttf --jua design/art/ui/raw/fonts-dl-jua/Jua-Regular.ttf --out assets/fonts --chars-out tools/fonts` (원본 ttf는 `github.com/google/fonts`의 `ofl/gowundodum`, `ofl/jua`에서 받아 gitignore된 `design/art/ui/raw/`에 둔다. 안 하면 `tests/fonts.test.mjs`가 잡는다)

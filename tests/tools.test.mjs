@@ -210,6 +210,14 @@ print(im.size, im.mode, 'transparency' in im.info, sym, px[4, 72][0] > 150, px[9
 rgba = im.convert('RGBA')
 print(im.size, all(p[:3] == (255, 255, 255) for p in rgba.getdata() if p[3] > 0), rgba.getpixel((0, 0))[3], rgba.getpixel((40, 52))[3] > 250)
 `), '(300, 104) True 0 True');
+  // --flat-middle: 가운데 띠가 왼 끝 맨 오른쪽 열(63)의 되풀이라 끝 조각과 이음매가 없다. 기본은 원본 가운데 띠
+  const flat = join(dir, 'bar-flat.png');
+  execFileSync(VENV_PY, ['-I', 'tools/ui-slice.py', 'bar', src, flat, '--size', '192x144', '--slice', '48,64,32,64', '--flat-middle']);
+  assert.equal(inspectFrame(flat, `
+px = im.convert('RGBA').load()
+same = all(px[x, y] == px[63, y] for y in range(30, 110) for x in range(64, 128))
+print(same, px[4, 72][0] > 150, px[187, 72][0] > 150)
+`), 'True True True');
 });
 
 test('ui-slice mask: 위·아래 조각이 0이면 알아볼 수 있는 말로 멈춘다', (t) => {

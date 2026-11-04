@@ -617,7 +617,7 @@ canvas, img {
 }
 .battle-feedback p { margin: 0; }
 .battle-answer { font-size: 24px; }
-.x-mark { font-family: var(--font-title); color: var(--gray-3); margin-right: 4px; }
+.x-mark { font-family: var(--font-body); /* 주아에는 × ○ 가 없어 고운돋움 글자로 */ color: var(--gray-3); margin-right: 4px; }
 .battle-meaning { font-size: 22px; line-height: 1.45; }
 .battle-meaning-word {
   font-family: var(--font-title);
@@ -747,7 +747,7 @@ canvas, img {
   right: 18px;
   top: 50%;
   translate: 0 -50%;
-  font-family: var(--font-title);
+  font-family: var(--font-body); /* 주아에는 ○ × 가 없어 고운돋움 글자로 */
   font-size: 30px;
   line-height: 1;
 }

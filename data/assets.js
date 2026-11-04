@@ -64,7 +64,7 @@ export const ASSETS = {
 export const UI_KIT = {
   panel: { w: 144, h: 144, slice: [48, 48, 48, 48], border: [24, 24, 24, 24] },
   dialogue: { w: 192, h: 192, slice: [64, 64, 64, 64], border: [32, 32, 32, 32] },
-  scroll: { w: 336, h: 120, slice: [36, 96, 36, 36], border: [18, 48, 18, 18] },
+  scroll: { w: 336, h: 120, slice: [36, 96, 36, 36], border: [18, 48, 18, 18], fill: true }, // 종이가 조각 안에 있어 가운데도 그린다
   card: { w: 144, h: 144, slice: [48, 48, 48, 48], border: [24, 24, 24, 24] },
   btnGreen: { w: 192, h: 144, slice: [48, 64, 32, 64], border: [24, 32, 16, 32], fill: true },
   btnWood: { w: 192, h: 144, slice: [48, 64, 32, 64], border: [24, 32, 16, 32], fill: true },

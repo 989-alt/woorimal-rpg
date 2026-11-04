@@ -1,4 +1,4 @@
-// 게임 오버: "안개에 휩싸였다…" → 도감(그 막 탭) 다시 보기 → "다시 도전"(처음부터 초점).
+// 게임 오버: "안개에 휩싸였다..." → 도감(그 막 탭) 다시 보기 → "다시 도전"(처음부터 초점).
 // 다시 도전은 같은 낱말 묶음으로 순서만 섞어 새 보스전을 연다. 도감·부탁 진행은 그대로다.
 import { openCodex } from './codex.js';
 
@@ -15,7 +15,7 @@ export const gameover = {
     const scene = el('section', 'end-scene gameover-scene');
     scene.dataset.scene = 'gameover';
     const panel = el('div', 'end-panel panel');
-    const title = el('h2', 'end-title', '안개에 휩싸였다…');
+    const title = el('h2', 'end-title', '안개에 휩싸였다...');
     const help = el('p', 'end-text', '낱말을 다시 살펴보고 한 번 더 겨뤄 보자.');
     const actions = el('div', 'end-actions');
     const codexBtn = el('button', 'btn btn-wood', '도감 다시 보기');
