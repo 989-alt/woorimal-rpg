@@ -14,7 +14,14 @@ export const ASSETS = {
     baker: 'assets/pixel/npc_baker.png',
     laundry: 'assets/pixel/npc_laundry.png',
     gate: 'assets/pixel/npc_gate.png',
-    haesol: null, fruit: null, guard: null, shopper: null, chestnut: null, flower: null, northgate: null, // 2막
+    // 2막
+    haesol: 'assets/pixel/npc_haesol.png',
+    fruit: 'assets/pixel/npc_fruit.png',
+    guard: 'assets/pixel/npc_guard.png',
+    shopper: 'assets/pixel/npc_shopper.png',
+    chestnut: 'assets/pixel/npc_chestnut.png',
+    flower: 'assets/pixel/npc_flower.png',
+    northgate: 'assets/pixel/npc_northgate.png',
     narae: null, woodcutter: null, miru: null, yeoul: null, skygran: null, ferryman: null, // 3막
     tea: null, garam: null, signpost: null, keeper: null, traveler: null, // 4막
     greykid: null, // 5막

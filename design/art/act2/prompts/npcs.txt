@@ -1,0 +1,13 @@
+Pixel art character sprites for a top-down 3/4 view RPG, detailed pixel art, 48 pixels per tile. Seven people of a cozy fantasy market town, each standing still facing the viewer (front view), arranged in an exact grid of 4 columns and 2 rows with wide gaps, each figure centred in its cell, all feet on the same baseline in a row; the last cell of the bottom row is empty. Proportions 2.5 heads tall (not baby-like chibi). The reference image shows people of the same world: draw all seven in exactly that pixel style and size.
+Top row, left to right:
+1. Haesol, a lively boy about 12 years old, short spiky chestnut-brown hair, bright tangerine-orange (#F08A3C) vest over a cream shirt with a short tangerine-orange cape, knee-length brown trousers, two or three small round brass bells at his waist, and a very big round cloth bundle (cream and brown cloth, tied with brown cord) carried on his back that sticks up well above his head. Big grin.
+2. An apple seller man, round body, short brown hair, bare head, earth-brown apron over a dark brown shirt with rolled-up sleeves.
+3. A gate keeper man, tall and thin, short dark hair, bare head, long dark-brown coat, a ring of big round keys at his waist.
+4. A small grandmother shopper, short white hair, bare head, beige dress, holding a woven shopping basket.
+Bottom row, left to right:
+5. A chestnut seller grandmother, slightly bent back, grey hair tied low, bare head, dark-brown apron over a muted brown dress, holding long metal tongs for roasting chestnuts.
+6. A flower girl about 9 years old, bob-cut brown hair, bare head, plain white blouse and beige skirt, holding a single small wildflower in one hand.
+7. A north gate grandfather, white beard, short white hair, bare head, dark-brown vest over a cream shirt, arms folded across his chest.
+Townspeople wear nothing on their heads (no hats, caps or bandanas) and only two low-saturation colours each. Only Haesol wears orange; no blue, no purple, no gold on anyone. Simple shapes, child-friendly.
+Style: crisp hard-edged pixels, no blur, no anti-aliasing, limited palette, 1px darker-hue outlines (never black), soft cel shading, light from the upper left.
+Solid flat magenta (#FF00FF) background everywhere, no ground shadows, no text, no numbers, no labels, no grid lines.
