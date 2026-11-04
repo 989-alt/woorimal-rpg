@@ -272,6 +272,16 @@ tests/fixtures/ui-kit.html      UI 부품 견본 페이지(Task 3)
 - Modify: `js/ui/battle-layout.js`, `js/scenes/battle.js`, `js/scenes/gameover.js`, `js/scenes/clear.js`, `css/game.css`(전투·끝 화면 절)
 - Create: `tests/e2e/a11y.test.mjs`(화면을 모두 다시 만든 뒤의 접근성 훑기)
 - Test: `tests/e2e/art-layout.test.mjs`, `tests/e2e/battle.test.mjs`, `tests/e2e/images.test.mjs`, `tests/e2e/a11y.test.mjs`
+- Modify: `js/ui/battle-fx.js`(공격 연출 개선, 아래)
+
+**공격 연출 개선 (선생님 피드백 2026-11-04: "공격 이펙트도 개선해야")**: 지금의 빛줄기·흔들림·알갱이는 약하다. 정답 한 번마다 0.8초(`HIT_MS` ≤ 800) 안에 다음이 차례로 보이게 한다.
+1. 주인공 쪽: 말빛 주머니에서 낱말 글자(맞힌 낱말)가 금빛으로 떠올라 몬스터 쪽으로 날아간다(곡선, 꼬리 빛 줄).
+2. 맞는 순간: 몬스터 위치에 금빛 원형 파동 1개 + 빛 알갱이 12~16개 사방으로, 몬스터 흔들림(±12px), 화면 짧은 흔들림(±4px, 120ms), 몬스터 HP 칸 하나가 깨지듯 사라지며 금 조각 몇 개.
+3. 연속 정답(streak ≥ 3)이면 파동이 2겹, 알갱이 수 1.5배.
+4. 마지막 일격: 몬스터가 잿빛 안개 조각으로 흩어지고 그 자리에 빛이 퍼진다(구해 내는 느낌, 원칙 3: 무섭지 않게).
+5. 틀렸을 때(보스전): 안개가 주인공 쪽으로 조여 오고 하트 하나가 금 가며 흔들린다(지금 것 유지·다듬기). 복습전은 하트가 줄지 않으므로 몬스터가 살짝 웃듯 흔들리기만.
+6. 움직임 줄이기: 날아가기·흔들림·화면 흔들림 없이 서서히 나타나고 흐려지기만.
+검사: `battle-fx` 단위 검사(움직임 줄이기에서 흔들림 프레임 없음, 모든 애니메이션 길이 ≤ 800ms, streak 3에서 파동 2겹), e2e는 정답 뒤 `.fx-word-fly`와 `.fx-ring`이 생겼다가 800ms 안에 지워진다.
 
 **Interfaces:**
 - Consumes: 부품 클래스(Task 3)
@@ -390,7 +400,37 @@ test('글: id가 서로 다르고, 줄마다 30자 이하, 두 줄까지, 키보
 
 ---
 
-### Task 10: 화면 사진, 용량, 배포
+### Task 10: 길잡이(지금 할 일 알려 주기)와 숨은 낱말 빛무리
+
+**모델:** sonnet, high
+
+**선생님 피드백 (2026-11-04)**: "다온은 길을 막은 몬스터를 처치해 달라고 해. 몬스터를 처치하고 나면 바로 지나가 버리며 다온과 다시 대화를 하지 않을 것 같아. 그냥 지나가려고 하면 힌트를 주자. 누구와 대화를 해야 하는지, 어디서 무엇을 찾아야 하는지. 단어가 숨겨진 곳을 이따금씩 빛무리로 표시해 주면 도움이 될 것 같아."
+
+**Files:**
+- Create: `js/rules/guide.js`(순수 함수), `tests/guide.test.mjs`, `tests/e2e/guide.test.mjs`
+- Modify: `js/scenes/explore.js`, `js/explore/render.js`, `js/scenes/battle.js`(작은 몬스터를 이긴 뒤 돌아갈 때), `js/ui/hint.js`(Task 9의 말풍선을 길잡이에도 씀)
+
+**Interfaces:**
+- Consumes: `currentTask`, `npcMarker`, `hiddenGlow`, `questList`(`js/rules/quests.js`), `inViewWorld`(Task 5), 안내 말풍선 `showHint(layer, { text, anchor })`(Task 9).
+- Produces (`js/rules/guide.js`):
+  - `nextGoal(state, chapter) -> { kind: 'talk'|'find'|'fight'|'hidden'|'boss'|'none', npcId?, objectSlot?, text }` — 지금 해야 할 한 가지. 우선순위: (1) 물건을 들었거나 작은 몬스터를 이겨 **끝내러 돌아갈 부탁**(stage `ready`)의 주는 인물에게 말 걸기 → (2) 받은 부탁의 대상(조사할 곳·전할 사람·쫓을 몬스터) → (3) 아직 받지 않은 부탁의 주는 인물 → (4) 부탁을 다 끝냈고 숨은 낱말이 남았으면 숨은 곳 → (5) 장 보스/다음 장. `text`는 6학년 쉬운 말, 25자 이하, 인물·장소 이름을 넣는다(예: "다온에게 돌아가 알려 주자", "우물에서 물을 길어 오자", "반짝이는 곳을 찾아 조사해 보자").
+  - `leavingTooSoon(state, chapter, fromPos, toPos, map) -> boolean` — 아직 `ready` 부탁이 있는데 그 주는 인물에게서 멀어지는 쪽으로, 장 출구·안개 문·막힌 골목 너머로 넘어가려는 걸음이면 true.
+- [ ] **Step 1: 실패하는 단위 검사** — `tests/guide.test.mjs`: 1-1 시작 → talk dodam; 물동이를 든 뒤 → talk dodam("돌아가"); 꼬마 안개를 이긴 직후(q2 `ready`) → talk daon("다온에게 돌아가 알려 주자"); 부탁을 다 끝내고 숨은 낱말 남음 → hidden; 모두 끝 → boss. `leavingTooSoon`: q2 `ready`에서 골목 너머 빈터로 들어가는 걸음 → true, 다온 쪽 걸음 → false, `ready` 없음 → false.
+- [ ] **Step 2: 실패 확인** — Run: `npm test` / Expected: FAIL
+- [ ] **Step 3: 구현과 연결**
+  1. **이긴 직후 한마디**: 작은 몬스터를 이기고 탐험으로 돌아오면 바로 길잡이 말풍선 "다온에게 돌아가 알려 주자"를 주인공 머리 위에 3초 띄우고, 다온 머리 위 표시를 금빛 ! 로 깜박인다.
+  2. **그냥 지나가려 할 때**: `leavingTooSoon`이 true인 걸음은 막지 않고(학생이 자유롭게 걸을 수 있게) 길잡이 말풍선을 띄운다. 같은 말은 20초 안에 다시 띄우지 않는다.
+  3. **오래 헤맬 때**: 30초 동안 할 일이 진전되지 않으면(말 걸기·조사·전투 없음) `nextGoal`의 말풍선을 띄우고, 화면 가장자리 화살표(지금의 첫 인물 화살표를 일반화)로 대상 쪽을 가리킨다. 학생이 움직이거나 대상에 닿으면 사라진다.
+  4. **할 일 창(Q)과 HUD 두루마리**는 늘 `nextGoal().text`를 보여 준다(HUD 두루마리 글이 지금의 부탁 제목 대신 "지금 할 일"이 됨).
+  5. **숨은 낱말 빛무리**: 숨은 낱말이 있는 물건(주머니를 받은 뒤, 아직 못 찾았을 때)에 6초마다 1.2초 동안 둥근 빛무리(물건 칸보다 1.5배, 말빛 금색 #F2C14E 반투명, 가운데서 퍼졌다 사라짐)와 빛 알갱이 3~4개가 떠오른다. 부탁을 다 끝낸 뒤(`hiddenGlow` 'bright')에는 3초마다. 지금의 1픽셀 반짝임은 이것으로 바꾼다. 움직임 줄이기에서는 퍼지는 대신 1.2초 동안 은은히 밝아졌다 어두워지기만.
+  6. 길잡이 말풍선은 안내(Task 9)와 같은 모양을 쓰되 저장의 `seenTips`에 넣지 않는다(언제든 다시 뜰 수 있는 도움말).
+- [ ] **Step 4: 화면 검사** — `tests/e2e/guide.test.mjs`: (a) 꼬마 안개를 이기고 돌아오면 "다온에게" 말풍선이 보인다; (b) 다온에게 가지 않고 빈터 쪽으로 걸으면 길잡이 말풍선이 뜨지만 걸음은 막히지 않는다; (c) `__test`로 시계를 30초 넘기면 길잡이와 가장자리 화살표가 뜬다; (d) 숨은 곳 빛무리가 6초 주기로 그려진다(`animKey`에 빛무리 단계가 들어가 그 동안만 다시 그림, 나머지 때는 "바뀐 것이 없으면 다시 그리지 않는다" 검사 그대로 통과).
+- [ ] **Step 5: 통과 확인** — Run: `npm test && npm run test:e2e` / Expected: PASS
+- [ ] **Step 6: Commit** — `git commit -m "feat: guide hints for what to do next and a light halo on hidden words"`
+
+---
+
+### Task 11: 화면 사진, 용량, 배포
 
 **모델:** sonnet, low
 
