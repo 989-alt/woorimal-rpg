@@ -60,3 +60,12 @@ test('새 낱말: params.words에 있고 아직 못 얻은 것만, 줄 안 차�
   assert.deepEqual(newWordsOf(text, ['어스름', '해거름', '짬'], { 짬: {} }), ['어스름', '해거름']);
   assert.deepEqual(newWordsOf(text, [], {}), []);
 });
+
+import { keyConfirmAllowed, CARD_GUARD_MS } from '../js/ui/meaning-card.js';
+
+test('낱말 카드: 열린 뒤 300ms 안의 키보드 확인은 막고, 그 뒤는 받는다', () => {
+  assert.equal(CARD_GUARD_MS, 300);
+  assert.equal(keyConfirmAllowed(1000, 1000), false);
+  assert.equal(keyConfirmAllowed(1000, 1299), false);
+  assert.equal(keyConfirmAllowed(1000, 1300), true);
+});

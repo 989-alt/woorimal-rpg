@@ -1,9 +1,9 @@
 // 대화 장면: 타자 효과, 강조 낱말, 뜻풀이 카드, 낱말 습득.
 import { actOfChapter } from '../../data/acts/index.js';
-import { WORDS } from '../../data/words.js';
 import { formatLine } from '../rules/josa.js';
 import { acquireWords, extractWords, markTip } from '../rules/game.js';
 import { blockColor, initial, labelBlockEl } from '../ui/placeholder.js';
+import { openMeaningCard } from '../ui/meaning-card.js';
 
 export const TIP_WORD = 'tip-word';
 const HERO_COLOR = '#3B5BA5'; // 쪽빛
@@ -93,7 +93,7 @@ export const dialogue = {
 
     let index = -1;
     let tw = null;
-    let cardOpen = false;
+    let card = null; // 열려 있는 뜻풀이 카드
     let busy = false; // 이 줄의 낱말 카드를 다 보여 주는 동안
     let leaving = false;
     let raf = 0;
@@ -127,7 +127,7 @@ export const dialogue = {
       index = i;
       const line = script[i];
       const raw = formatLine(line.text, nickname);
-      const plain = raw.replace(/\[\[(.+?)\]\]/g, '$1');
+      const plain = splitHighlights(raw).map((seg) => seg.text).join('');
       tw = createTypewriter({ full: plain, msPerChar: 30 });
       busy = false;
       tipEl?.remove();
@@ -195,7 +195,9 @@ export const dialogue = {
       const next = () => {
         const w = cards.shift();
         if (!w) { busy = false; arrow.hidden = false; return; }
-        openCard(w, () => {
+        card = openMeaningCard(scene, w, () => {
+          card = null;
+          spans.find((x) => x.hl?.dataset.word === w)?.hl.classList.remove('new');
           const st = ctx.getState();
           if (st) {
             const after = acquireWords(st, [w], from);
@@ -208,37 +210,8 @@ export const dialogue = {
       next();
     }
 
-    function openCard(wordId, onConfirm) {
-      const info = WORDS.find((x) => x.id === wordId);
-      const overlay = el('div', 'word-card-overlay');
-      const card = el('div', 'word-card');
-      card.setAttribute('role', 'dialog');
-      card.setAttribute('aria-modal', 'true');
-      const ok = el('button', 'big-button', '확인');
-      ok.type = 'button';
-      card.append(el('p', 'word-card-title', '새 낱말을 찾았다!'), el('p', 'word-card-word', info?.word ?? wordId),
-        el('p', 'word-card-meaning', info?.meaning ?? ''));
-      if (info?.example) card.append(el('p', 'word-card-example', info.example));
-      card.append(ok);
-      overlay.appendChild(card);
-      scene.appendChild(overlay);
-      cardOpen = true;
-      let closed = false;
-      confirmCard = () => {
-        if (closed) return;
-        closed = true;
-        cardOpen = false;
-        confirmCard = null;
-        overlay.remove();
-        onConfirm();
-      };
-      ok.addEventListener('click', confirmCard);
-      ok.focus();
-    }
-    let confirmCard = null;
-
     function press() {
-      if (cardOpen || leaving || !tw) return;
+      if (card || leaving || !tw) return;
       const r = tw.press();
       if (r === 'reveal') { render(); sentenceShown(); }
       else if (r === 'next') advance();
@@ -254,23 +227,25 @@ export const dialogue = {
       if (e.key !== ' ' && e.key !== 'Enter') return;
       e.preventDefault();
       if (e.repeat) return;
-      if (cardOpen) confirmCard?.();
+      if (card) card.confirmByKey();
       else press();
     };
     window.addEventListener('keydown', onKey);
     box.addEventListener('click', press);
     text.addEventListener('click', (e) => {
       const hl = e.target.closest?.('.hl.new');
-      if (!hl || cardOpen) return;
+      if (!hl || card || tw.done()) return;
       e.stopPropagation();
-      if (!tw.done()) { tw.press(); render(); sentenceShown(); }
+      tw.press();
+      render();
+      sentenceShown();
     });
 
     const frame = (now) => {
       raf = requestAnimationFrame(frame);
       const dt = Math.min(100, now - last);
       last = now;
-      if (!tw || cardOpen) return;
+      if (!tw || card) return;
       const was = tw.done();
       tw.tick(dt);
       render();

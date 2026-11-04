@@ -53,8 +53,15 @@ test('끝난 부탁 대사: 낱말 카드가 뜨고 확인하면 낱말을 얻�
   // 카드가 열린 동안 상자 누름은 무시
   await page.locator('.dialogue-box').click({ force: true });
   assert.equal(await page.locator('.word-card').count(), 1);
+  // 연타: 카드가 열린 직후의 키 누름은 카드를 닫지 못한다
+  await page.keyboard.press('Space');
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('.word-card').count(), 1, '연타로 카드가 닫히면 안 된다');
+  await page.waitForTimeout(350);
   await page.keyboard.press('Enter'); // 확인
   await page.waitForSelector('.word-card', { state: 'detached' });
+  // 얻은 뒤에는 '새 낱말' 표시가 사라져, 그 낱말을 눌러도 상자 누름(넘어가기)을 막지 않는다
+  assert.equal(await page.locator('.hl.new').count(), 0);
   s = await page.evaluate(() => window.__test.state());
   assert.deepEqual(s.acquired['어스름'], { from: '도담 할머니' });
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('malbit:save:하늘')));
