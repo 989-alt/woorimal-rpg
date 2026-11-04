@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
 import { launchBrowser, collectErrors, finishDialogue } from './browser.mjs';
 import { walkToExit } from './helpers.mjs';
+import { atEndingExit } from './play.mjs';
 import ACT1 from '../../data/acts/act1.js';
 
 let server, browser;
@@ -227,6 +228,23 @@ for (const blocked of [false, true]) {
     await page.getByRole('button', { name: '세계 지도로' }).click();
     await page.waitForSelector('[data-scene="worldmap"][data-walked]');
     await check('세계 지도');
+
+    // 엔딩: 마지막 말 → 말빛 주머니 → 만든 이
+    await page.evaluate(() => window.__test.newGame('하늘', 'f'));
+    await page.waitForSelector('[data-scene="explore"]');
+    await atEndingExit(page);
+    await walkToExit(page);
+    await page.waitForSelector('[data-scene="clear"]');
+    await page.getByRole('button', { name: '엔딩 보기' }).click();
+    await finishDialogue(page, 'ending');
+    await page.waitForSelector('.ending-next:not([hidden])');
+    await check('마지막 말');
+    await page.locator('.ending-next').click();
+    await page.waitForSelector('[data-part="pouch"][data-lit]');
+    await check('말빛 주머니', { tabs: 56 });
+    await page.getByRole('button', { name: '만든 이 보기' }).click();
+    await page.waitForSelector('[data-part="credits"]');
+    await check('만든 이');
 
     assert.deepEqual(problems, []);
     assert.deepEqual(errors, []);

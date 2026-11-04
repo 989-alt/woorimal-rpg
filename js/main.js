@@ -12,6 +12,7 @@ import { battle, battleProbe } from './scenes/battle.js';
 import { gameover } from './scenes/gameover.js';
 import { clear } from './scenes/clear.js';
 import { worldmap } from './scenes/worldmap.js';
+import { ending, setEndingDelay, MESSAGE_DELAY_MS } from './scenes/ending.js';
 import { ASSETS } from '../data/assets.js';
 import { loadImage, forgetFailed } from './ui/images.js';
 import { loadUiKit } from './ui/ui-kit.js';
@@ -82,6 +83,7 @@ router.register('battle', battle);
 router.register('gameover', gameover);
 router.register('clear', clear);
 router.register('worldmap', worldmap);
+router.register('ending', ending);
 
 // 검사용 도움 기능: 주소에 ?test=1이 있을 때만 만든다.
 if (new URLSearchParams(location.search).get('test') === '1') {
@@ -146,7 +148,8 @@ if (new URLSearchParams(location.search).get('test') === '1') {
     answerIndex: () => battleProbe()?.answerIndex() ?? -1,
     battle: () => battleProbe()?.snapshot() ?? null,
     teleportTo,
-    fastText: (on) => setTypeSpeed(on ? 0 : 30),
+    // 타자 효과와 엔딩 마지막 말의 '다음' 기다림을 끈다(false면 되돌린다)
+    fastText: (on) => { setTypeSpeed(on ? 0 : 30); setEndingDelay(on ? 0 : MESSAGE_DELAY_MS); },
     // 그림 경로를 바꿔 끼운다(예: setAsset('npcs.dodam', url)). 경로는 ASSETS 안의 점 표기이며 url은 null도 된다.
     setAsset(where, url) {
       const keys = where.split('.');

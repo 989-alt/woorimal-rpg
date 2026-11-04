@@ -402,10 +402,11 @@ test('엔딩: cast가 말하는 인물을 덮고, 줄 규칙, [[ ]] 없음, 마�
   }
   const castIds = new Set(ENDING.cast.map((c) => c.id));
   assert.equal(castIds.size, ENDING.cast.length);
-  assert.equal(ENDING.scenes.length, 4);
+  assert.equal(ENDING.scenes.length, 8);
+  const chapterIds = ACTS.flatMap((a) => a.chapters.map((c) => c.id));
   ENDING.scenes.forEach((sc, i) => {
-    assert.ok(['ending01', 'ending02', 'ending03'].includes(sc.bg), `장면 ${i + 1} bg ${sc.bg}`);
-    assert.equal(sc.still === true, i === 3, `still은 scenes[3]에만 (장면 ${i + 1})`);
+    assert.ok(['ending01', 'ending02', 'ending03'].includes(sc.bg) || chapterIds.includes(sc.bg), `장면 ${i + 1} bg ${sc.bg}`);
+    assert.equal(sc.still === true, i === ENDING.scenes.length - 1, `still은 마지막 장면에만 (장면 ${i + 1})`);
     assert.ok(Array.isArray(sc.lines) && sc.lines.length > 0, `장면 ${i + 1} 줄`);
     for (const l of sc.lines) {
       assert.ok(['npc', 'hero', 'narration'].includes(l.who), l.text);
@@ -425,5 +426,24 @@ test('엔딩: cast가 말하는 인물을 덮고, 줄 규칙, [[ ]] 없음, 마�
     }
   });
   assert.equal(ENDING.message, '우리가 쓰면 말은 살아난다.');
+});
+
+test('엔딩 되찾은 마을들(장면 2~5): 2~5막 차례, 그 막 장 배경, 해설로 시작, 그 막 주민 2~3명이 그 막 낱말을 쓴다', () => {
+  const montage = ENDING.scenes.slice(1, 5);
+  const companions = new Set(['haesol', 'narae']);
+  montage.forEach((sc, k) => {
+    const act = ACTS[k + 1];
+    assert.ok(act.chapters.some((c) => c.id === sc.bg), `${act.id}막 장면 bg ${sc.bg}`);
+    assert.equal(sc.lines[0].who, 'narration', `${act.id}막 장면은 해설로 시작`);
+    const actNpcs = new Set(act.chapters.flatMap((c) => c.npcs.map((n) => n.id)));
+    const residents = sc.lines.filter((l) => l.who === 'npc' && !companions.has(l.npc));
+    assert.ok(residents.length >= 2 && residents.length <= 3, `${act.id}막 주민 ${residents.length}명`);
+    assert.equal(new Set(residents.map((l) => l.npc)).size, residents.length, `${act.id}막 주민은 한 줄씩`);
+    for (const l of residents) assert.ok(actNpcs.has(l.npc), `${l.npc}는 ${act.id}막 인물`);
+    const actWordForms = WORDS.filter((w) => w.act === act.id).map((w) => w.word.replace(/하다$|다$/, ''));
+    for (const l of residents) assert.ok(actWordForms.some((stem) => l.text.includes(stem)), `${act.id}막 낱말을 쓴다: ${l.text}`);
+    assert.ok(sc.lines.filter((l) => l.who === 'npc' && companions.has(l.npc)).length <= 1, '동료 줄은 많아야 하나');
+  });
+  assert.equal(ENDING.scenes[4].warm, true, '잿빛 탑 장면은 따뜻한 빛깔로');
   assert.equal(formatLine(ENDING.thanks, '하늘'), '하늘아, 끝까지 함께해 줘서 고마워!');
 });
