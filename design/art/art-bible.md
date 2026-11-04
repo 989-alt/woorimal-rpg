@@ -3,7 +3,7 @@
 > **Status**: Draft
 > **Owned By**: art-director
 > **Last Updated**: 2026-11-04
-> **Art Director Sign-Off (AD-ART-BIBLE)**: [Not yet reviewed]
+> **Art Director Sign-Off (AD-ART-BIBLE)**: SKIPPED 2026-11-04 — solo mode (각 절을 선생님이 직접 승인)
 
 `/art-bible` writes these nine sections in this order and replaces each
 section's `[To be designed]` line as that section is approved. A section still
@@ -336,6 +336,26 @@ holding its placeholder is incomplete; a later run fills only those.
 
 ## 9. Reference Direction
 
-[To be designed] — 3–5 references (games, films, art styles or artists). For
-each: the specific element to take from it, and what to avoid so the result
-does not read as a copy.
+> 참고 그림은 게임 이름이나 작가 이름이 아니라 **화풍 갈래**로만 적는다. 네 갈래는 서로 다른 것을 하나씩 맡는다: 칸과 윤곽은 A, 색 단계는 B, 일러스트 칠은 C, 화면 구도는 D.
+
+**A. 2000년대 휴대용 게임기 시대의 16px 탑다운 도트 마을 (3/4 시점)**
+- 가져올 것: 16px 칸에 딱 맞는 타일, 물체 색을 어둡게 한 1px 윤곽, 둥글고 짙은 나무 덩어리, 윤곽이 있는 물길, 턱으로 나뉜 풀밭(3·6절). 북적이는 항구 도시 그림은 2장 너울장의 소품 밀도(12~16) 기준으로 쓴다.
+- 피할 것: 이 시대 특정 게임의 타일 모양, 건물, 인물, 몬스터 디자인. 검정 윤곽.
+
+**B. 부드러운 회화풍 도트**
+- 가져올 것: 색조를 옮겨 가며 칠하는 음영(그늘은 푸른 쪽, 밝은 면은 금빛 쪽). 3장 냇물과 웅덩이의 부드러운 물빛(4·6절).
+- 피할 것: 30색이 넘는 색, 안티에일리어싱, 바닥 디더링(6절). 참고 그림 속 기존 인물과 돌길 무늬.
+
+**C. 요즘 애니메이션 키 아트의 칠**
+- 가져올 것: 셀 음영 2단에 부드러운 그라데이션 하나, 섬세한 머리카락 하이라이트, 감정이 잘 보이는 큰 눈(5절).
+- 피할 것: 어른스러운 옷·자세·비율. 빛 번짐·보케·역광은 대화 장면에 쓰지 않고 낱말 습득과 엔딩에만(2절). 빛은 늘 왼쪽 위.
+
+**D. 잿빛 군중 속에서 혼자 빛나는 인물 일러스트**
+- 가져올 것: 채도로 인물과 배경을 가르는 구도. 주인공은 색을 지키고, 얼굴 없는 무리는 회색 덩어리로, 흩날리는 빛 알갱이가 둘을 잇는다. 전투, 보스, 장 클리어 장면에 쓴다(1·3·5절).
+- 피할 것: 도시의 현실적인 군중, 압박감이나 공포. 빛 알갱이는 그림자가 풀려나는 순간에만.
+
+**AI 생성 프롬프트에 쓸 말 / 쓰지 말 말**
+- 쓸 말: `16px pixel art`, `top-down 3/4 view`, `limited palette`, `1px darker-hue outline`, `flat ground shading`, `rounded tree canopy`, `cozy fantasy village`, `light from upper left`, `soft cel shading`, `modern adventure outfit`, `child-friendly`, `faceless grey silhouette crowd`, `desaturated`, `solid magenta background`
+- 쓰지 말 말: 게임·시리즈·회사·작가 이름, `in the style of`, `hanbok`, `kimono`, `hanfu`, `traditional ... costume`, `thatched roof`, `giwa`, `hanok`, `pagoda`, `sexy`, `seductive`, `mature`, `cleavage`, `fanservice`, `horror`, `teeth`, `blood`, `claws`. `bloom`과 `bokeh`는 효과 그림에만 쓴다.
+- 옷이나 건물을 설명할 때 나라 이름(`Korean`, `Japanese`, `Chinese` 등)을 붙이지 않는다. 장독·빨랫줄 같은 생활 소품은 나라 이름 없이 물건 이름으로만 지시한다(예: `large clay storage jars`, `clothesline`).
+
