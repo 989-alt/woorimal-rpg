@@ -101,3 +101,117 @@ im.save(${JSON.stringify(src)})`]);
   const r = spawnSync(VENV_PY, ['-I', 'tools/pixelize.py', src, join(dir, 'o.png'), '--size', '30x1', '--max-colors', '2']);
   assert.notEqual(r.status, 0);
 });
+
+// --- ui-slice ---------------------------------------------------------------
+
+function pyRun(code) {
+  return execFileSync(VENV_PY, ['-I', '-c', code]).toString().trim();
+}
+
+// 일부러 비대칭인 원본: 가장자리에 투명 여백 10px, 안쪽 200x200은 왼쪽 위 빨강·오른쪽 위 파랑·나머지 초록
+function makeAsymmetricSource(path) {
+  pyRun(`
+from PIL import Image
+im = Image.new('RGBA', (220, 220), (0, 0, 0, 0))
+inner = Image.new('RGBA', (200, 200), (40, 160, 60, 255))
+for y in range(200):
+    for x in range(200):
+        if x < 60 and y < 60: inner.putpixel((x, y), (230, 20, 20, 255))
+        elif x >= 140 and y < 60: inner.putpixel((x, y), (20, 30, 230, 255))
+        elif y < 60: inner.putpixel((x, y), (230, 200, 40, 255))
+        elif x < 60: inner.putpixel((x, y), (150, 40, 200, 255))
+im.paste(inner, (10, 10))
+im.save(${JSON.stringify(path)})
+`);
+}
+
+function uiSliceSetup(t) {
+  if (!existsSync(VENV_PY)) { t.skip(`sprite-gen venv python missing (${VENV_PY})`); return null; }
+  const dir = mkdtempSync(join(tmpdir(), 'ui-'));
+  const src = join(dir, 'src.png');
+  makeAsymmetricSource(src);
+  return { dir, src };
+}
+
+function inspectFrame(path, checks) {
+  return pyRun(`
+from PIL import Image
+im = Image.open(${JSON.stringify(path)})
+${checks}
+`);
+}
+
+test('ui-slice frame: 크기·색표·좌우와 위아래 대칭·가운데 투명', (t) => {
+  const s = uiSliceSetup(t); if (!s) return;
+  const out = join(s.dir, 'frame.png');
+  execFileSync(VENV_PY, ['-I', 'tools/ui-slice.py', 'frame', s.src, out, '--size', '144x144', '--slice', '48,48,48,48', '--src-corner', '60']);
+  const r = inspectFrame(out, `
+rgba = im.convert('RGBA'); px = rgba.load()
+sym = all(px[x, y] == px[143 - x, y] == px[x, 143 - y] for y in range(144) for x in range(144))
+print(im.size, im.mode, 'transparency' in im.info, sym, px[72, 72][3], px[0, 0][3], px[5, 5][3])
+`);
+  const m = r.match(/^\((\d+), (\d+)\) (\w+) (True|False) (True|False) (\d+) (\d+) (\d+)$/);
+  assert.ok(m, r);
+  assert.deepEqual([m[1], m[2], m[3], m[4], m[5], m[6]], ['144', '144', 'P', 'True', 'True', '0']);
+  assert.equal(m[8], '255', '모서리 안쪽은 불투명');
+});
+
+test('ui-slice frame --fill: 가운데가 채워진다', (t) => {
+  const s = uiSliceSetup(t); if (!s) return;
+  const out = join(s.dir, 'fill.png');
+  execFileSync(VENV_PY, ['-I', 'tools/ui-slice.py', 'frame', s.src, out, '--size', '144x144', '--slice', '48,48,48,48', '--src-corner', '60', '--fill']);
+  assert.equal(inspectFrame(out, `print(im.convert('RGBA').getpixel((72, 72))[3])`), '255');
+});
+
+test('ui-slice frame --asym-right: 오른쪽은 원본 오른쪽에서 온다', (t) => {
+  const s = uiSliceSetup(t); if (!s) return;
+  const out = join(s.dir, 'asym.png');
+  execFileSync(VENV_PY, ['-I', 'tools/ui-slice.py', 'frame', s.src, out, '--size', '144x144', '--slice', '48,48,48,48', '--src-corner', '60', '--asym-right']);
+  // 왼쪽 위는 빨강, 오른쪽 위는 파랑(대칭이었다면 빨강)
+  const r = inspectFrame(out, `
+px = im.convert('RGBA').load()
+print(px[4, 4][0] > 150, px[139, 4][2] > 150)
+`);
+  assert.equal(r, 'True True');
+});
+
+test('ui-slice sheet: 덩어리 셋을 이름 순서대로', (t) => {
+  const s = uiSliceSetup(t); if (!s) return;
+  const sheet = join(s.dir, 'sheet.png');
+  pyRun(`
+from PIL import Image, ImageDraw
+im = Image.new('RGBA', (300, 200), (0, 0, 0, 0))
+d = ImageDraw.Draw(im)
+d.rectangle([10, 10, 60, 50], fill=(220, 30, 30, 255))      # a: 위 왼쪽
+d.rectangle([150, 20, 230, 90], fill=(30, 200, 30, 255))    # b: 위 오른쪽
+d.rectangle([40, 130, 120, 190], fill=(30, 30, 220, 255))   # c: 아래
+im.save(${JSON.stringify(sheet)})
+`);
+  const outDir = join(s.dir, 'parts');
+  execFileSync(VENV_PY, ['-I', 'tools/ui-slice.py', 'sheet', sheet, outDir, '--names', 'a,b,c', '--size', '40x40']);
+  const want = { a: '(220, 30, 30)', b: '(30, 200, 30)', c: '(30, 30, 220)' };
+  for (const [name, color] of Object.entries(want)) {
+    const r = pyRun(`
+from PIL import Image
+from collections import Counter
+im = Image.open(${JSON.stringify(join(outDir, name + '.png'))})
+c = Counter(p[:3] for p in im.convert('RGBA').getdata() if p[3] == 255)
+print(im.size, im.mode, c.most_common(1)[0][0])
+`);
+    assert.equal(r, `(40, 40) P ${color}`, name);
+  }
+});
+
+test('ui-slice mask: 흰색 + 알파, 좌우 대칭', (t) => {
+  const s = uiSliceSetup(t); if (!s) return;
+  const out = join(s.dir, 'mask.png');
+  execFileSync(VENV_PY, ['-I', 'tools/ui-slice.py', 'mask', s.src, out, '--size', '160x80', '--slice', '20,40,20,40', '--src-corner', '60']);
+  const r = inspectFrame(out, `
+px = im.convert('RGBA').load(); w, h = im.size
+white = all(px[x, y][:3] == (255, 255, 255) for y in range(h) for x in range(w) if px[x, y][3])
+sym = all(px[x, y] == px[w - 1 - x, y] for y in range(h) for x in range(w))
+opaque = sum(1 for y in range(h) for x in range(w) if px[x, y][3])
+print(im.size, im.mode, white, sym, opaque > 0)
+`);
+  assert.equal(r, '(160, 80) P True True True');
+});
