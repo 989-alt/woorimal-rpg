@@ -21,3 +21,15 @@ export function collectErrors(page) {
   });
   return errors;
 }
+
+// 대화를 끝까지 넘긴다: 카드가 뜨면 '확인'을 누르고, 아니면 스페이스. 끝나면 `until` 장면에서 멈춘다.
+export async function finishDialogue(page, until = 'explore') {
+  for (let i = 0; i < 120; i++) {
+    if (await page.locator(`[data-scene="${until}"]`).count()) return;
+    const ok = page.locator('.word-card button');
+    if (await ok.count()) await ok.click();
+    else await page.keyboard.press('Space');
+    await page.waitForTimeout(220);
+  }
+  throw new Error('대화가 끝나지 않았다');
+}

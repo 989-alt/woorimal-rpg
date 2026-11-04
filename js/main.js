@@ -3,6 +3,7 @@ import { createStore } from './save.js';
 import { newGame, acquireWords } from './rules/game.js';
 import { explore } from './scenes/explore.js';
 import { title } from './scenes/title.js';
+import { dialogue } from './scenes/dialogue.js';
 
 function safeLocalStorage() {
   try { return window.localStorage; } catch { return null; }
@@ -56,7 +57,8 @@ function stub(name) {
 
 router.register('title', title);
 router.register('explore', explore);
-for (const name of ['dialogue', 'battle', 'clear']) router.register(name, stub(name));
+router.register('dialogue', dialogue);
+for (const name of ['battle', 'clear']) router.register(name, stub(name));
 
 // 검사용 도움 기능: 주소에 ?test=1이 있을 때만 만든다.
 if (new URLSearchParams(location.search).get('test') === '1') {
@@ -67,6 +69,7 @@ if (new URLSearchParams(location.search).get('test') === '1') {
       state = acquireWords(state, wordIds, from);
       router.show('explore');
     },
+    dialogue: (script, words = [], from = '', next) => router.show('dialogue', { script, words, from, next }),
   };
 }
 

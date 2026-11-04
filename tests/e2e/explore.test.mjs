@@ -1,7 +1,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
-import { launchBrowser, collectErrors } from './browser.mjs';
+import { launchBrowser, collectErrors, finishDialogue } from './browser.mjs';
 import { parseMap, isWalkable } from '../../js/explore/grid.js';
 import ACT1 from '../../data/acts/act1.js';
 
@@ -96,8 +96,7 @@ test('할머니에게 걸어가 말을 걸면 대화 장면으로 가고, 저장
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('malbit:save:하늘')));
   assert.equal(saved.quests.q1.stage, 'active');
   assert.deepEqual(saved.pos, below);
-  await page.locator('[data-scene="dialogue"] button').click();
-  await page.waitForSelector('[data-scene="explore"]');
+  await finishDialogue(page);
   assert.deepEqual(errors, []);
   await page.close();
 });
@@ -119,7 +118,7 @@ test('?test=1이 없으면 __test가 없다', async () => {
   await page.fill('#nickname', '하늘');
   await page.getByRole('button', { name: '처음부터' }).click();
   await page.waitForSelector('[data-scene="dialogue"]');
-  await page.getByRole('button', { name: '탐험으로 돌아가기' }).click();
+  await finishDialogue(page);
   await page.waitForSelector('[data-scene="explore"] canvas');
   assert.deepEqual(errors, []);
   await page.close();

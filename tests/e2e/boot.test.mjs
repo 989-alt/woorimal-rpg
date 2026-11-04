@@ -1,7 +1,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
-import { launchBrowser, collectErrors } from './browser.mjs';
+import { launchBrowser, collectErrors, finishDialogue } from './browser.mjs';
 
 let server, browser;
 before(async () => {
@@ -53,8 +53,7 @@ test('시작 화면: 제목이 보이고, 하늘로 처음부터 하면 이야�
   await page.fill('#nickname', '하늘');
   await page.getByRole('button', { name: '처음부터' }).click();
   await page.waitForSelector('[data-scene="dialogue"]');
-  await page.getByRole('button', { name: '탐험으로 돌아가기' }).click();
-  await page.waitForSelector('[data-scene="explore"]');
+  await finishDialogue(page);
   assert.deepEqual(errors, []);
   await page.close();
 });

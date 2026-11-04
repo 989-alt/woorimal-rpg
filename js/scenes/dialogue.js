@@ -1,0 +1,296 @@
+// 대화 장면: 타자 효과, 강조 낱말, 뜻풀이 카드, 낱말 습득.
+import { actOfChapter } from '../../data/acts/index.js';
+import { WORDS } from '../../data/words.js';
+import { formatLine } from '../rules/josa.js';
+import { acquireWords, extractWords, markTip } from '../rules/game.js';
+import { blockColor, initial, labelBlockEl } from '../ui/placeholder.js';
+
+export const TIP_WORD = 'tip-word';
+const HERO_COLOR = '#3B5BA5'; // 쪽빛
+const GUARD_MS = 200;
+
+// 글을 [[낱말]] 기준으로 나눈다.
+export function splitHighlights(text) {
+  const out = [];
+  let last = 0;
+  for (const m of text.matchAll(/\[\[(.+?)\]\]/g)) {
+    if (m.index > last) out.push({ text: text.slice(last, m.index) });
+    out.push({ text: m[1], word: m[1] });
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) out.push({ text: text.slice(last) });
+  return out;
+}
+
+// 타자 효과. 시간은 tick(ms)로만 흐른다(화면과 무관한 순수 객체).
+export function createTypewriter({ full, msPerChar = 30 }) {
+  const chars = Array.from(full);
+  const total = chars.length * msPerChar;
+  let elapsed = 0;
+  let sinceDone = 0;
+  const done = () => elapsed >= total;
+  return {
+    shown: () => chars.slice(0, Math.floor(Math.min(elapsed, total) / msPerChar)).join(''),
+    done,
+    press() {
+      if (!done()) { elapsed = total; sinceDone = 0; return 'reveal'; }
+      return sinceDone < GUARD_MS ? 'ignored' : 'next';
+    },
+    tick(ms) {
+      const before = elapsed;
+      elapsed += ms;
+      if (elapsed >= total) sinceDone += elapsed - Math.max(before, total);
+    },
+  };
+}
+
+// 말하는 쪽: { side, name, color } 또는 해설이면 null
+export function resolveSpeaker(line, npcs, from, nickname) {
+  if (line.who === 'hero') return { side: 'hero', name: nickname, color: HERO_COLOR };
+  if (line.who !== 'npc') return null;
+  const npc = (line.npc && npcs.find((n) => n.id === line.npc)) || npcs.find((n) => n.name === from);
+  if (npc) return { side: 'npc', name: npc.name, color: npc.color };
+  return { side: 'npc', name: from, color: blockColor(from) };
+}
+
+// 이 줄에서 새로 얻을 낱말(줄 안 차례, 중복 없음)
+export function newWordsOf(rawText, words, acquired) {
+  return [...new Set(extractWords(rawText))].filter((w) => words.includes(w) && !(w in acquired));
+}
+
+const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const el = (tag, className, text) => {
+  const e = document.createElement(tag);
+  if (className) e.className = className;
+  if (text !== undefined) e.textContent = text;
+  return e;
+};
+
+export const dialogue = {
+  mount(root, params, ctx) {
+    const { script = [], words = [], from = '' } = params;
+    const initState = ctx.getState();
+    const nickname = initState?.nickname ?? '';
+    const chapter = initState ? actOfChapter(initState.chapter).chapters.find((c) => c.id === initState.chapter) : null;
+    const npcs = chapter?.npcs ?? [];
+    const hasHero = script.some((l) => l.who === 'hero');
+    const hasNpc = script.some((l) => l.who === 'npc');
+
+    const scene = el('section', 'dialogue-scene');
+    scene.dataset.scene = 'dialogue';
+    const heroBust = labelBlockEl(initial(nickname), HERO_COLOR, 'bust bust-hero');
+    const npcBust = el('span', 'bust bust-npc');
+    const box = el('div', 'dialogue-box');
+    box.setAttribute('role', 'button');
+    box.tabIndex = 0;
+    const tag = el('div', 'name-tag');
+    const text = el('p', 'dialogue-text');
+    const arrow = el('span', 'dialogue-arrow', '▼');
+    arrow.setAttribute('aria-hidden', 'true');
+    box.append(tag, text, arrow);
+    scene.append(heroBust, npcBust, box);
+    root.appendChild(scene);
+
+    let index = -1;
+    let tw = null;
+    let cardOpen = false;
+    let busy = false; // 이 줄의 낱말 카드를 다 보여 주는 동안
+    let leaving = false;
+    let raf = 0;
+    let last = 0;
+    let spans = [];
+    let tipEl = null;
+    let lastNpc = null;
+
+    const npcFor = (i) => {
+      for (let j = i; j >= 0; j--) if (script[j].who === 'npc') return resolveSpeaker(script[j], npcs, from, nickname);
+      for (let j = i; j < script.length; j++) if (script[j].who === 'npc') return resolveSpeaker(script[j], npcs, from, nickname);
+      return null;
+    };
+
+    function render() {
+      const shown = Array.from(tw.shown()).length;
+      let used = 0;
+      for (const s of spans) {
+        const n = Math.max(0, Math.min(s.len, shown - used));
+        s.on.textContent = s.chars.slice(0, n).join('');
+        s.off.textContent = s.chars.slice(n).join('');
+        used += s.len;
+        if (s.hl && n === s.len && !s.sparked) {
+          s.sparked = true;
+          if (!reducedMotion()) s.hl.classList.add('sparkle');
+        }
+      }
+    }
+
+    function showLine(i) {
+      index = i;
+      const line = script[i];
+      const raw = formatLine(line.text, nickname);
+      const plain = raw.replace(/\[\[(.+?)\]\]/g, '$1');
+      tw = createTypewriter({ full: plain, msPerChar: 30 });
+      busy = false;
+      tipEl?.remove();
+      tipEl = null;
+      arrow.hidden = true;
+      text.textContent = '';
+      spans = splitHighlights(raw).map((seg) => {
+        const on = el('span', 'on');
+        const off = el('span', 'off');
+        let hl = null;
+        const wrap = el('span', seg.word ? 'hl' : 'seg');
+        if (seg.word) { hl = wrap; hl.dataset.word = seg.word; }
+        wrap.append(on, off);
+        text.appendChild(wrap);
+        return { on, off, hl, chars: Array.from(seg.text), len: Array.from(seg.text).length, sparked: false };
+      });
+      const sp = resolveSpeaker(line, npcs, from, nickname);
+      const narration = !sp;
+      box.classList.toggle('narration', narration);
+      tag.hidden = narration;
+      heroBust.hidden = narration || !hasHero;
+      npcBust.hidden = narration || !hasNpc;
+      if (!narration) {
+        tag.textContent = sp.name;
+        tag.dataset.side = sp.side;
+        tag.style.setProperty('--band', sp.color);
+        const np = npcFor(i);
+        if (np && np !== lastNpc && (!lastNpc || np.name !== lastNpc.name)) {
+          lastNpc = np;
+          npcBust.replaceChildren(labelBlockEl(initial(np.name), np.color, 'bust-block'));
+          npcBust.style.setProperty('--band', np.color);
+        }
+        heroBust.classList.toggle('listener', sp.side !== 'hero');
+        npcBust.classList.toggle('listener', sp.side !== 'npc');
+      }
+      for (const w of newWordsOf(raw, words, ctx.getState()?.acquired ?? {})) {
+        const s = spans.find((x) => x.hl?.dataset.word === w);
+        s?.hl.classList.add('new');
+      }
+      maybeTip();
+      render();
+    }
+
+    // 처음 보는 새 낱말이 나오면 한 번만 안내한다.
+    function maybeTip() {
+      const st = ctx.getState();
+      const target = spans.find((s) => s.hl?.classList.contains('new'));
+      if (!st || !target || st.seenTips.includes(TIP_WORD)) return;
+      ctx.setState(markTip(st, TIP_WORD));
+      tipEl = el('p', 'word-tip', '반짝이는 낱말을 눌러 보세요');
+      text.appendChild(tipEl);
+      tipEl.style.left = `${target.hl.offsetLeft}px`;
+      tipEl.style.top = `${target.hl.offsetTop - 48}px`;
+    }
+
+    function sentenceShown() {
+      if (busy) return;
+      const raw = formatLine(script[index].text, nickname);
+      const pending = newWordsOf(raw, words, ctx.getState()?.acquired ?? {});
+      if (pending.length === 0) { arrow.hidden = false; return; }
+      busy = true;
+      tipEl?.remove();
+      tipEl = null;
+      const cards = [...pending];
+      const next = () => {
+        const w = cards.shift();
+        if (!w) { busy = false; arrow.hidden = false; return; }
+        openCard(w, () => {
+          const st = ctx.getState();
+          if (st) {
+            const after = acquireWords(st, [w], from);
+            ctx.setState(after);
+            ctx.store?.save(after); // 낱말을 얻은 순간은 저장 자리
+          }
+          next();
+        });
+      };
+      next();
+    }
+
+    function openCard(wordId, onConfirm) {
+      const info = WORDS.find((x) => x.id === wordId);
+      const overlay = el('div', 'word-card-overlay');
+      const card = el('div', 'word-card');
+      card.setAttribute('role', 'dialog');
+      card.setAttribute('aria-modal', 'true');
+      const ok = el('button', 'big-button', '확인');
+      ok.type = 'button';
+      card.append(el('p', 'word-card-title', '새 낱말을 찾았다!'), el('p', 'word-card-word', info?.word ?? wordId),
+        el('p', 'word-card-meaning', info?.meaning ?? ''));
+      if (info?.example) card.append(el('p', 'word-card-example', info.example));
+      card.append(ok);
+      overlay.appendChild(card);
+      scene.appendChild(overlay);
+      cardOpen = true;
+      let closed = false;
+      confirmCard = () => {
+        if (closed) return;
+        closed = true;
+        cardOpen = false;
+        confirmCard = null;
+        overlay.remove();
+        onConfirm();
+      };
+      ok.addEventListener('click', confirmCard);
+      ok.focus();
+    }
+    let confirmCard = null;
+
+    function press() {
+      if (cardOpen || leaving || !tw) return;
+      const r = tw.press();
+      if (r === 'reveal') { render(); sentenceShown(); }
+      else if (r === 'next') advance();
+    }
+
+    function advance() {
+      if (index + 1 < script.length) { showLine(index + 1); return; }
+      leaving = true;
+      ctx.router.show(params.next || 'explore');
+    }
+
+    const onKey = (e) => {
+      if (e.key !== ' ' && e.key !== 'Enter') return;
+      e.preventDefault();
+      if (e.repeat) return;
+      if (cardOpen) confirmCard?.();
+      else press();
+    };
+    window.addEventListener('keydown', onKey);
+    box.addEventListener('click', press);
+    text.addEventListener('click', (e) => {
+      const hl = e.target.closest?.('.hl.new');
+      if (!hl || cardOpen) return;
+      e.stopPropagation();
+      if (!tw.done()) { tw.press(); render(); sentenceShown(); }
+    });
+
+    const frame = (now) => {
+      raf = requestAnimationFrame(frame);
+      const dt = Math.min(100, now - last);
+      last = now;
+      if (!tw || cardOpen) return;
+      const was = tw.done();
+      tw.tick(dt);
+      render();
+      if (!was && tw.done()) sentenceShown();
+    };
+
+    if (script.length === 0) {
+      leaving = true;
+      queueMicrotask(() => { if (scene.isConnected) ctx.router.show(params.next || 'explore'); });
+    } else {
+      showLine(0);
+      last = performance.now();
+      raf = requestAnimationFrame(frame);
+    }
+
+    return () => {
+      leaving = true;
+      cancelAnimationFrame(raf);
+      window.removeEventListener('keydown', onKey);
+      scene.remove();
+    };
+  },
+};
