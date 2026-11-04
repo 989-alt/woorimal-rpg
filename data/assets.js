@@ -2,10 +2,10 @@
 // null이거나 불러오지 못하면 각 화면이 임시 그림(색 블록·그라데이션)으로 대신한다.
 // 이름 규칙: assets/pixel|illust/종류_장_이름_변형.확장자 (art-bible 8절)
 export const ASSETS = {
-  // 탐험 맵(512×384, 장 id)
+  // 탐험 맵(1536×1152, 칸당 48, 장 id)
   maps: { '1-1': 'assets/pixel/map_ch1-1_saebyeokgol.png', '1-2': 'assets/pixel/map_ch1-2_maeul-eogwi.png' },
-  // 주인공 걷기 시트 48×128 (f 여 · m 남)
-  walk: { f: null, m: null },
+  // 주인공 걷기 시트 144×384: 48×96칸 × 3프레임(왼발·서기·오른발) × 4방향(아래·왼·오·위) (f 여 · m 남)
+  walk: { f: 'assets/pixel/walk_hero_f.png', m: 'assets/pixel/walk_hero_m.png' },
   // 인물 도트 16×32 (인물 id)
   npcs: { dodam: null, daon: null, gardener: null, baker: null, laundry: null, gate: null },
   // 물건 아이콘 (물건 id)

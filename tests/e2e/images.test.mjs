@@ -78,6 +78,8 @@ test('탐험: 도담 그림이 있으면 그림을, 없는 주소면 오류 없�
 
 test('탐험: 주인공 걷기 시트가 있으면 시트 그림으로 그린다', async () => {
   const { page, errors } = await openNewGame();
+  // 없는 주소면 임시 블록(쪽빛)
+  assert.equal(await page.evaluate((u) => window.__test.setAsset('walk.f', u), MISSING), false);
   await expectColor(page, 'hero', [0x3B, 0x5B, 0xA5]);
   assert.equal(await page.evaluate((u) => window.__test.setAsset('walk.f', u), FIXTURE), true);
   await expectColor(page, 'hero', FIXTURE_RGB);

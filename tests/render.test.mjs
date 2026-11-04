@@ -58,3 +58,22 @@ test('animKey: 화면 안에 움직이는 그림이 없으면 시간이 흘러�
   const byJar = { ...s, pos: { x: jar.x, y: jar.y + 1 } };
   assert.notEqual(at(byJar, 100, { still: true }), at(byJar, 500, { still: true }));
 });
+
+test('feetRect: 발이 칸 아래 줄 가운데에 닿는 세계 상자(인물 16×32, 보스 32×32 = 2×2칸)', async () => {
+  const { feetRect } = await import('../js/explore/render.js');
+  // 인물: 칸 (5,6) → 칸 너비 그대로, 위로 16 솟는다
+  assert.deepEqual(feetRect(5, 6, 16, 32), [80, 80, 16, 32]);
+  // 보스: 1-2의 M 칸 (15,2) → 좌우 반 칸씩 넓고 위로 한 칸, 아래 끝은 M 칸 아래 줄
+  const [x, y, w, h] = feetRect(15, 2, 32, 32);
+  assert.deepEqual([x, y, w, h], [232, 16, 32, 32]);
+  assert.equal(y + h, 3 * 16);
+  assert.equal(x + w / 2, 15 * 16 + 8);
+  // 아이콘 16×16은 칸과 같다
+  assert.deepEqual(feetRect(3, 4, 16, 16), [48, 64, 16, 16]);
+});
+
+test('headTop: 머리 위 표시는 도트 그림이 있으면 16×32 상자 위, 임시 블록이면 블록 위에 붙는다', async () => {
+  const { headTop } = await import('../js/explore/render.js');
+  assert.equal(headTop(6, true), 6 * 16 - 16);
+  assert.equal(headTop(6, false), 6 * 16 - 8);
+});

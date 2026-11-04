@@ -1,6 +1,6 @@
 // 탐험 캔버스 그리기. ctx에는 이미 배율(ART=3)이 걸려 있어 좌표는 384×216 세계 기준(칸 16)이다.
 // 그림은 칸당 48픽셀이므로 세계 상자 크기를 정해서 그린다(맵 512×384 상자에 1536×1152 그림이 1:1).
-import { BASE_W, BASE_H, ART } from './scale.js';
+import { BASE_W, BASE_H } from './scale.js';
 import { fogOpen } from '../rules/game.js';
 import { npcMarker, hiddenGlow } from '../rules/quests.js';
 import { drawLabelBlock, initial, MEOK } from '../ui/placeholder.js';
@@ -121,13 +121,19 @@ function drawMarker(ctx, cx, top, mark) {
   ctx.fillText(mark, cx, y + h / 2 + 0.5);
 }
 
-// 발이 칸 아래 줄에 닿게 세계 상자 w×h에 그린다(칸 가운데 맞춤). 인물 16×32 상자는 위 16이 칸 위로 솟는다.
-// 상자를 주지 않으면 그림 크기를 ART로 나눈 크기(48픽셀 그림 → 16).
-function drawFeet(ctx, img, tx, ty, w = img.width / ART, h = img.height / ART) {
-  ctx.drawImage(img, tx * TILE + (TILE - w) / 2, ty * TILE + TILE - h, w, h);
+// 발이 칸 아래 줄에 닿게 놓을 세계 상자 [x, y, w, h](칸 가운데 맞춤). 인물 16×32 상자는 위 16이 칸 위로 솟고,
+// 보스 32×32 상자는 칸 가운데를 중심으로 좌우 반 칸씩 넓고 위로 한 칸 솟는다(2×2칸).
+export const feetRect = (tx, ty, w, h) => [tx * TILE + (TILE - w) / 2, ty * TILE + TILE - h, w, h];
+function drawFeet(ctx, img, tx, ty, w, h) {
+  ctx.drawImage(img, ...feetRect(tx, ty, w, h));
 }
-const NPC_BOX = [16, 32]; // 인물 도트(그림 48×96)
+const NPC_BOX = [16, 32]; // 인물 도트(그림 48×96, 그 안의 인물은 48×72쯤)
 const ICON_BOX = [16, 16]; // 물건 아이콘(그림 48×48)
+const SMALL_BOX = [16, 32]; // 꼬마 몬스터(그림 48×96)
+const BOSS_BOX = [32, 32]; // 보스 도트(그림 96×96, 2×2칸)
+
+// 머리 위 표시(!·…·?)를 붙일 윗선. 도트 그림이 있으면 16×32 상자 위(칸 위 16), 임시 블록이면 블록 위(칸 위 8).
+export const headTop = (tileY, hasArt) => tileY * TILE - (hasArt ? 16 : 8);
 
 // 주인공 걷기 시트: 한 방향 3프레임(서기·왼발·오른발), 줄 순서 아래·왼·오·위. 걸을 때 1-2-1-3 순서로 초당 8장.
 const WALK_ROW = { down: 0, left: 1, right: 2, up: 3 };
@@ -151,18 +157,25 @@ function drawGlow(ctx, px, py, glow, time) {
   if (glow === 'bright') ctx.fillRect(px + 11, py + 10, 1, 1);
 }
 
-// 첫 부탁 인물 머리 위 화살표가 화면 안에 그려지는지(그렇지 않으면 가장자리에 멈춘 화살표)
-function tipInView(camera, target) {
+// 첫 부탁 인물 칸에 도트 그림이 그려지면 8(머리 위 표시가 그만큼 높다), 아니면 0
+function tipLift(chapter, map, target) {
+  const npc = chapter.npcs.find((n) => { const p = map.slots[n.slot]; return p && p.x === target.x && p.y === target.y; });
+  return npc && getLoaded(ASSETS.npcs[npc.id]) ? 8 : 0;
+}
+
+// 첫 부탁 인물 머리 위 화살표가 화면 안에 그려지는지(그렇지 않으면 가장자리에 멈춘 화살표).
+// lift: 인물 도트 그림이 있으면 머리 위 표시가 8 높아지므로 화살표도 그만큼 올린다.
+function tipInView(camera, target, lift = 0) {
   const tx = target.x * TILE + TILE / 2;
-  const ty = target.y * TILE - 8;
+  const ty = target.y * TILE - 8 - lift;
   return tx >= camera.x + 8 && tx <= camera.x + BASE_W - 8 && ty - 20 >= camera.y && ty <= camera.y + BASE_H - 8;
 }
 
 // 첫 부탁 인물 쪽 화살표: 화면 안이면 머리 위에서, 밖이면 화면 가장자리에서 그쪽을 가리킨다.
-function drawTipArrow(ctx, camera, target, hero, bob) {
+function drawTipArrow(ctx, camera, target, hero, bob, lift = 0) {
   const tx = target.x * TILE + TILE / 2;
-  const ty = target.y * TILE - 8;
-  if (tipInView(camera, target)) {
+  const ty = target.y * TILE - 8 - lift;
+  if (tipInView(camera, target, lift)) {
     drawArrow(ctx, tx, ty - 20 + bob, Math.PI / 2, 8);
     return;
   }
@@ -204,17 +217,17 @@ export function drawExplore(ctx, { map, state, chapter, camera, time = 0, tipTar
   if (map.smallMonster && !state.smallGone?.[chapter.id]) {
     const { x, y } = map.smallMonster;
     const art = getLoaded(ASSETS.small[actId]);
-    if (art) drawFeet(ctx, art, x, y);
+    if (art) drawFeet(ctx, art, x, y, ...SMALL_BOX);
     else drawCircle(ctx, x * TILE + 8, y * TILE + 8, 7, '#8A8D91', '#5E6266');
   }
   if (map.boss) {
     const { x, y } = map.boss;
     const art = getLoaded(ASSETS.bossPixel[actId]);
-    if (art) drawFeet(ctx, art, x, y);
+    if (art) drawFeet(ctx, art, x, y, ...BOSS_BOX);
     else drawCircle(ctx, x * TILE + 8, y * TILE + 4, 14, '#5E6266', MEOK);
   }
 
-  // 인물과 주인공: 아래쪽에 있는 것을 나중에 그린다(16×24, 발이 칸 아래에 닿게)
+  // 인물과 주인공: 아래쪽에 있는 것을 나중에 그린다(그림은 16×32 상자, 임시 블록은 16×24, 발이 칸 아래에 닿게)
   const people = [];
   for (const npc of chapter.npcs) {
     const p = map.slots[npc.slot];
@@ -240,10 +253,10 @@ export function drawExplore(ctx, { map, state, chapter, camera, time = 0, tipTar
       ctx.fillStyle = '#FBF5E6';
       ctx.fillRect(px + f[0], py + f[1], 4, 4);
     }
-    if (who.mark) drawMarker(ctx, px + TILE / 2, py, who.mark);
+    if (who.mark) drawMarker(ctx, px + TILE / 2, headTop(who.p.y, !!(who.art || who.sheet)), who.mark);
   }
 
-  if (tipTarget) drawTipArrow(ctx, camera, tipTarget, state.pos, bob);
+  if (tipTarget) drawTipArrow(ctx, camera, tipTarget, state.pos, bob, tipLift(chapter, map, tipTarget));
   ctx.restore();
 }
 
@@ -256,7 +269,7 @@ export function animKey({ map, state, chapter, camera, time = 0, tipTarget = nul
   const parts = [];
   if (!still) {
     const arrowSeen = questObjectSlots(state, chapter).some((slot) => map.objects[slot] && inView(map.objects[slot]));
-    if (arrowSeen || (tipTarget && tipInView(camera, tipTarget))) parts.push(`b${bobAt(time, still)}`);
+    if (arrowSeen || (tipTarget && tipInView(camera, tipTarget, tipLift(chapter, map, tipTarget)))) parts.push(`b${bobAt(time, still)}`);
   }
   if (moving && !still && heroSheet(state)) parts.push(`w${walkFrame(time, true)}`);
   const glow = hiddenGlow(state, chapter);
