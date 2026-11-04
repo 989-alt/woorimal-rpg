@@ -62,6 +62,7 @@ canvas, img {
   gap: 16px;
   width: min(640px, 100%);
   min-height: 100vh;
+  min-height: 100dvh; /* 휴대 기기 주소창을 뺀 높이(지원하는 브라우저) */
   padding: 24px 16px;
 }
 .title-logo { margin: 0; font-family: var(--font-title); font-size: 72px; font-weight: normal; line-height: 1.1; }
@@ -265,6 +266,7 @@ canvas, img {
   position: relative;
   width: 100vw;
   height: 100vh;
+  height: 100dvh; /* 휴대 기기 주소창을 뺀 높이(지원하는 브라우저) */
   min-height: 480px;
   overflow: hidden;
   background: linear-gradient(#DCE6F0 0%, #EFE6C8 55%, #C9B48A 100%);
@@ -437,6 +439,7 @@ canvas, img {
   position: relative;
   width: 100vw;
   height: 100vh;
+  height: 100dvh; /* 휴대 기기 주소창을 뺀 높이(지원하는 브라우저) */
   min-height: 560px;
   display: flex;
   flex-direction: column;
@@ -821,6 +824,7 @@ canvas, img {
   position: relative;
   width: 100vw;
   min-height: 100vh;
+  min-height: 100dvh; /* 휴대 기기 주소창을 뺀 높이(지원하는 브라우저) */
   display: grid;
   place-items: center;
   padding: 24px 16px;
