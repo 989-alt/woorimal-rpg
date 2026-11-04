@@ -45,7 +45,7 @@ export const ASSETS = {
     haesol: { base: 'assets/illust/bust_haesol_base.webp', pout: 'assets/illust/bust_haesol_pout.webp', surprise: 'assets/illust/bust_haesol_surprise.webp' },
     fruit: { base: 'assets/illust/bust_fruit_base.webp', joy: 'assets/illust/bust_fruit_joy.webp' },
     guard: { base: 'assets/illust/bust_guard_base.webp', joy: 'assets/illust/bust_guard_joy.webp' },
-    shopper: { base: null },
+    shopper: { base: 'assets/illust/bust_shopper_base.webp' },
     chestnut: { base: null, joy: null },
     flower: { base: null, joy: null },
     northgate: { base: null },

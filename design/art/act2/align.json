@@ -42,5 +42,9 @@
   "scale": 1.0,
   "dx": 0,
   "dy": 0
+ },
+ "shopper_base": {
+  "src": "bust_shopper_base_a2",
+  "quality": 85
  }
 }
