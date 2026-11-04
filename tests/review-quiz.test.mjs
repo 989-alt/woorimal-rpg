@@ -58,6 +58,24 @@ test('buildQuiz 상황 빈칸: 그 낱말 문장, 보이는 꼴, 오답에 가�
   assert.ok(situations >= 200);
 });
 
+test('buildQuiz 뜻 고르기: 뜻이 가까운 낱말(CLOSE_WORDS)의 뜻은 정답과도, 서로도 함께 보기에 나오지 않는다', () => {
+  const byMeaning = new Map(WORDS.map((w) => [w.meaning, w.id]));
+  const sameGroup = (a, b) => CLOSE_WORDS.some((g) => g.includes(a) && g.includes(b));
+  let checked = 0;
+  for (let seed = 1; seed <= 300; seed++) {
+    for (const q of buildQuiz(WORDS, makeRng(seed)).filter((x) => x.type === 'meaning')) {
+      const ids = q.options.map((m) => byMeaning.get(m));
+      assert.equal(new Set(ids).size, 4);
+      assert.equal(ids[q.answer], q.word);
+      for (let i = 0; i < 4; i++) {
+        for (let j = i + 1; j < 4; j++) assert.ok(!sameGroup(ids[i], ids[j]), `${q.word}: ${ids[i]}·${ids[j]}`);
+      }
+      checked++;
+    }
+  }
+  assert.equal(checked, 1200);
+});
+
 test('buildQuiz: 시드마다 낱말과 문제 차례가 달라진다(차례도 섞는다)', () => {
   const a = buildQuiz(WORDS, makeRng(1));
   const b = buildQuiz(WORDS, makeRng(2));

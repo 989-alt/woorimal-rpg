@@ -1896,6 +1896,15 @@ p.ending-thanks {
 .quiz-result-meaning { padding-left: 42px; font-size: 18px; line-height: 1.35; color: var(--gray-3); }
 .quiz-actions { margin-top: 2px; }
 .quiz-actions .btn { min-width: 180px; }
+/* 결과: 패널은 화면 높이 안에 두고, 낱말 목록만 패널 안에서 스크롤한다(10개 모두 틀려 뜻이 길게 늘어나도 쪽·장면이 스크롤되지 않게) */
+.quiz-scene[data-phase='result'] .quiz {
+  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 12px;
+}
+.quiz-scene[data-phase='result'] .quiz-results { min-height: 0; overflow-y: auto; align-content: start; padding: 4px; overscroll-behavior: contain; }
+.quiz-scene[data-phase='result'] .quiz-score { font-size: 36px; }
 
 @media (max-width: 760px) {
   .quiz-head { flex-wrap: wrap; justify-content: center; }
