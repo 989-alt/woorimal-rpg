@@ -319,7 +319,7 @@ test('막 보스: 이긴 뒤 처음 화면 → 이어하기 → 보스 앞에서
   const map = parseMap(ACT1.chapters[1].map.rows);
   await faceFromBelow(page, map, map.boss, { fogOpen: true });
   await page.waitForSelector('.toast:not([hidden])');
-  assert.equal(await page.locator('.toast').innerText(), '1막은 이미 끝냈어. 다음 막은 준비 중이에요.');
+  assert.equal(await page.locator('.toast').innerText(), '1막을 마쳤어요. 다음 막은 준비 중이에요.');
   await page.waitForTimeout(200);
   assert.equal(await page.locator('[data-scene="battle"]').count(), 0);
   assert.deepEqual(errors, []);
