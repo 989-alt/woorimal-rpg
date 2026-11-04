@@ -4,7 +4,7 @@ const NAMES = 'malbit:names';
 const PROBE = 'malbit:probe';
 
 const SHAPE = {
-  version: 'number', nickname: 'string', avatar: 'any', act: 'number', chapter: 'number',
+  version: 'number', nickname: 'string', avatar: 'any', act: 'number', chapter: 'string',
   pos: 'object', facing: 'string', acquired: 'object', quests: 'object', bag: 'array',
   hiddenFound: 'object', smallGone: 'object', askedWordIds: 'array',
   clearedChapters: 'array', clearedActs: 'array', seenTips: 'array',
