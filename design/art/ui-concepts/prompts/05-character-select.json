@@ -1,0 +1,23 @@
+{
+ "model": "gpt-image-2-5-flare-image-to-image",
+ "input": {
+  "prompt": "Character select screen mockup for a game, full-screen 16:9. Background: the first reference image (the cozy morning village) softly blurred and slightly dimmed, full-bleed. The two other reference images are the two hero characters; draw them exactly as they look (same face, hair, indigo hooded cape, cream shirt) in the same polished anime cel-shaded style.\n\nLayout:\n1. Top centre: a carved-wood and brass header banner reading \"모습 고르기\".\n2. Below it, in the upper half of the screen: a framed name panel. A label \"내 이름\" on the left, then a wide cream input field with a dark-brown inset border showing the name \"하늘\" and a blinking text cursor, and below the field a small line of hint text: \"1~6글자, 한글·영어·숫자로 적어 주세요.\"\n3. Centre: two large portrait cards side by side, each an arched-top carved-wood frame with brass trim showing a hero from the waist up: the girl with the brown ponytail on the left, the boy with short brown hair on the right. The girl's card is selected: a glowing brass rim, a gentle warm halo, and a green round check badge on its corner; the boy's card is plain and slightly dimmed.\n4. Bottom: a glossy warm-wood button \"뒤로\" on the left, and a larger glossy leaf-green button \"시작하기\" on the right.\nNo other text.\n\nUI KIT (use the same kit on every element): an original, cheerful, chunky 2D fantasy RPG interface for 12-year-old children. Panels are framed in rounded, carved honey-brown wood (#A8714A with #6B4426 shadows) with a thin polished antique-brass trim line (#C9963F) and small leaf-shaped brass corner ornaments; tiny round gem studs at the corners in leaf green (#5FAE5A) and clear water blue (#3FA7C9). Panel interiors are smooth warm cream parchment (#FBF5E6) with dark brown ink text (#2B2622). Buttons are glossy and bevelled: rounded shape, soft white highlight along the top, darker lip along the bottom, a thin brass rim. Small square keycap badges are cream with a dark brown letter and a darker bottom edge, like a physical keyboard key. Korean text is crisp, large, perfectly spelled, in a clean rounded sans-serif; every Korean string appears exactly once, exactly as written below, and there is no other text anywhere. Soft drop shadows fall down-right because the warm morning light comes from the upper left. Bright, warm, light colours; friendly and polished like a finished commercial game. No sound, settings, chat, currency, level, experience or map icons. No real brand logos, no watermark.",
+  "aspect_ratio": "16:9",
+  "resolution": "2K",
+  "input_urls": [
+   "https://tempfile.redpandaai.co/kieai/631937/woorimal/1793786198988-d31d1qx8n8r.jpg",
+   "https://tempfile.redpandaai.co/kieai/631937/woorimal/1793786199980-ha9vzn4ekq.jpg",
+   "https://tempfile.redpandaai.co/kieai/631937/woorimal/1793786200918-nxjvvx9xfm.jpg"
+  ]
+ },
+ "refs": {
+  "title.jpg": "https://tempfile.redpandaai.co/kieai/631937/woorimal/1793786198988-d31d1qx8n8r.jpg",
+  "bust_hero_f_base.jpg": "https://tempfile.redpandaai.co/kieai/631937/woorimal/1793786199980-ha9vzn4ekq.jpg",
+  "bust_hero_m_base.jpg": "https://tempfile.redpandaai.co/kieai/631937/woorimal/1793786200918-nxjvvx9xfm.jpg"
+ },
+ "taskId": "27300b67a3edca8e308cb933d263127f",
+ "credits": 10.0,
+ "costTime": 29,
+ "source_url": "https://tempfile.aiquickdraw.com/gpt-image-2-5/1793786232020-sb4rsa4dc0f.png",
+ "output": "ui-05-character-select.webp (converted from PNG, quality 88)"
+}

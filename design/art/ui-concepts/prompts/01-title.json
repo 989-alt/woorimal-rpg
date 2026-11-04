@@ -1,0 +1,19 @@
+{
+ "model": "gpt-image-2-5-flare-image-to-image",
+ "input": {
+  "prompt": "Game title screen mockup, full-screen 16:9. Keep the reference illustration as the full-bleed background exactly as it is: the cozy fantasy village with round puffy-roofed cottages, the well, the green trees, the stream on the right and the low morning sun at the upper left. Do not add a web form, input box or big flat box.\n\nOverlay only these elements:\n1. A big illustrated title logo in the upper centre that reads exactly \"말빛 한울\" (two words, four Korean syllables). Chunky, rounded, hand-lettered display letters with a cream-white face, a soft vertical gradient to pale gold at the bottom, a thick dark-brown outline and a second outer outline in warm carved wood; a gentle warm golden glow behind the letters and a few tiny sparkles. A small cream cloth pouch tied with a cord hangs from the end of the logo and glows softly (it is the only glowing object). Beneath the logo a slim carved-wood and brass flourish line, no extra words.\n2. In the lower centre, a short vertical menu of two wide, chunky, glossy buttons, each about one fifth of the screen wide, stacked with a small gap: the top button is glossy leaf green with a brass rim and reads \"처음부터\"; the bottom button is glossy warm honey wood with a brass rim and reads \"이어하기\". Text on the buttons is white with a dark brown outline. A small brass leaf arrow marks the top button as selected.\n\nUI KIT (use the same kit on every element): an original, cheerful, chunky 2D fantasy RPG interface for 12-year-old children. Panels are framed in rounded, carved honey-brown wood (#A8714A with #6B4426 shadows) with a thin polished antique-brass trim line (#C9963F) and small leaf-shaped brass corner ornaments; tiny round gem studs at the corners in leaf green (#5FAE5A) and clear water blue (#3FA7C9). Panel interiors are smooth warm cream parchment (#FBF5E6) with dark brown ink text (#2B2622). Buttons are glossy and bevelled: rounded shape, soft white highlight along the top, darker lip along the bottom, a thin brass rim. Small square keycap badges are cream with a dark brown letter and a darker bottom edge, like a physical keyboard key. Korean text is crisp, large, perfectly spelled, in a clean rounded sans-serif; every Korean string appears exactly once, exactly as written below, and there is no other text anywhere. Soft drop shadows fall down-right because the warm morning light comes from the upper left. Bright, warm, light colours; friendly and polished like a finished commercial game. No sound, settings, chat, currency, level, experience or map icons. No real brand logos, no watermark.",
+  "aspect_ratio": "16:9",
+  "resolution": "2K",
+  "input_urls": [
+   "https://tempfile.redpandaai.co/kieai/631937/woorimal/1793786154424-naldai00wsa.jpg"
+  ]
+ },
+ "refs": {
+  "title.jpg": "https://tempfile.redpandaai.co/kieai/631937/woorimal/1793786154424-naldai00wsa.jpg"
+ },
+ "taskId": "7a4bfe5286aed280638aa7124020c49e",
+ "credits": 10.0,
+ "costTime": 31,
+ "source_url": "https://tempfile.aiquickdraw.com/gpt-image-2-5/1793786186196-9u009ern36v.png",
+ "output": "ui-01-title.webp (converted from PNG, quality 88)"
+}
