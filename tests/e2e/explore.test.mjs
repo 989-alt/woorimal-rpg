@@ -158,11 +158,16 @@ test('탐험 캔버스는 바뀐 것이 없으면 다시 그리지 않고, 겹�
     const orig = CanvasRenderingContext2D.prototype.fillRect;
     CanvasRenderingContext2D.prototype.fillRect = function (...a) { window.__fills++; return orig.apply(this, a); };
   });
+  // 느린 CI처럼 그림이 늦게 와도 흔들리지 않도록 그림 응답을 늦춘다
+  await page.route(/\/assets\/.*\.(png|webp)$/, async (r) => { await new Promise((ok) => setTimeout(ok, 300)); r.continue(); });
   await page.goto(server.url + '/?test=1');
   await page.waitForFunction(() => window.__test);
   await page.evaluate(() => window.__test.newGame('하늘', 'f'));
   await page.waitForSelector('[data-scene="explore"] canvas');
   const fills = () => page.evaluate(() => window.__fills);
+  // 그림과 글꼴이 다 와서 한 번 더 그린 뒤를 기준으로 삼는다
+  await page.waitForLoadState('networkidle');
+  await page.evaluate(() => document.fonts.ready.then(() => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok)))));
   await page.waitForTimeout(200);
   // 처음 자리: 화면 안에 움직이는 그림이 없다
   let n = await fills();
