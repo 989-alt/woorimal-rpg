@@ -301,6 +301,8 @@ test('currentTask 순서', () => {
   t = inspect(t, ch2, '3').state;
   t = acquireWords(t, chapterWords(ch2), 'x');
   assert.equal(currentTask(t, ch2), '그림자를 물리쳐라');
+  // 막을 마친 뒤
+  assert.equal(currentTask({ ...t, clearedActs: [1] }, ch2), '1막을 마쳤어요');
 });
 
 test('questList', () => {
@@ -388,5 +390,5 @@ test('fightGate boss: 이미 끝낸 막이면 막는다', () => {
   const s = { ...newGame({ nickname: '하늘', avatar: 'f' }), chapter: '1-2' };
   assert.deepEqual(fightGate(s, ch, 'boss'), { ok: true, message: null });
   assert.deepEqual(fightGate({ ...s, clearedActs: [1] }, ch, 'boss'),
-    { ok: false, message: '1막은 이미 끝냈어. 다음 막은 준비 중이에요.' });
+    { ok: false, message: '1막을 마쳤어요. 다음 막은 준비 중이에요.' });
 });

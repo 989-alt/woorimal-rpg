@@ -1,6 +1,6 @@
 // 할 일: 이 장의 부탁, 숨은 낱말, (막의 마지막 장이면) 그림자.
 import { actOfChapter } from '../../data/acts/index.js';
-import { questList } from '../rules/quests.js';
+import { questList, actCleared, actDoneText } from '../rules/quests.js';
 import { mountOverlay } from '../ui/overlay.js';
 
 const LABEL = { locked: '?', open: '받기 전', active: '하는 중', ready: '돌아가서 알리기', done: '완료' };
@@ -48,8 +48,12 @@ export function openTasks(root, state, chapter, { onClose, focusAfter } = {}) {
   }
   const found = !!state.hiddenFound?.[chapter.id];
   list.appendChild(row(`숨은 낱말: ${found ? '찾음' : '못 찾음'}`, '', false));
-  const { chapters } = actOfChapter(chapter.id);
-  if (chapters[chapters.length - 1].id === chapter.id) list.appendChild(row('그림자를 물리쳐라', '', false));
+  const act = actOfChapter(chapter.id);
+  const { chapters } = act;
+  if (chapters[chapters.length - 1].id === chapter.id) {
+    const cleared = actCleared(state, act);
+    list.appendChild(row(cleared ? actDoneText(act) : '그림자를 물리쳐라', cleared ? '완료' : '', cleared));
+  }
 
   panel.append(head, list);
   el.appendChild(panel);

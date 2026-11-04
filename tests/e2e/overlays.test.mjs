@@ -83,7 +83,7 @@ test('할 일: 모든 단계 이름, 완료 체크, 찾음, 그림자 줄(1-2에
     const mk = (chapter, stages, found) => {
       const quests = {};
       chapter.quests.forEach((q, i) => { quests[q.id] = { stage: stages[i], gathered: [] }; });
-      return { quests, hiddenFound: found ? { [chapter.id]: true } : {} };
+      return { quests, hiddenFound: found ? { [chapter.id]: true } : {}, clearedActs: [] };
     };
     const out = [];
     const run = (chapter, st) => {
@@ -100,6 +100,7 @@ test('할 일: 모든 단계 이름, 완료 체크, 찾음, 그림자 줄(1-2에
     run(c1, mk(c1, ['active', 'ready'], false));
     run(c1, mk(c1, ['done', 'done'], true));
     run(c2, mk(c2, ['locked', 'locked'], false));
+    run(c2, { ...mk(c2, ['done', 'done'], true), clearedActs: [1] });
     return out;
   });
   assert.match(texts[0].text, /하는 중/);
@@ -109,6 +110,9 @@ test('할 일: 모든 단계 이름, 완료 체크, 찾음, 그림자 줄(1-2에
   assert.match(texts[1].text, /숨은 낱말: 찾음/);
   assert.doesNotMatch(texts[1].text, /그림자를 물리쳐라/);
   assert.match(texts[2].text, /그림자를 물리쳐라/);
+  assert.match(texts[3].text, /1막을 마쳤어요/);
+  assert.doesNotMatch(texts[3].text, /그림자를 물리쳐라/);
+  assert.equal(texts[3].checks, 3);
   assert.deepEqual(errors, []);
   await page.close();
 });

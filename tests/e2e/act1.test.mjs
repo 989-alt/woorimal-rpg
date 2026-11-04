@@ -269,6 +269,17 @@ test('1막 끝까지: 시작 화면 → 부탁 4개 → 숨은 낱말 2개 → �
   assert.deepEqual(saved.clearedActs, [1]);
   assert.equal(saved.askedWordIds.length, 10);
   assert.equal(Object.keys(saved.acquired).length, 10);
+
+  // ── 막을 마친 뒤: 처음 화면 → 이어하기 → 할 일 "1막을 마쳤어요", 보스는 막는다 ──
+  await page.getByRole('button', { name: '처음 화면으로' }).click();
+  await page.waitForSelector('[data-scene="title"]');
+  await page.locator('.saved-name', { hasText: '하늘' }).click();
+  await page.getByRole('button', { name: '이어하기' }).click();
+  await page.waitForSelector('[data-scene="explore"]');
+  assert.equal(await hudTask(page), '1막을 마쳤어요');
+  await interact(page, 'boss');
+  assert.equal(await toast(page), '1막을 마쳤어요. 다음 막은 준비 중이에요.');
+  assert.equal(await page.locator('[data-scene="battle"]').count(), 0);
   assert.deepEqual(errors, []);
   await page.close();
 });

@@ -136,8 +136,8 @@ export function winSmall(state, chapter) {
 export function fightGate(state, chapter, kind) {
   const act = actOfChapter(chapter.id);
   if (kind === 'boss') {
-    if (state.clearedActs.includes(act.id)) {
-      return { ok: false, message: `${act.id}막은 이미 끝냈어. 다음 막은 준비 중이에요.` };
+    if (actCleared(state, act)) {
+      return { ok: false, message: `${actDoneText(act)}. 다음 막은 준비 중이에요.` };
     }
     return { ok: true, message: null };
   }
@@ -165,13 +165,19 @@ export function npcMarker(state, chapter, npcId) {
   return marker;
 }
 
+// 막을 마친 뒤 할 일 자리에 쓰는 말
+export const actDoneText = (act) => `${act.id}막을 마쳤어요`;
+export const actCleared = (state, act) => (state.clearedActs ?? []).includes(act.id);
+
 export function currentTask(state, chapter) {
+  const act = actOfChapter(chapter.id);
+  if (actCleared(state, act)) return actDoneText(act);
   const doing = chapter.quests.find((q) => ['active', 'open', 'ready'].includes(stageOf(state, q)));
   if (doing) return doing.title;
   if (!hiddenFound(state, chapter)) return '숨은 낱말을 찾아라';
   // 낱말 5개가 다 모이기 전(옛 저장 등)에는 마지막 부탁 제목을 그대로 둔다.
   if (!chapterComplete(state, chapter)) return chapter.quests[chapter.quests.length - 1].title;
-  const { chapters } = actOfChapter(chapter.id);
+  const { chapters } = act;
   return chapter.id === chapters[chapters.length - 1].id ? '그림자를 물리쳐라' : '다음 장으로';
 }
 
