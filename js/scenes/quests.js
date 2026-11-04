@@ -26,7 +26,7 @@ function row(title, label, done) {
   return li;
 }
 
-export function openTasks(root, state, chapter, { onClose } = {}) {
+export function openTasks(root, state, chapter, { onClose, focusAfter } = {}) {
   const el = document.createElement('div');
   el.className = 'overlay tasks';
   const panel = document.createElement('div');
@@ -53,7 +53,7 @@ export function openTasks(root, state, chapter, { onClose } = {}) {
 
   panel.append(head, list);
   el.appendChild(panel);
-  const close = mountOverlay(root, el, { label: '할 일', onClose });
+  const close = mountOverlay(root, el, { label: '할 일', onClose, focusAfter });
   closeBtn.addEventListener('click', close);
   closeBtn.focus();
   return close;

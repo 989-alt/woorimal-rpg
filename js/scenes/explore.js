@@ -61,12 +61,15 @@ export const explore = {
       entry.close = open(() => { if (overlay === entry) overlay = null; });
       overlay = entry;
     };
-    const showCodex = () => toggle('codex', (onClose) => openCodex(el, state, { actTab: state.act, onClose }));
-    const showTasks = () => toggle('tasks', (onClose) => openTasks(el, state, chapter, { onClose }));
+    // 겹침 창을 닫을 때 HUD 단추로는 초점을 돌려주지 않는다(Space·Enter가 말하기로 쓰이도록). 지도 쪽으로 준다.
+    const focusAfter = (opener) => (opener && hud.el.contains(opener) ? stage : opener);
+    const showCodex = () => toggle('codex', (onClose) => openCodex(el, state, { actTab: state.act, onClose, focusAfter }));
+    const showTasks = () => toggle('tasks', (onClose) => openTasks(el, state, chapter, { onClose, focusAfter }));
 
     const hud = createHud({ onCodex: showCodex, onTasks: showTasks });
     const stage = document.createElement('div');
     stage.className = 'explore-stage';
+    stage.tabIndex = -1; // 겹침 창을 닫은 뒤 초점을 받을 자리
     const canvas = document.createElement('canvas');
     canvas.setAttribute('aria-label', `${chapter.title} 지도`);
     stage.appendChild(canvas);

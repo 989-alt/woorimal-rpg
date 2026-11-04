@@ -4,7 +4,7 @@ import { mountOverlay } from '../ui/overlay.js';
 
 export const ACT_COUNT = 5;
 
-export function openCodex(root, state, { actTab = state.act, onClose } = {}) {
+export function openCodex(root, state, { actTab = state.act, onClose, focusAfter } = {}) {
   const el = document.createElement('div');
   el.className = 'overlay codex';
   const panel = document.createElement('div');
@@ -114,7 +114,7 @@ export function openCodex(root, state, { actTab = state.act, onClose } = {}) {
   }
   show(current);
 
-  const close = mountOverlay(root, el, { label: '도감', onClose });
+  const close = mountOverlay(root, el, { label: '도감', onClose, focusAfter });
   closeBtn.addEventListener('click', close);
   tabBtns[current - 1]?.focus();
   return close;

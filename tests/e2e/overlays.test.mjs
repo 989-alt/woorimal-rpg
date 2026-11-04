@@ -48,13 +48,13 @@ test('도감: 1막 탭에 어스름 카드 1장과 ? 9칸, 닫기와 초점', as
   await page.waitForSelector('.codex');
   await page.keyboard.press('KeyE');
   assert.equal(await page.locator('.codex').count(), 0);
-  // 단추로 열고 닫으면 초점이 단추로 돌아온다
+  // 단추로 열고 닫아도 초점은 HUD 단추로 돌아가지 않는다(Space·Enter가 말하기로 쓰이도록)
   await page.locator('.hud-button', { hasText: '도감' }).focus();
   await page.keyboard.press('Enter');
   await page.waitForSelector('.codex');
   await page.locator('.codex-close').click();
   assert.equal(await page.locator('.codex').count(), 0);
-  assert.match(await page.evaluate(() => document.activeElement.textContent), /도감/);
+  assert.equal(await page.evaluate(() => !!document.activeElement.closest('.explore-top')), false);
   assert.deepEqual(errors, []);
   await page.close();
 });
@@ -152,3 +152,20 @@ test('겹침 창이 열려 있으면 Space로 말을 걸지 않는다', async ()
   await page.waitForSelector('[data-scene="dialogue"]');
   await page.close();
 });
+
+for (const [label, sel, closeSel] of [['도감', '.codex', '.codex-close'], ['할 일', '.tasks', '.tasks-close']]) {
+  test(`HUD ${label} 단추를 마우스로 눌러 열고 닫은 뒤 Space는 말 걸기다`, async () => {
+    const { page, errors } = await start();
+    await page.evaluate(() => window.__test.teleportTo('dodam'));
+    await page.waitForSelector('[data-scene="explore"]');
+    await page.locator('.hud-button', { hasText: label }).click();
+    await page.waitForSelector(sel);
+    await page.locator(closeSel).click();
+    assert.equal(await page.locator(sel).count(), 0);
+    await page.keyboard.press('Space');
+    await page.waitForSelector('[data-scene="dialogue"]');
+    assert.equal(await page.locator(sel).count(), 0);
+    assert.deepEqual(errors, []);
+    await page.close();
+  });
+}

@@ -30,7 +30,11 @@ function button(label, key, onClick) {
   const k = document.createElement('kbd');
   k.textContent = key;
   b.append(k);
-  b.addEventListener('click', onClick);
+  b.addEventListener('click', () => {
+    onClick();
+    // 마우스로 누른 뒤 단추에 초점이 남으면 Space·Enter가 말하기 대신 단추를 다시 누른다.
+    if (document.activeElement === b) b.blur();
+  });
   return b;
 }
 

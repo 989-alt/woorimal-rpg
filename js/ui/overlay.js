@@ -1,7 +1,8 @@
 // 겹침 창 공통: 초점 가두기, Esc로 닫기, 닫으면 초점 돌려주기.
+// focusAfter(opener)를 주면 닫을 때 그 함수가 고른 요소로 초점을 돌려준다(null이면 아무 데도 주지 않는다).
 const FOCUSABLE = 'button, [tabindex]:not([tabindex="-1"])';
 
-export function mountOverlay(root, el, { label, onClose }) {
+export function mountOverlay(root, el, { label, onClose, focusAfter }) {
   const opener = document.activeElement;
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
@@ -14,7 +15,8 @@ export function mountOverlay(root, el, { label, onClose }) {
     document.removeEventListener('keydown', onKey, true);
     el.remove();
     onClose?.();
-    if (opener && opener.isConnected && typeof opener.focus === 'function') opener.focus();
+    const back = focusAfter ? focusAfter(opener) : opener;
+    if (back && back.isConnected && typeof back.focus === 'function') back.focus({ preventScroll: true });
   };
   function onKey(e) {
     if (e.key === 'Escape') {
