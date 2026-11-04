@@ -118,9 +118,10 @@ export const explore = {
     let glide = null; // 마지막 걸음의 { from, to, startedAt, ms }: 그림만 이 길을 미끄러진다(규칙의 state.pos는 바로 바뀐다)
     const WALK_TAIL_MS = 34; // 미끄러짐이 끝난 뒤에도 이 시간 안에 다음 걸음이 오면 계속 걷는 모습(꾹 누른 때)
     // 그림 한 장이 막 도착하면 상태가 그대로여도 다시 그린다.
-    const stopImages = onImageLoaded(() => { drawn = null; });
+    let resetBy = 'start'; // 검사용: 마지막으로 다시 그리게 한 까닭
+    const stopImages = onImageLoaded(() => { drawn = null; resetBy = 'image'; });
     // 글꼴이 늦게 오면(font-display: swap) 가만히 있는 화면의 캔버스 글자(머리 위 표시 등)가 대신 글꼴로 남는다. 한 번 다시 그린다.
-    document.fonts?.ready.then(() => { drawn = null; });
+    document.fonts?.ready.then(() => { drawn = null; resetBy = 'fonts'; });
     preloadChapter(state.chapter, state.avatar);
     // 상태(자리·부탁 등)가 바뀌었거나, 화면 안의 움직이는 그림이 바뀌었거나, 캔버스가 지워졌을 때만 다시 그린다.
     // 겹침 창이 열려 있는 동안은 (캔버스가 지워진 때가 아니면) 그리지 않는다.
@@ -132,6 +133,10 @@ export const explore = {
       const view = { map, state, chapter, camera: cameraFor(map, heroAt), time, tipTarget: tipTarget(), still, moving, heroAt };
       const anim = animKey(view);
       if (drawn && drawn.state === state && drawn.size === size && drawn.anim === anim) return;
+      if (window.__test) {
+        const why = !drawn ? resetBy : drawn.state !== state ? 'state' : drawn.size !== size ? 'size' : `anim ${drawn.anim}→${anim}`;
+        (window.__test.draws ??= []).push([Math.round(time), why]);
+      }
       drawExplore(g, view);
       if (window.__test) window.__test.heroAt = heroAt; // 검사용: 마지막으로 그려진 주인공 자리
       drawn = { state, size, anim };

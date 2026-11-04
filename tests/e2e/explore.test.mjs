@@ -172,8 +172,10 @@ test('탐험 캔버스는 바뀐 것이 없으면 다시 그리지 않고, 겹�
   // 처음 자리: 화면 안에 움직이는 그림이 없다
   let n = await fills();
   assert.ok(n > 0, '한 번은 그렸다');
+  const since = await page.evaluate(() => (window.__test.draws ?? []).length);
   await page.waitForTimeout(500);
-  assert.equal(await fills(), n, '바뀐 것이 없는데 다시 그렸다');
+  const extra = await page.evaluate((k) => (window.__test.draws ?? []).slice(k), since);
+  assert.equal(await fills(), n, `바뀐 것이 없는데 다시 그렸다: ${JSON.stringify(extra)}`);
   // 걸으면 다시 그린다
   await page.keyboard.press('ArrowRight');
   await page.waitForFunction((k) => window.__fills > k, n);
