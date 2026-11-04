@@ -135,3 +135,47 @@ test('tipLift: 첫 부탁 인물에 도트 그림이 그려져 있을 때만 8',
     if (real) globalThis.Image = real; else delete globalThis.Image;
   }
 });
+
+test('haloStep: 숨은 낱말 빛무리는 6초마다(부탁을 다 끝낸 뒤에는 3초마다) 1.2초 동안, 50ms 단계', async () => {
+  const { haloStep, HALO_MS } = await import('../js/explore/render.js');
+  assert.equal(HALO_MS, 1200);
+  assert.equal(haloStep('none', 0), null);
+  assert.equal(haloStep('dim', 0), 0);
+  assert.equal(haloStep('dim', 1199), 23);
+  assert.equal(haloStep('dim', 1200), null);
+  assert.equal(haloStep('dim', 3000), null);
+  assert.equal(haloStep('dim', 6000), 0);
+  assert.equal(haloStep('bright', 3000), 0);
+  assert.equal(haloStep('bright', 2999), null);
+  assert.equal(haloStep('bright', 4100), 22);
+});
+
+test('animKey: 빛무리는 보이는 때 단계마다 바뀌고, 쉬는 동안·화면 밖에서는 그대로다', async () => {
+  const { animKey } = await import('../js/explore/render.js');
+  const ch = chapterOf(ACT1, '1-1');
+  const map = parseMap(ch.map.rows);
+  const s = talkTo(newGame({ nickname: '하늘', avatar: 'f' }), ch, 'dodam').state; // 주머니를 받아 빛무리가 켜지는 상태
+  const jar = map.objects[ch.hidden.object];
+  const near = { ...s, pos: { x: jar.x, y: jar.y + 1 } };
+  const far = { ...s, pos: { x: 22, y: 19 } }; // 시작 자리 맞은편: 장독대가 화면 밖
+  const at = (state, time, extra = {}) => animKey({ map, state, chapter: ch, camera: cameraFor(map, state.pos), time, ...extra });
+  assert.equal(at(near, 1300), at(near, 5900)); // 쉬는 동안
+  assert.notEqual(at(near, 1000), at(near, 1060)); // 보이는 동안 50ms 단계
+  assert.equal(at(near, 1000), at(near, 1040));
+  assert.notEqual(at(near, 1150), at(near, 1250)); // 끝나면 지워지려고 한 번 더
+  assert.equal(at({ ...far, bag: [] }, 100, { camera: { x: 0, y: 0 }, view: { w: 100, h: 100 } }), ''); // 화면 밖
+});
+
+test('animKey: 깜박이는 인물 표시는 화면 안에서 250ms마다 바뀌고, 깜박임이 끝나면(null) 멈춘다', async () => {
+  const { animKey, blinkAt } = await import('../js/explore/render.js');
+  const ch = chapterOf(ACT1, '1-1');
+  const map = parseMap(ch.map.rows);
+  const daon = map.slots.b;
+  const s = { ...newGame({ nickname: '하늘', avatar: 'f' }), pos: { x: daon.x, y: daon.y + 1 } };
+  const at = (time, flashNpc) => animKey({ map, state: s, chapter: ch, camera: cameraFor(map, s.pos), time, flashNpc });
+  assert.deepEqual([0, 249, 250, 499, 500].map(blinkAt), [0, 0, 1, 1, 0]);
+  assert.notEqual(at(0, 'daon'), at(300, 'daon'));
+  assert.equal(at(0, 'daon'), at(100, 'daon'));
+  assert.equal(at(0, null), at(300, null));
+  assert.equal(at(0, null), '');
+});

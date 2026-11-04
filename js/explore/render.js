@@ -108,22 +108,24 @@ function drawArrow(ctx, x, y, angle, size = 6) {
 }
 
 // 인물 머리 위 말풍선 표시: 흰 바탕 + 먹색 1px 윤곽
-function drawMarker(ctx, cx, top, mark) {
+// invert: 깜박일 때 한 번씩 색을 뒤집어(먹색 바탕에 흰 글자) 눈에 띄게 한다.
+function drawMarker(ctx, cx, top, mark, invert = false) {
   const w = mark === '…' ? 11 : 9, h = 9;
+  const face = invert ? MEOK : WHITE;
   const x = Math.round(cx - w / 2), y = top - h - 3;
-  ctx.fillStyle = WHITE;
+  ctx.fillStyle = face;
   ctx.fillRect(x, y, w, h);
-  ctx.strokeStyle = MEOK;
+  ctx.strokeStyle = invert ? WHITE : MEOK;
   ctx.lineWidth = 1;
   ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
   ctx.beginPath(); // 꼬리
   ctx.moveTo(cx - 2, y + h - 0.5);
   ctx.lineTo(cx, y + h + 2.5);
   ctx.lineTo(cx + 2, y + h - 0.5);
-  ctx.fillStyle = WHITE;
+  ctx.fillStyle = face;
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = MEOK;
+  ctx.fillStyle = invert ? WHITE : MEOK;
   ctx.font = "bold 8px 'Gowun Dodum', system-ui, sans-serif";
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -156,14 +158,78 @@ function itemIdOf(chapter, obj) {
   return chapter.quests.find((q) => ['fetch', 'gather'].includes(q.kind) && q.targets.includes(obj.slot))?.item?.id;
 }
 
+// 이긴 직후 돌아갈 인물 머리 위 표시가 깜박이는 단계(250ms마다 0/1)
+export const blinkAt = (time) => Math.floor(time / 250) % 2;
 const bobAt = (time, still) => (still ? 0 : Math.round(Math.sin(time / 250)));
-const glowOn = (glow, time) => glow !== 'none' && time % (glow === 'bright' ? 1000 : 2000) <= 300;
+// 숨은 낱말 빛무리(빛무리 = 말빛 금빛 둥근 빛이 퍼졌다 사라짐 + 빛 알갱이). 6초마다(부탁을 다 끝낸 뒤에는 3초마다) 1.2초 동안.
+// 그림은 50ms 단계로만 바뀌므로, 같은 단계(animKey의 g 값)면 같은 그림이다.
+export const HALO_MS = 1200;
+export const HALO_STEP_MS = 50;
+const HALO_GOLD = '#F2C14E';
+const haloPeriod = (glow) => (glow === 'bright' ? 3000 : 6000);
+// 지금이 빛무리가 보이는 때면 단계 번호(0부터), 아니면 null
+export function haloStep(glow, time) {
+  if (glow === 'none') return null;
+  const t = time % haloPeriod(glow);
+  return t < HALO_MS ? Math.floor(t / HALO_STEP_MS) : null;
+}
 
-function drawGlow(ctx, px, py, glow, time) {
-  if (!glowOn(glow, time)) return;
-  ctx.fillStyle = WHITE;
-  ctx.fillRect(px + 4, py + 3, 1, 1);
-  if (glow === 'bright') ctx.fillRect(px + 11, py + 10, 1, 1);
+const SPARKLES = [[-5, 0.0], [3, 0.12], [-1, 0.24], [6, 0.34]]; // [가운데에서 옆으로(세계 단위), 늦게 떠오르는 몫]
+function drawSparkle(ctx, x, y, r, alpha) {
+  ctx.globalAlpha = alpha;
+  ctx.beginPath();
+  ctx.moveTo(x, y - r);
+  ctx.lineTo(x + r * 0.28, y - r * 0.28);
+  ctx.lineTo(x + r, y);
+  ctx.lineTo(x + r * 0.28, y + r * 0.28);
+  ctx.lineTo(x, y + r);
+  ctx.lineTo(x - r * 0.28, y + r * 0.28);
+  ctx.lineTo(x - r, y);
+  ctx.lineTo(x - r * 0.28, y - r * 0.28);
+  ctx.closePath();
+  ctx.fillStyle = HALO_GOLD;
+  ctx.fill();
+  ctx.fillStyle = '#FFF6D6';
+  ctx.beginPath();
+  ctx.arc(x, y, r * 0.22, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// (cx, cy): 물건 칸 가운데(세계 좌표). 칸의 1.75배(반지름 14, 지름 28 = 84픽셀)까지 퍼진다. 움직임 줄이기면 퍼지지 않고 같은 크기로 밝아졌다 어두워지기만 한다.
+function drawHalo(ctx, cx, cy, step, still) {
+  const p = (step * HALO_STEP_MS) / HALO_MS;
+  const env = Math.sin(Math.PI * p); // 0 → 1 → 0
+  const R = 14;
+  const r = still ? R * 0.85 : R * (0.4 + 0.6 * (1 - (1 - p) * (1 - p)));
+  ctx.save();
+  ctx.globalAlpha = (still ? 0.8 : 1) * env;
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+  grad.addColorStop(0, 'rgba(255, 246, 214, 1)');
+  grad.addColorStop(0.4, 'rgba(242, 193, 78, 0.75)');
+  grad.addColorStop(1, 'rgba(242, 193, 78, 0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  if (!still) {
+    ctx.strokeStyle = HALO_GOLD; // 바깥으로 퍼지는 고리
+    ctx.lineWidth = 1.1;
+    ctx.globalAlpha = 0.95 * env;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.92, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.lineWidth = 0.6; // 안쪽 둘째 고리
+    ctx.globalAlpha = 0.55 * env;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.6, 0, Math.PI * 2);
+    ctx.stroke();
+    for (const [dx, late] of SPARKLES) { // 빛 알갱이: 아래에서 위로 떠오르며 사라진다
+      const q = (p - late) / 0.62;
+      if (q <= 0 || q >= 1) continue;
+      drawSparkle(ctx, cx + dx, cy + 4 - q * 15, 2.4 - 0.7 * q, Math.sin(Math.PI * q));
+    }
+  }
+  ctx.restore();
 }
 
 // 첫 부탁 인물 칸에 도트 그림이 그려지면 8(머리 위 표시가 그만큼 높다), 아니면 0
@@ -194,11 +260,12 @@ function drawTipArrow(ctx, camera, view, target, hero, bob, lift = 0) {
   const m = 10;
   const ax = Math.min(Math.max(tx, camera.x + m), camera.x + view.w - m);
   const ay = Math.min(Math.max(ty, camera.y + (view.insetTop ?? 0) + m), camera.y + view.h - m); // 위쪽은 HUD 아래에서 멈춘다
-  drawArrow(ctx, ax, ay, angle, 8);
+  drawArrow(ctx, ax, ay, angle, 12); // 가장자리 화살표는 눈에 잘 띄게 더 크게
 }
 
 // heroAt: 그려지는 주인공 자리(칸 단위, 미끄러지는 중이면 소수). 없으면 state.pos.
-export function drawExplore(ctx, { map, state, chapter, camera, view = { w: BASE_W, h: BASE_H }, time = 0, tipTarget = null, still = false, moving = false, heroAt = state.pos }) {
+// flashNpc: 머리 위 표시를 깜박일 인물 id(없으면 null)
+export function drawExplore(ctx, { map, state, chapter, camera, view = { w: BASE_W, h: BASE_H }, time = 0, tipTarget = null, flashNpc = null, still = false, moving = false, heroAt = state.pos }) {
   ctx.save();
   ctx.fillStyle = WALL;
   ctx.fillRect(0, 0, view.w + 1, view.h + 1); // 보이는 세계 전체(맵 밖은 숲색). 분수 크기여서 한 칸 더
@@ -220,7 +287,10 @@ export function drawExplore(ctx, { map, state, chapter, camera, view = { w: BASE
     const icon = arrows.includes(obj.slot) ? getLoaded(ASSETS.items[itemIdOf(chapter, obj)]) : null;
     if (icon) drawFeet(ctx, icon, p.x, p.y, ...ICON_BOX);
     else if (!mapArt) drawLabelBlock(ctx, px + 1, py + 1, TILE - 2, TILE - 2, EARTH, initial(obj.name));
-    if (obj.slot === chapter.hidden.object) drawGlow(ctx, px + 1, py + 1, glow, time);
+    if (obj.slot === chapter.hidden.object) {
+      const step = haloStep(glow, time);
+      if (step !== null) drawHalo(ctx, px + TILE / 2, py + TILE / 2, step, still);
+    }
     if (arrows.includes(obj.slot)) drawArrow(ctx, px + TILE / 2, py + TILE + 2 - bob, -Math.PI / 2, 6);
   }
 
@@ -242,7 +312,7 @@ export function drawExplore(ctx, { map, state, chapter, camera, view = { w: BASE
   const people = [];
   for (const npc of chapter.npcs) {
     const p = map.slots[npc.slot];
-    if (p) people.push({ p, color: npc.color, label: initial(npc.name), mark: npcMarker(state, chapter, npc.id), art: getLoaded(ASSETS.npcs[npc.id]) });
+    if (p) people.push({ p, color: npc.color, label: initial(npc.name), mark: npcMarker(state, chapter, npc.id), art: getLoaded(ASSETS.npcs[npc.id]), flash: flashNpc === npc.id });
   }
   people.push({ p: heroAt, color: HERO, label: initial(state.nickname), hero: true, sheet: heroSheet(state) });
   people.sort((a, b) => a.p.y - b.p.y);
@@ -264,16 +334,16 @@ export function drawExplore(ctx, { map, state, chapter, camera, view = { w: BASE
       ctx.fillStyle = '#FBF5E6';
       ctx.fillRect(px + f[0], py + f[1], 4, 4);
     }
-    if (who.mark) drawMarker(ctx, px + TILE / 2, headTop(who.p.y, !!(who.art || who.sheet)), who.mark);
+    if (who.mark) drawMarker(ctx, px + TILE / 2, headTop(who.p.y, !!(who.art || who.sheet)), who.mark, who.flash && blinkAt(time) === 1);
   }
 
   if (tipTarget) drawTipArrow(ctx, camera, view, tipTarget, heroAt, bob, tipLift(chapter, map, tipTarget));
   ctx.restore();
 }
 
-// 시간에 따라 바뀌는 그림(발밑·머리 위 화살표 흔들림, 숨은 낱말 반짝임) 중 화면 안에 있는 것만의 지금 모습.
+// 시간에 따라 바뀌는 그림(발밑·머리 위 화살표 흔들림, 머리 위 표시 깜박임, 숨은 낱말 빛무리) 중 화면 안에 있는 것만의 지금 모습.
 // 이 값과 상태·카메라가 그대로면 같은 그림이므로 다시 그리지 않아도 된다.
-export function animKey({ map, state, chapter, camera, view = { w: BASE_W, h: BASE_H }, time = 0, tipTarget = null, still = false, moving = false, heroAt = state.pos }) {
+export function animKey({ map, state, chapter, camera, view = { w: BASE_W, h: BASE_H }, time = 0, tipTarget = null, flashNpc = null, still = false, moving = false, heroAt = state.pos }) {
   // 칸(위로 8px 솟은 인물·화살표 여유 포함)이 화면에 조금이라도 걸치는지
   const inView = (p) => p.x * TILE + TILE > camera.x && p.x * TILE < camera.x + view.w
     && p.y * TILE + TILE + 8 > camera.y && p.y * TILE - 8 < camera.y + view.h;
@@ -284,8 +354,13 @@ export function animKey({ map, state, chapter, camera, view = { w: BASE_W, h: BA
   }
   if (moving && !still && heroSheet(state)) parts.push(`w${walkFrame(time, true)}`);
   if (heroAt.x !== state.pos.x || heroAt.y !== state.pos.y) parts.push(`h${heroAt.x},${heroAt.y}`); // 미끄러지는 중
+  if (flashNpc) { // 깜박이는 표시가 화면 안에 있는 동안만 250ms마다 바뀐다
+    const npc = chapter.npcs.find((n) => n.id === flashNpc);
+    const at = npc && map.slots[npc.slot];
+    if (at && inView(at)) parts.push(`k${blinkAt(time)}`);
+  }
   const glow = hiddenGlow(state, chapter);
   const spot = map.objects[chapter.hidden.object];
-  if (glow !== 'none' && spot && inView(spot)) parts.push(`g${glowOn(glow, time) ? 1 : 0}`);
+  if (glow !== 'none' && spot && inView(spot)) parts.push(`g${haloStep(glow, time) ?? '-'}`); // 빛무리 단계(쉴 때는 '-'로 그대로)
   return parts.join('|');
 }
