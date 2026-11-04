@@ -199,6 +199,17 @@ sym = all(px[x, y] == px[191 - x, y] for y in range(144) for x in range(192))
 print(im.size, im.mode, 'transparency' in im.info, sym, px[4, 72][0] > 150, px[96, 4][1] > px[96, 139][1] + 60)
 `);
   assert.equal(r, '(192, 144) P True True True True');
+  // --asym-right: 오른쪽 끝은 원본 오른쪽(파랑)에서 온다
+  const asym = join(dir, 'bar-asym.png');
+  execFileSync(VENV_PY, ['-I', 'tools/ui-slice.py', 'bar', src, asym, '--size', '192x144', '--slice', '48,64,32,64', '--asym-right']);
+  assert.equal(inspectFrame(asym, `px = im.convert('RGBA').load(); print(px[4, 72][0] > 150, px[187, 72][2] > 150)`), 'True True');
+  // --mask: 위아래 조각이 0이어도 된다. RGB는 흰색, 귀퉁이는 투명으로 모양이 남는다
+  const mask = join(dir, 'bar-mask.png');
+  execFileSync(VENV_PY, ['-I', 'tools/ui-slice.py', 'bar', src, mask, '--size', '300x104', '--slice', '0,80,0,80', '--mask']);
+  assert.equal(inspectFrame(mask, `
+rgba = im.convert('RGBA')
+print(im.size, all(p[:3] == (255, 255, 255) for p in rgba.getdata() if p[3] > 0), rgba.getpixel((0, 0))[3], rgba.getpixel((40, 52))[3] > 250)
+`), '(300, 104) True 0 True');
 });
 
 test('ui-slice sheet: 덩어리 셋을 이름 순서대로', (t) => {
