@@ -2,6 +2,7 @@
 // 화면에 보이는 크기는 1152×648을 넘지 않게 줄이기만 한다(1366×768 크롬북에서 1:1).
 export const BASE_W = 384;
 export const BASE_H = 216;
+export const TILE = 16; // 칸 하나의 세계 크기
 export const ART = 3; // 세계 좌표 1 = 그림 3픽셀 (칸 16 → 48픽셀)
 export const CANVAS_W = BASE_W * ART;
 export const CANVAS_H = BASE_H * ART;

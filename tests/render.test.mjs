@@ -77,3 +77,38 @@ test('headTop: 머리 위 표시는 도트 그림이 있으면 16×32 상자 위
   assert.equal(headTop(6, true), 6 * 16 - 16);
   assert.equal(headTop(6, false), 6 * 16 - 8);
 });
+
+test('walkFrame: 서 있으면 0, 걸으면 1-2-1-3 순서로 125ms마다', async () => {
+  const { walkFrame } = await import('../js/explore/render.js');
+  assert.equal(walkFrame(0, false), 0);
+  assert.equal(walkFrame(130, false), 0);
+  assert.deepEqual([0, 125, 250, 375].map((t) => walkFrame(t, true)), [0, 1, 0, 2]);
+  assert.equal(walkFrame(124, true), 0);
+  assert.equal(walkFrame(500, true), 0); // 한 바퀴(500ms) 돌고 처음으로
+  assert.equal(walkFrame(625, true), 1);
+});
+
+test('tipLift: 첫 부탁 인물에 도트 그림이 그려져 있을 때만 8', async () => {
+  const { tipLift } = await import('../js/explore/render.js');
+  const { loadImage, forgetFailed } = await import('../js/ui/images.js');
+  const { ASSETS } = await import('../data/assets.js');
+  const ch = chapterOf(ACT1, '1-1');
+  const map = parseMap(ch.map.rows);
+  const giver = ch.npcs.find((n) => n.id === ch.quests[0].giver);
+  const at = map.slots[giver.slot];
+  // 인물이 없는 칸: 0
+  assert.equal(tipLift(ch, map, { x: -1, y: -1 }), 0);
+  // 그림이 아직 없다: 0
+  assert.equal(tipLift(ch, map, at), 0);
+  // 가짜 Image로 그림을 불러온 뒤: 8
+  const real = globalThis.Image;
+  globalThis.Image = class { set src(_) { setTimeout(() => this.onload?.(), 0); } };
+  try {
+    forgetFailed(); // 위 확인에서 실패로 남은 기록을 지운다
+    await loadImage(ASSETS.npcs[giver.id]);
+    assert.equal(tipLift(ch, map, at), 8);
+    assert.equal(tipLift(ch, map, { x: -1, y: -1 }), 0);
+  } finally {
+    if (real) globalThis.Image = real; else delete globalThis.Image;
+  }
+});

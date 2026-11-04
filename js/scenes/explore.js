@@ -4,6 +4,7 @@ import { parseMap, step, facingTarget } from '../explore/grid.js';
 import { computeScale, ART, CANVAS_W, CANVAS_H } from '../explore/scale.js';
 import { bindInput, createTouchControls, isCoarsePointer } from '../explore/input.js';
 import { drawExplore, cameraFor, animKey } from '../explore/render.js';
+import { nextGlide, drawnPos, glideEnd } from '../explore/motion.js';
 import { onImageLoaded, preloadChapter } from '../ui/images.js';
 import { createHud, createToast, fogMessage, HUD_HEIGHT } from '../explore/hud.js';
 import { chapterOf, chapterComplete, fogOpen, setPos, markTip, takeWords } from '../rules/game.js';
@@ -114,8 +115,8 @@ export const explore = {
     const still = reducedMotion();
     let raf = 0;
     let drawn = null; // 마지막으로 그린 때의 { state, size, anim }
-    let lastMoveAt = -Infinity; // 마지막으로 걸음을 뗀 때(걷기 그림 프레임용)
-    const WALK_MS = 220; // 걸음을 뗀 뒤 이 시간 동안은 걷는 모습
+    let glide = null; // 마지막 걸음의 { from, to, startedAt, ms }: 그림만 이 길을 미끄러진다(규칙의 state.pos는 바로 바뀐다)
+    const WALK_TAIL_MS = 34; // 미끄러짐이 끝난 뒤에도 이 시간 안에 다음 걸음이 오면 계속 걷는 모습(꾹 누른 때)
     // 그림 한 장이 막 도착하면 상태가 그대로여도 다시 그린다.
     const stopImages = onImageLoaded(() => { drawn = null; });
     // 글꼴이 늦게 오면(font-display: swap) 가만히 있는 화면의 캔버스 글자(머리 위 표시 등)가 대신 글꼴로 남는다. 한 번 다시 그린다.
@@ -126,10 +127,13 @@ export const explore = {
     const frame = (time) => {
       raf = requestAnimationFrame(frame);
       if (overlay && drawn?.size === size) return;
-      const view = { map, state, chapter, camera: cameraFor(map, state.pos), time, tipTarget: tipTarget(), still, moving: time - lastMoveAt < WALK_MS };
+      const heroAt = drawnPos(glide, state.pos, time); // 상태 자리와 다른 곳으로 옮겨진 때(순간이동·불러오기)는 미끄러지지 않는다
+      const moving = !!glide && glide.to.x === state.pos.x && glide.to.y === state.pos.y && time < glideEnd(glide) + WALK_TAIL_MS;
+      const view = { map, state, chapter, camera: cameraFor(map, heroAt), time, tipTarget: tipTarget(), still, moving, heroAt };
       const anim = animKey(view);
       if (drawn && drawn.state === state && drawn.size === size && drawn.anim === anim) return;
       drawExplore(g, view);
+      if (window.__test) window.__test.heroAt = heroAt; // 검사용: 마지막으로 그려진 주인공 자리
       drawn = { state, size, anim };
     };
     raf = requestAnimationFrame(frame);
@@ -139,7 +143,7 @@ export const explore = {
     function move(dir) {
       if (leaving || overlay) return;
       const r = step(map, state.pos, dir, opts());
-      if (r.pos.x !== state.pos.x || r.pos.y !== state.pos.y) lastMoveAt = performance.now();
+      if (!still && (r.pos.x !== state.pos.x || r.pos.y !== state.pos.y)) glide = nextGlide(glide, state.pos, r.pos, performance.now());
       let next = setPos(state, r.pos, r.facing);
       if (tip) {
         next = markTip(next, TIP_MOVE);

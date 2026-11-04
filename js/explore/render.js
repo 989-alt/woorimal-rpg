@@ -1,13 +1,13 @@
 // 탐험 캔버스 그리기. ctx에는 이미 배율(ART=3)이 걸려 있어 좌표는 384×216 세계 기준(칸 16)이다.
 // 그림은 칸당 48픽셀이므로 세계 상자 크기를 정해서 그린다(맵 512×384 상자에 1536×1152 그림이 1:1).
-import { BASE_W, BASE_H } from './scale.js';
+import { BASE_W, BASE_H, TILE, ART } from './scale.js';
 import { fogOpen } from '../rules/game.js';
 import { npcMarker, hiddenGlow } from '../rules/quests.js';
 import { drawLabelBlock, initial, MEOK } from '../ui/placeholder.js';
 import { ASSETS } from '../../data/assets.js';
 import { getLoaded } from '../ui/images.js';
 
-export const TILE = 16;
+export { TILE };
 const WALL = '#2F6B3A';
 const PATH = '#D9A55B';
 const FOG = ['#B9BBBE', '#8A8D91'];
@@ -158,7 +158,7 @@ function drawGlow(ctx, px, py, glow, time) {
 }
 
 // 첫 부탁 인물 칸에 도트 그림이 그려지면 8(머리 위 표시가 그만큼 높다), 아니면 0
-function tipLift(chapter, map, target) {
+export function tipLift(chapter, map, target) {
   const npc = chapter.npcs.find((n) => { const p = map.slots[n.slot]; return p && p.x === target.x && p.y === target.y; });
   return npc && getLoaded(ASSETS.npcs[npc.id]) ? 8 : 0;
 }
@@ -187,11 +187,12 @@ function drawTipArrow(ctx, camera, target, hero, bob, lift = 0) {
   drawArrow(ctx, ax, ay, angle, 8);
 }
 
-export function drawExplore(ctx, { map, state, chapter, camera, time = 0, tipTarget = null, still = false, moving = false }) {
+// heroAt: 그려지는 주인공 자리(칸 단위, 미끄러지는 중이면 소수). 없으면 state.pos.
+export function drawExplore(ctx, { map, state, chapter, camera, time = 0, tipTarget = null, still = false, moving = false, heroAt = state.pos }) {
   ctx.save();
   ctx.fillStyle = WALL;
   ctx.fillRect(0, 0, BASE_W, BASE_H);
-  ctx.translate(-Math.round(camera.x), -Math.round(camera.y));
+  ctx.translate(-Math.round(camera.x * ART) / ART, -Math.round(camera.y * ART) / ART); // 그림 픽셀(1/3 세계 단위)에 맞춘다
   const actId = Number(String(chapter.id).split('-')[0]);
   const mapArt = getLoaded(ASSETS.maps[chapter.id]);
   if (mapArt) ctx.drawImage(mapArt, 0, 0, map.w * TILE, map.h * TILE);
@@ -233,7 +234,7 @@ export function drawExplore(ctx, { map, state, chapter, camera, time = 0, tipTar
     const p = map.slots[npc.slot];
     if (p) people.push({ p, color: npc.color, label: initial(npc.name), mark: npcMarker(state, chapter, npc.id), art: getLoaded(ASSETS.npcs[npc.id]) });
   }
-  people.push({ p: state.pos, color: HERO, label: initial(state.nickname), hero: true, sheet: heroSheet(state) });
+  people.push({ p: heroAt, color: HERO, label: initial(state.nickname), hero: true, sheet: heroSheet(state) });
   people.sort((a, b) => a.p.y - b.p.y);
   for (const who of people) {
     const px = who.p.x * TILE, py = who.p.y * TILE - 8;
@@ -256,13 +257,13 @@ export function drawExplore(ctx, { map, state, chapter, camera, time = 0, tipTar
     if (who.mark) drawMarker(ctx, px + TILE / 2, headTop(who.p.y, !!(who.art || who.sheet)), who.mark);
   }
 
-  if (tipTarget) drawTipArrow(ctx, camera, tipTarget, state.pos, bob, tipLift(chapter, map, tipTarget));
+  if (tipTarget) drawTipArrow(ctx, camera, tipTarget, heroAt, bob, tipLift(chapter, map, tipTarget));
   ctx.restore();
 }
 
 // 시간에 따라 바뀌는 그림(발밑·머리 위 화살표 흔들림, 숨은 낱말 반짝임) 중 화면 안에 있는 것만의 지금 모습.
 // 이 값과 상태·카메라가 그대로면 같은 그림이므로 다시 그리지 않아도 된다.
-export function animKey({ map, state, chapter, camera, time = 0, tipTarget = null, still = false, moving = false }) {
+export function animKey({ map, state, chapter, camera, time = 0, tipTarget = null, still = false, moving = false, heroAt = state.pos }) {
   // 칸(위로 8px 솟은 인물·화살표 여유 포함)이 화면에 조금이라도 걸치는지
   const inView = (p) => p.x * TILE + TILE > camera.x && p.x * TILE < camera.x + BASE_W
     && p.y * TILE + TILE + 8 > camera.y && p.y * TILE - 8 < camera.y + BASE_H;
@@ -272,6 +273,7 @@ export function animKey({ map, state, chapter, camera, time = 0, tipTarget = nul
     if (arrowSeen || (tipTarget && tipInView(camera, tipTarget, tipLift(chapter, map, tipTarget)))) parts.push(`b${bobAt(time, still)}`);
   }
   if (moving && !still && heroSheet(state)) parts.push(`w${walkFrame(time, true)}`);
+  if (heroAt.x !== state.pos.x || heroAt.y !== state.pos.y) parts.push(`h${heroAt.x},${heroAt.y}`); // 미끄러지는 중
   const glow = hiddenGlow(state, chapter);
   const spot = map.objects[chapter.hidden.object];
   if (glow !== 'none' && spot && inView(spot)) parts.push(`g${glowOn(glow, time) ? 1 : 0}`);

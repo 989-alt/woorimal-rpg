@@ -187,3 +187,33 @@ test('탐험 캔버스는 바뀐 것이 없으면 다시 그리지 않고, 겹�
   assert.deepEqual(errors, []);
   await page.close();
 });
+
+test('걸음 한 번은 두 칸 사이를 미끄러져 지나가고, 끝나면 칸에 선다', async () => {
+  const page = await browser.newPage({ viewport: { width: 1366, height: 768 } });
+  const errors = collectErrors(page);
+  await page.goto(server.url + '/?test=1');
+  await page.waitForFunction(() => window.__test);
+  await page.evaluate(() => window.__test.newGame('하늘', 'f'));
+  await page.waitForSelector('[data-scene="explore"] canvas');
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(300);
+  const start = await page.evaluate(() => window.__test.state().pos);
+  // 걸음 하나 동안 매 프레임 그려진 주인공 자리를 모은다
+  await page.evaluate(() => {
+    window.__seen = [];
+    const tick = () => { const h = window.__test.heroAt; if (h) window.__seen.push({ x: h.x, y: h.y }); requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  });
+  await page.keyboard.press('ArrowRight');
+  await page.waitForTimeout(500);
+  const pos = await page.evaluate(() => window.__test.state().pos);
+  assert.equal(pos.x, start.x + 1, '규칙의 자리는 바로 한 칸 옮겨진다');
+  const seen = await page.evaluate(() => window.__seen);
+  assert.ok(seen.some((p) => p.x > start.x && p.x < start.x + 1), `칸 사이에 그려진 프레임이 없다: ${JSON.stringify(seen.slice(0, 12))}`);
+  const last = seen[seen.length - 1];
+  assert.deepEqual(last, { x: start.x + 1, y: start.y }, '끝나면 칸에 선다');
+  // 칸 사이 자리는 그림 픽셀(칸의 1/48)에 맞는다
+  for (const p of seen) assert.ok(Math.abs(p.x * 48 - Math.round(p.x * 48)) < 1e-9);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
