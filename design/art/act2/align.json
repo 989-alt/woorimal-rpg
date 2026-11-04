@@ -1,4 +1,16 @@
 {
+ "fruit_base": {
+  "src": "bust_fruit_base_a1",
+  "quality": 85
+ },
+ "fruit_joy": {
+  "src": "bust_fruit_joy_a1",
+  "quality": 85,
+  "iou_head": 0.9966,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ },
  "haesol_base": {
   "src": "bust_haesol_base_a1",
   "quality": 85
