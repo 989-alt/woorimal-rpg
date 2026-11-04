@@ -109,7 +109,7 @@ test('보스전: 오답만 5번 → 게임 오버 → 도감 다시 보기 → �
   const fontSize = await page.locator('.battle-meaning').evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
   assert.ok(fontSize >= 22, `뜻 글자 ${fontSize}px`);
   const nextBox = await page.locator('.battle-next').boundingBox();
-  assert.ok(nextBox.height >= 48);
+  assert.ok(Math.round(nextBox.height) >= 48, `${nextBox.height}`);
   assert.equal(await page.evaluate(() => document.activeElement?.classList.contains('battle-next')), true);
   assert.equal(await page.locator('.heart.full').count(), 4);
   assert.equal(await page.locator('.battle-option.wrong').count(), 1);

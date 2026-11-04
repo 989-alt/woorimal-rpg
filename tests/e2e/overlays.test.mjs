@@ -125,7 +125,7 @@ test('도감: 칸을 고르면 상세, 단추 크기 48px 이상', async () => {
   await page.locator('.codex-card.unknown').first().click();
   assert.match(await page.locator('.codex-detail').innerText(), /아직 못 찾은 낱말이에요\./);
   for (const sel of ['.codex-tab', '.codex-close']) {
-    for (const b of await page.locator(sel).all()) assert.ok((await b.boundingBox()).height >= 48, sel);
+    for (const b of await page.locator(sel).all()) { const h = (await b.boundingBox()).height; assert.ok(Math.round(h) >= 48, `${sel} ${h}`); } // 열리는 애니메이션의 소수점 위치 때문에 47.99998처럼 나올 수 있다
   }
   assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.codex-grid')).gridTemplateColumns.split(' ').length), 5);
   await page.screenshot({ path: '.superpowers/sdd/2026-11-04-act1-playable/task-13-codex.png' });

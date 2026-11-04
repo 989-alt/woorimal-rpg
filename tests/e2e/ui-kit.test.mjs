@@ -57,7 +57,7 @@ test('그림이 오면 <html>에 ui-* 클래스 17개, .btn-green의 borderImage
   const panel = await page.locator('.frame-panel').evaluate((el) => getComputedStyle(el).backgroundClip);
   assert.equal(panel, 'border-box');
   for (const sel of ['.btn-green', '.btn-wood', '.btn-sm', '.btn-lg', '.btn-icon']) {
-    assert.ok((await look(page, sel)).height >= 48, `${sel} 높이`);
+    assert.ok(Math.round((await look(page, sel)).height) >= 48, `${sel} 높이`);
   }
   assert.equal((await look(page, '.btn-green')).height, 64);
   assert.equal((await look(page, '.btn-lg')).height, 76);
@@ -77,7 +77,7 @@ test('assets/ui/** 를 모두 막으면 ui-* 클래스 0개, .btn-green은 2px s
   assert.equal(green.style, 'solid');
   assert.equal(green.width, '2px');
   assert.equal(green.image, 'none');
-  assert.ok(green.height >= 48, `높이 ${green.height}`);
+  assert.ok(Math.round(green.height) >= 48, `높이 ${green.height}`);
   assert.notEqual(green.color, 'rgb(255, 255, 255)', '그림 없는 단추는 흰 글자가 아니다');
   const panel = await look(page, '.frame-panel');
   assert.equal(panel.style, 'solid');
@@ -98,7 +98,7 @@ test('btn_green만 막으면 .btn-green만 CSS 모습, .frame-panel은 그림', 
   assert.equal(green.image, 'none');
   assert.equal(green.style, 'solid');
   assert.equal(green.width, '2px');
-  assert.ok(green.height >= 48);
+  assert.ok(Math.round(green.height) >= 48);
   assert.equal(await page.locator('#b-green').innerText(), '처음부터');
   assert.match((await look(page, '.btn-wood')).image, /btn_wood/);
   assert.match((await look(page, '.frame-panel')).image, /frame_panel/);
