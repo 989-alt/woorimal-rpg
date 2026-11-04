@@ -19,9 +19,10 @@ export function createRouter(root, services = {}) {
         done();
       }
       const ctx = { store: null, getState: () => null, setState: () => {}, ...services, router };
-      current = name;
       const result = scene.mount(root, params, ctx);
+      // 그리기에 성공한 뒤에만 지금 장면으로 삼는다.
       unmount = typeof result === 'function' ? result : null;
+      current = name;
     },
     get current() {
       return current;

@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createStore } from '../js/save.js';
-import { newGame } from '../js/rules/game.js';
+import { newGame, acquireWords, chapterWords } from '../js/rules/game.js';
+import { parseMap } from '../js/explore/grid.js';
+import ACT1 from '../data/acts/act1.js';
 
 function fakeStorage({ failAfter = Infinity } = {}) {
   const m = new Map();
@@ -77,4 +79,45 @@ test('setItem throwing on later save returns false and flips available', () => {
   assert.equal(s.save(newGame({ nickname: '가', avatar: 0 })), true);
   assert.equal(s.save(newGame({ nickname: '나', avatar: 0 })), false);
   assert.equal(s.available, false);
+});
+
+test('없는 장(chapter)의 저장은 깨진 저장으로 본다', () => {
+  const st = fakeStorage();
+  const g = newGame({ nickname: '가', avatar: 'f' });
+  st.setItem('malbit:save:가', JSON.stringify({ ...g, chapter: '9-9' }));
+  assert.deepEqual(createStore(st).load('가'), { ok: false, reason: 'corrupt' });
+});
+
+test('지도 밖이나 걸을 수 없는 자리는 그 장의 시작 자리로 고쳐서 불러온다', () => {
+  const st = fakeStorage();
+  const s = createStore(st);
+  const g = newGame({ nickname: '가', avatar: 'f' });
+  const map1 = parseMap(ACT1.chapters[0].map.rows);
+  const start1 = { x: map1.start.x, y: map1.start.y };
+  for (const pos of [{ x: -1, y: 3 }, { x: 999, y: 0 }, { x: 0, y: 0 }, { x: 1.5, y: 19 }, { x: 'a', y: 19 }]) {
+    st.setItem('malbit:save:가', JSON.stringify({ ...g, pos, facing: 'left' }));
+    const r = s.load('가');
+    assert.equal(r.ok, true, JSON.stringify(pos));
+    assert.deepEqual(r.state.pos, start1);
+    assert.equal(r.state.facing, 'down');
+  }
+  // 걸을 수 있는 자리는 그대로
+  st.setItem('malbit:save:가', JSON.stringify({ ...g, pos: { x: 6, y: 19 }, facing: 'left' }));
+  assert.deepEqual(s.load('가').state.pos, { x: 6, y: 19 });
+  assert.equal(s.load('가').state.facing, 'left');
+  // 꼬마 안개 칸: 쫓아내기 전에는 고치고, 쫓아낸 뒤에는 그대로
+  const m = map1.smallMonster;
+  st.setItem('malbit:save:가', JSON.stringify({ ...g, pos: m }));
+  assert.deepEqual(s.load('가').state.pos, start1);
+  st.setItem('malbit:save:가', JSON.stringify({ ...g, pos: m, smallGone: { '1-1': true } }));
+  assert.deepEqual(s.load('가').state.pos, { x: m.x, y: m.y });
+  // 1-2 안개 문 칸: 낱말 5개를 다 모았을 때만 설 수 있다
+  const ch2 = ACT1.chapters[1];
+  const map2 = parseMap(ch2.map.rows);
+  const fog = map2.fog[0];
+  const in2 = { ...g, chapter: '1-2', pos: fog };
+  st.setItem('malbit:save:가', JSON.stringify(in2));
+  assert.deepEqual(s.load('가').state.pos, { x: map2.start.x, y: map2.start.y });
+  st.setItem('malbit:save:가', JSON.stringify(acquireWords(in2, chapterWords(ch2), 'x')));
+  assert.deepEqual(s.load('가').state.pos, { x: fog.x, y: fog.y });
 });

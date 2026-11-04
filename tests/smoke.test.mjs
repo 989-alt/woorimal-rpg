@@ -42,3 +42,14 @@ test('mount는 root, params, ctx(router 포함)를 받는다', () => {
   assert.equal(got[2].store, null);
   assert.equal(got[2].getState(), null);
 });
+
+test('mount가 실패하면 그 장면을 지금 장면으로 삼지 않는다', () => {
+  const router = createRouter({});
+  router.register('a', { mount() { return () => {}; } });
+  router.register('bad', { mount() { throw new Error('그리기 실패'); } });
+  router.show('a');
+  assert.throws(() => router.show('bad'), /그리기 실패/);
+  assert.equal(router.current, null);
+  router.show('a');
+  assert.equal(router.current, 'a');
+});

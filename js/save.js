@@ -1,4 +1,7 @@
 // 저장소: 닉네임별 localStorage 저장. storage는 주입한다.
+import { ACTS } from '../data/acts/index.js';
+import { parseMap, isWalkable } from './explore/grid.js';
+import { fogOpen } from './rules/game.js';
 const SAVE = 'malbit:save:';
 const NAMES = 'malbit:names';
 const PROBE = 'malbit:probe';
@@ -20,6 +23,30 @@ function typeOk(v, t) {
 function valid(s) {
   if (!typeOk(s, 'object') || s.version !== 1) return false;
   return Object.entries(SHAPE).every(([k, t]) => typeOk(s[k], t));
+}
+
+const FACINGS = ['up', 'down', 'left', 'right'];
+
+function chapterById(id) {
+  for (const act of ACTS) {
+    const ch = act.chapters.find((c) => c.id === id);
+    if (ch) return ch;
+  }
+  return null;
+}
+
+// 모양은 맞는 저장을 살펴본다. 없는 장이면 null(깨진 저장),
+// 서 있을 수 없는 자리면 그 장의 시작 자리(아래를 봄)로 고친다.
+function repair(state) {
+  const chapter = chapterById(state.chapter);
+  if (!chapter) return null;
+  const map = parseMap(chapter.map.rows);
+  const { x, y } = state.pos;
+  const opts = { fogOpen: fogOpen(state, chapter), smallMonsterGone: !!state.smallGone[chapter.id] };
+  if (Number.isInteger(x) && Number.isInteger(y) && isWalkable(map, x, y, opts)) {
+    return FACINGS.includes(state.facing) ? state : { ...state, facing: 'down' };
+  }
+  return { ...state, pos: { x: map.start.x, y: map.start.y }, facing: 'down' };
 }
 
 export function createStore(storage) {
@@ -53,7 +80,8 @@ export function createStore(storage) {
       if (raw === null || raw === undefined) return { ok: false, reason: 'missing' };
       try {
         const state = JSON.parse(raw);
-        if (valid(state)) return { ok: true, state };
+        const fixed = valid(state) ? repair(state) : null;
+        if (fixed) return { ok: true, state: fixed };
       } catch { /* fall through */ }
       return { ok: false, reason: 'corrupt' };
     },

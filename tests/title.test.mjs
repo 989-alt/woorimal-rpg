@@ -36,11 +36,11 @@ test('없는 닉네임으로 처음부터 → start', () => {
 test('이어하기: 저장 있음 → start, 깨짐 → load-error, 없음 → 새로 시작', () => {
   const storage = memStorage();
   const store = createStore(storage);
-  const saved = { ...newGame({ nickname: '하늘', avatar: 'f' }), chapter: 'x-saved' };
+  const saved = { ...newGame({ nickname: '하늘', avatar: 'f' }), chapter: '1-2' };
   store.save(saved);
   const r = titleDecision({ nickname: '하늘', avatar: 'm', choice: 'continue', store });
   assert.equal(r.action, 'start');
-  assert.equal(r.state.chapter, 'x-saved');
+  assert.equal(r.state.chapter, '1-2');
   assert.equal(r.state.avatar, 'f');
   storage.setItem('malbit:save:바다', '{깨짐');
   assert.deepEqual(titleDecision({ nickname: '바다', avatar: 'f', choice: 'continue', store }), { action: 'load-error' });
