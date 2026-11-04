@@ -77,6 +77,32 @@ test('새 게임을 열면 1366×768에서 캔버스가 1152×648이고 HUD에 �
   await page.close();
 });
 
+test('캔버스 안쪽은 늘 1152×648(칸당 48픽셀): 1366×768에선 1:1 또렷하게, 1024×768에선 줄여 부드럽게', async () => {
+  const look = async (width, height) => {
+    const page = await browser.newPage({ viewport: { width, height } });
+    const errors = collectErrors(page);
+    await page.goto(server.url + '/?test=1');
+    await page.waitForFunction(() => window.__test);
+    await page.evaluate(() => window.__test.newGame('하늘', 'f'));
+    await page.waitForSelector('[data-scene="explore"] canvas');
+    const r = await page.evaluate(() => {
+      const c = document.querySelector('[data-scene="explore"] canvas');
+      const b = c.getBoundingClientRect();
+      return { w: c.width, h: c.height, cssW: b.width, cssH: b.height, rendering: c.style.imageRendering };
+    });
+    assert.deepEqual(errors, []);
+    await page.close();
+    return r;
+  };
+  assert.deepEqual(await look(1366, 768), { w: 1152, h: 648, cssW: 1152, cssH: 648, rendering: 'pixelated' });
+  const small = await look(1024, 768);
+  assert.equal(small.w, 1152);
+  assert.equal(small.h, 648);
+  assert.equal(small.cssW, 1024);
+  assert.equal(small.cssH, 576);
+  assert.equal(small.rendering, 'auto');
+});
+
 test('할머니에게 걸어가 말을 걸면 대화 장면으로 가고, 저장된다', async () => {
   const { page, errors } = await openGame();
   await page.waitForFunction(() => window.__test);

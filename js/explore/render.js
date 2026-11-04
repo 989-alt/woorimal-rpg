@@ -1,5 +1,6 @@
-// 탐험 캔버스 그리기(임시 그림). ctx는 이미 배율이 걸려 있어 좌표는 384×216 도트 기준이다.
-import { BASE_W, BASE_H } from './scale.js';
+// 탐험 캔버스 그리기. ctx에는 이미 배율(ART=3)이 걸려 있어 좌표는 384×216 세계 기준(칸 16)이다.
+// 그림은 칸당 48픽셀이므로 세계 상자 크기를 정해서 그린다(맵 512×384 상자에 1536×1152 그림이 1:1).
+import { BASE_W, BASE_H, ART } from './scale.js';
 import { fogOpen } from '../rules/game.js';
 import { npcMarker, hiddenGlow } from '../rules/quests.js';
 import { drawLabelBlock, initial, MEOK } from '../ui/placeholder.js';
@@ -120,10 +121,13 @@ function drawMarker(ctx, cx, top, mark) {
   ctx.fillText(mark, cx, y + h / 2 + 0.5);
 }
 
-// 발이 칸 아래 줄에 닿게 그린다(그림 크기 그대로, 칸 가운데 맞춤). 16×32 도트는 위 16px이 칸 위로 솟는다.
-function drawFeet(ctx, img, tx, ty) {
-  ctx.drawImage(img, Math.round(tx * TILE + (TILE - img.width) / 2), ty * TILE + TILE - img.height);
+// 발이 칸 아래 줄에 닿게 세계 상자 w×h에 그린다(칸 가운데 맞춤). 인물 16×32 상자는 위 16이 칸 위로 솟는다.
+// 상자를 주지 않으면 그림 크기를 ART로 나눈 크기(48픽셀 그림 → 16).
+function drawFeet(ctx, img, tx, ty, w = img.width / ART, h = img.height / ART) {
+  ctx.drawImage(img, tx * TILE + (TILE - w) / 2, ty * TILE + TILE - h, w, h);
 }
+const NPC_BOX = [16, 32]; // 인물 도트(그림 48×96)
+const ICON_BOX = [16, 16]; // 물건 아이콘(그림 48×48)
 
 // 주인공 걷기 시트: 한 방향 3프레임(서기·왼발·오른발), 줄 순서 아래·왼·오·위. 걸을 때 1-2-1-3 순서로 초당 8장.
 const WALK_ROW = { down: 0, left: 1, right: 2, up: 3 };
@@ -177,7 +181,7 @@ export function drawExplore(ctx, { map, state, chapter, camera, time = 0, tipTar
   ctx.translate(-Math.round(camera.x), -Math.round(camera.y));
   const actId = Number(String(chapter.id).split('-')[0]);
   const mapArt = getLoaded(ASSETS.maps[chapter.id]);
-  if (mapArt) ctx.drawImage(mapArt, 0, 0);
+  if (mapArt) ctx.drawImage(mapArt, 0, 0, map.w * TILE, map.h * TILE);
   drawTiles(ctx, map, camera, fogOpen(state, chapter), !!mapArt);
 
   const bob = bobAt(time, still);
@@ -190,7 +194,7 @@ export function drawExplore(ctx, { map, state, chapter, camera, time = 0, tipTar
     if (!p) continue;
     const px = p.x * TILE, py = p.y * TILE;
     const icon = arrows.includes(obj.slot) ? getLoaded(ASSETS.items[itemIdOf(chapter, obj)]) : null;
-    if (icon) drawFeet(ctx, icon, p.x, p.y);
+    if (icon) drawFeet(ctx, icon, p.x, p.y, ...ICON_BOX);
     else if (!mapArt) drawLabelBlock(ctx, px + 1, py + 1, TILE - 2, TILE - 2, EARTH, initial(obj.name));
     if (obj.slot === chapter.hidden.object) drawGlow(ctx, px + 1, py + 1, glow, time);
     if (arrows.includes(obj.slot)) drawArrow(ctx, px + TILE / 2, py + TILE + 2 - bob, -Math.PI / 2, 6);
@@ -221,10 +225,12 @@ export function drawExplore(ctx, { map, state, chapter, camera, time = 0, tipTar
   for (const who of people) {
     const px = who.p.x * TILE, py = who.p.y * TILE - 8;
     if (who.art) {
-      drawFeet(ctx, who.art, who.p.x, who.p.y);
+      drawFeet(ctx, who.art, who.p.x, who.p.y, ...NPC_BOX);
     } else if (who.sheet) {
       const row = WALK_ROW[state.facing] ?? 0;
-      ctx.drawImage(who.sheet, walkFrame(time, moving && !still) * 16, row * 32, 16, 32, px, who.p.y * TILE + TILE - 32, 16, 32);
+      // 시트는 3열 × 4줄(48픽셀 그림이면 144×384). 한 칸을 16×32 상자에 그린다.
+      const cw = who.sheet.width / 3, ch = who.sheet.height / 4;
+      ctx.drawImage(who.sheet, walkFrame(time, moving && !still) * cw, row * ch, cw, ch, px, who.p.y * TILE + TILE - 32, 16, 32);
     } else {
       drawLabelBlock(ctx, px, py, TILE, 24, who.color, who.label);
     }

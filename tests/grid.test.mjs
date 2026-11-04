@@ -2,13 +2,20 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeRng, shuffle } from '../js/rules/rng.js';
 import { parseMap, isWalkable, step, facingTarget, reachable } from '../js/explore/grid.js';
-import { computeScale } from '../js/explore/scale.js';
+import { computeScale, CANVAS_W, CANVAS_H } from '../js/explore/scale.js';
 
-test('배율', () => {
-  assert.deepEqual(computeScale(1366, 680, 1), { scale: 3, cssWidth: 1152, cssHeight: 648 });
-  assert.equal(computeScale(1024, 768, 2).scale, 5);
-  assert.equal(computeScale(300, 150, 1).scale, 1);
-  assert.deepEqual(computeScale(1024, 768, 2), { scale: 5, cssWidth: 960, cssHeight: 540 });
+test('배율: 캔버스 1152×648을 넘지 않게 줄이기만 한다', () => {
+  assert.equal(CANVAS_W, 1152);
+  assert.equal(CANVAS_H, 648);
+  assert.deepEqual(computeScale(1366, 680), { factor: 1, cssWidth: 1152, cssHeight: 648 });
+  assert.deepEqual(computeScale(1920, 1080), { factor: 1, cssWidth: 1152, cssHeight: 648 }); // 키우지 않는다
+  const s = computeScale(1024, 768);
+  assert.ok(Math.abs(s.factor - 1024 / 1152) < 1e-9); // 0.888…
+  assert.equal(s.cssWidth, 1024);
+  assert.ok(Math.abs(s.cssHeight - 576) < 1e-9);
+  const tiny = computeScale(300, 150);
+  assert.ok(tiny.factor > 0 && tiny.factor < 0.3);
+  assert.ok(tiny.cssWidth <= 300 && tiny.cssHeight <= 150);
 });
 
 test('막힌 칸은 제자리, 방향만 바뀜', () => {

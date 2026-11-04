@@ -87,12 +87,27 @@ test('탐험: 주인공 걷기 시트가 있으면 시트 그림으로 그린다
 
 test('탐험: 맵 그림이 있으면 길·벽 타일 색 대신 맵 그림을 깐다, 없는 주소면 타일 색으로 돌아온다', async () => {
   const { page, errors } = await openNewGame();
-  const PATH_RGB = [0xD9, 0xA5, 0x5B], WALL_RGB = [0x2F, 0x6B, 0x3A], ART_SAND_RGB = [0xF6, 0xD8, 0x96];
-  // 1-1에는 실제 맵 그림이 있다: 시작 칸 왼쪽은 그림의 모래길 색
-  await expectColor(page, 'left', ART_SAND_RGB);
-  // 16×32짜리 시험 그림은 월드 왼쪽 위만 덮으므로, 보이는 길 칸은 타일 색 없이 바탕색만 남는다
+  const PATH_RGB = [0xD9, 0xA5, 0x5B];
+  // 1-1에는 실제 맵 그림이 있다: 시작 칸 왼쪽 점은 맵 그림의 같은 자리 색(그림은 512×384 세계 상자에 맞춰 그린다)
+  const artRgb = await page.evaluate(async () => {
+    const { ASSETS } = await import('/data/assets.js');
+    const s = window.__test.state();
+    const img = new Image();
+    img.src = '/' + ASSETS.maps['1-1'];
+    await img.decode();
+    const c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    const g = c.getContext('2d');
+    g.drawImage(img, 0, 0);
+    const k = img.width / 512;
+    const x = Math.floor(((s.pos.x - 1) * 16 + 3.5) * k), y = Math.floor((s.pos.y * 16 + 3.5) * k);
+    return [...g.getImageData(x, y, 1, 1).data].slice(0, 3);
+  });
+  assert.notDeepEqual(artRgb, PATH_RGB);
+  await expectColor(page, 'left', artRgb);
+  // 맵 그림은 크기와 상관없이 세계 상자 전체에 늘려 그리므로 16×32 시험 그림 한 색으로 덮인다
   assert.equal(await page.evaluate((u) => window.__test.setAsset('maps.1-1', u), FIXTURE), true);
-  await expectColor(page, 'left', WALL_RGB);
+  await expectColor(page, 'left', FIXTURE_RGB);
   assert.equal(await page.evaluate((u) => window.__test.setAsset('maps.1-1', u), MISSING), false);
   await expectColor(page, 'left', PATH_RGB);
   assert.deepEqual(unexpected(errors), []);

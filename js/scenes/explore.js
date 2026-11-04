@@ -1,7 +1,7 @@
 // 탐험 장면: 칸 맵을 걷고, 인물에게 말을 걸고, 물건을 조사한다.
 import { actOfChapter } from '../../data/acts/index.js';
 import { parseMap, step, facingTarget } from '../explore/grid.js';
-import { computeScale, BASE_W, BASE_H } from '../explore/scale.js';
+import { computeScale, ART, CANVAS_W, CANVAS_H } from '../explore/scale.js';
 import { bindInput, createTouchControls, isCoarsePointer } from '../explore/input.js';
 import { drawExplore, cameraFor, animKey } from '../explore/render.js';
 import { onImageLoaded, preloadChapter } from '../ui/images.js';
@@ -96,14 +96,16 @@ export const explore = {
     let size = 0; // 캔버스 크기를 바꿀 때마다 늘린다(크기를 바꾸면 그림이 지워진다)
     const fit = () => {
       size++;
-      const dpr = window.devicePixelRatio || 1;
-      const { scale, cssWidth, cssHeight } = computeScale(window.innerWidth, Math.max(BASE_H, window.innerHeight - TOP_SPACE), dpr);
-      canvas.width = BASE_W * scale;
-      canvas.height = BASE_H * scale;
+      const { factor, cssWidth, cssHeight } = computeScale(window.innerWidth, Math.max(1, window.innerHeight - TOP_SPACE));
+      canvas.width = CANVAS_W;
+      canvas.height = CANVAS_H;
       canvas.style.width = `${cssWidth}px`;
       canvas.style.height = `${cssHeight}px`;
+      // 1:1이면 도트를 또렷하게, 줄여 보일 때는 부드럽게(최근접으로 줄이면 선이 끊긴다)
+      canvas.style.imageRendering = factor === 1 ? 'pixelated' : 'auto';
       el.style.width = `${cssWidth}px`;
-      g.setTransform(scale, 0, 0, scale, 0, 0);
+      // 그리는 코드는 세계 좌표(384×216, 칸 16)를 그대로 쓴다
+      g.setTransform(ART, 0, 0, ART, 0, 0);
       g.imageSmoothingEnabled = false;
     };
     fit();
