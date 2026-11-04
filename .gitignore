@@ -3,6 +3,6 @@ node_modules/
 .venv/
 .claude/settings.local.json
 project.local.yaml
-design/art/act1/raw/
+design/art/*/raw/
 __pycache__/
 design/art/ui/raw/

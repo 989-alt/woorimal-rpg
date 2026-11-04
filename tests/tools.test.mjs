@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { inflateSync } from 'node:zlib';
@@ -277,4 +277,143 @@ alphas = {px[x, y][3] for y in range(h) for x in range(w)}
 print(im.size, im.mode, white, sym, 'transparency' in im.info, len(alphas) > 1, px[80, 40][3], px[2, 2][3] > 200)
 `);
   assert.match(r, /^\(160, 80\) P True True True True 0 True$/, r);
+});
+
+// --- layout-guide --rows · map-fit · kie-gen 장부 ---------------------------
+
+const chapterById = (id) => ACTS.flatMap((a) => a.chapters).find((c) => c.id === id);
+const WALK_RE = /[.Sa-eFmM]/;
+
+// 장 행대로 칸당 16px 합성 맵: 걸을 수 있는 칸과 출구 통로는 길 색, 나머지는 풀색. (dx, dy)칸만큼 민다.
+async function synthMap(id, dir, { dx = 0, dy = 0, passageAsPath = true } = {}) {
+  const { encodePng, exitPassage } = await import('../tools/layout-guide.mjs');
+  const ch = chapterById(id);
+  const rows = ch.map.rows;
+  const T = 16, W = rows[0].length * T, H = rows.length * T;
+  const passage = new Set(exitPassage(rows, ch.exit).map(([x, y]) => `${x},${y}`));
+  const PATH = [0xE8, 0xC8, 0x8A], BLOCK = [0x3E, 0x7A, 0x3A];
+  const buf = Buffer.alloc(W * H * 3);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const sx = x - dx * T, sy = y - dy * T;
+      let c = BLOCK;
+      if (sx >= 0 && sy >= 0 && sx < W && sy < H) {
+        const tx = Math.floor(sx / T), ty = Math.floor(sy / T);
+        if (WALK_RE.test(rows[ty][tx]) || (passageAsPath && passage.has(`${tx},${ty}`))) c = PATH;
+      }
+      buf.set(c, (y * W + x) * 3);
+    }
+  }
+  const out = join(dir, `synth_${id}_${dx}_${dy}.png`);
+  writeFileSync(out, encodePng(W, H, buf));
+  return out;
+}
+
+const mapFit = (...args) => spawnSync(VENV_PY, ['-I', 'tools/map-fit.py', ...args], { encoding: 'utf8' });
+
+test('layout-guide --rows: 장 행을 JSON으로', () => {
+  const out = execFileSync('node', ['tools/layout-guide.mjs', '--rows', '2-1']).toString();
+  assert.deepEqual(JSON.parse(out), ACTS[1].chapters[0].map.rows);
+});
+
+test('map-fit score: 행대로 그린 맵은 bad 0, 두 칸 밀면 bad > 0', async (t) => {
+  if (!existsSync(VENV_PY)) return t.skip(`sprite-gen venv python missing (${VENV_PY})`);
+  const dir = mkdtempSync(join(tmpdir(), 'fit-'));
+  const ok = mapFit('score', await synthMap('2-1', dir), '2-1');
+  assert.equal(ok.status, 0, ok.stdout + ok.stderr);
+  assert.match(ok.stdout, /^bad 0$/m);
+  const shifted = mapFit('score', await synthMap('2-1', dir, { dx: 2 }), '2-1');
+  assert.equal(shifted.status, 1, shifted.stdout + shifted.stderr);
+  const n = Number(shifted.stdout.match(/^bad (\d+)$/m)?.[1]);
+  assert.ok(n > 0, shifted.stdout);
+});
+
+test('map-fit warp: 두 칸 민 맵을 되돌린다(iou_after ≥ 0.95, score bad 0)', async (t) => {
+  if (!existsSync(VENV_PY)) return t.skip(`sprite-gen venv python missing (${VENV_PY})`);
+  const dir = mkdtempSync(join(tmpdir(), 'fit-'));
+  const src = await synthMap('2-1', dir, { dx: 2 });
+  const out = join(dir, 'warped.png');
+  const r = mapFit('warp', src, '2-1', out);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  const rep = JSON.parse(readFileSync(out + '.warp.json', 'utf8'));
+  for (const k of ['iou_before', 'iou_after', 'kx', 'vx', 'ky', 'vy']) assert.ok(k in rep, k);
+  assert.ok(rep.iou_after >= 0.95, `iou_after ${rep.iou_after}`);
+  assert.ok(rep.iou_after > rep.iou_before);
+  const s = mapFit('score', out, '2-1');
+  assert.equal(s.status, 0, s.stdout);
+});
+
+test('map-fit score: 출구 통로(3-2의 (22..31,1))는 길처럼 그려도 bad가 아니다', async (t) => {
+  if (!existsSync(VENV_PY)) return t.skip(`sprite-gen venv python missing (${VENV_PY})`);
+  const { exitPassage } = await import('../tools/layout-guide.mjs');
+  const ch = chapterById('3-2');
+  assert.deepEqual(exitPassage(ch.map.rows, ch.exit), Array.from({ length: 10 }, (_, i) => [22 + i, 1]));
+  const dir = mkdtempSync(join(tmpdir(), 'fit-'));
+  const r = mapFit('score', await synthMap('3-2', dir), '3-2');
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+});
+
+const SPRITE_PAL = JSON.parse(readFileSync('design/art/sprite-palette.json', 'utf8'));
+const hexRgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+const dist = (a, b) => Math.hypot(...a.map((v, i) => v - b[i]));
+const sat = ([r, g, b]) => { const mx = Math.max(r, g, b), mn = Math.min(r, g, b); return mx ? (mx - mn) / mx : 0; };
+
+test('map-fit palette(원본 assets/pixel/map_ch1-1_saebyeokgol.png): 64색 이하, 예약 색(대표색·말빛 금) 없음, --max-sat 0.25면 모든 색 채도 ≤ 0.25, --allow-fog 없으면 잿빛 3단 없음', (t) => {
+  if (!existsSync(VENV_PY)) return t.skip(`sprite-gen venv python missing (${VENV_PY})`);
+  const dir = mkdtempSync(join(tmpdir(), 'fit-'));
+  const src = 'assets/pixel/map_ch1-1_saebyeokgol.png';
+  const res = SPRITE_PAL.reserved;
+  const owned = ['hero', 'dodam', 'haesol', 'narae', 'gold'].flatMap((k) => res[k]).map(hexRgb);
+  const fog = res.fog.map(hexRgb);
+  for (const [extra, check] of [
+    [[], (cols) => {
+      for (const c of cols) assert.ok(fog.every((f) => dist(c, f) >= 12), `잿빛 가까운 색 ${c}`);
+    }],
+    [['--max-sat', '0.25'], (cols) => {
+      for (const c of cols) assert.ok(sat(c) <= 0.25 + 1e-9, `채도 ${sat(c).toFixed(3)} ${c}`);
+    }],
+    [['--allow-fog'], () => {}],
+  ]) {
+    const out = join(dir, `pal${extra.join('')}.json`);
+    const r = mapFit('palette', src, '--out', out, ...extra);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    const cols = JSON.parse(readFileSync(out, 'utf8')).colors.map(hexRgb);
+    // 1-1은 채도가 높은 그림이라 --max-sat 0.25면 남는 색이 적다
+    assert.ok(cols.length > (extra[0] === '--max-sat' ? 4 : 16) && cols.length <= 64, `${cols.length}색`);
+    for (const c of cols) assert.ok(owned.every((o) => dist(c, o) >= 12), `예약 색 가까운 색 ${c}`);
+    check(cols);
+  }
+});
+
+function ledgerWith(dir, rows) {
+  const p = join(dir, 'credits.tsv');
+  writeFileSync(p, ['taskId\tlabel\tout\tresolution\tcredits\tstatus', ...rows].join('\n') + '\n');
+  return p;
+}
+
+function kieGen(dir, ledger) {
+  const prompt = join(dir, 'p.txt');
+  writeFileSync(prompt, 'test');
+  const env = { ...process.env };
+  delete env.KIE_AI_API_KEY;
+  return spawnSync('python3', ['tools/kie-gen.py', '--prompt-file', prompt, '--out', join(dir, 'o.png'),
+    '--resolution', '1K', '--ledger', ledger, '--task', 'T0', '--cap', '1000'], { encoding: 'utf8', env });
+}
+
+test('kie-gen: 장부 합계 + 예상이 상한을 넘으면 API 전에 종료 3, 장부는 그대로', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kie-'));
+  const ledger = ledgerWith(dir, ['abc\tT9\tx.png\t2K\t996\tok']);
+  const before = readFileSync(ledger, 'utf8');
+  const r = kieGen(dir, ledger);
+  assert.equal(r.status, 3, r.stderr);
+  assert.match(r.stderr, /크레딧 상한/);
+  assert.equal(readFileSync(ledger, 'utf8'), before);
+});
+
+test('kie-gen: 상한 아래면 키 확인으로 넘어간다', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kie-'));
+  const ledger = ledgerWith(dir, []);
+  const r = kieGen(dir, ledger);
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /KIE_AI_API_KEY가 없습니다/);
 });

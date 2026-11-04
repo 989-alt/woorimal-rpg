@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // 장 맵 격자를 칸당 16px 색 밑그림 PNG로 그린다 (이미지 생성의 배치 참고용).
 // 사용: node tools/layout-guide.mjs <chapterId> <out.png>
+//       node tools/layout-guide.mjs --rows <chapterId>   맵 행을 JSON으로(tools/map-fit.py가 읽는다)
+//       node tools/layout-guide.mjs --exit <chapterId>   출구 { x, y, dir }를 JSON으로(없으면 null)
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { deflateSync } from 'node:zlib';
@@ -69,10 +71,30 @@ export function renderGuide(rows) {
   return encodePng(W, H, buf);
 }
 
+// 출구 통로: 출구 칸 다음 칸부터 exit.dir 쪽으로 맵 끝까지의 칸 [[x, y], …].
+// 길이 화면 밖으로 이어지는 곳이라 막힌 칸('#')이어도 맵 그림에 길처럼 그려도 된다(설계 2절).
+// tools/map-fit.py의 exit_passage와 같은 정의.
+export function exitPassage(rows, exit) {
+  const step = exit && { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[exit.dir];
+  if (!step) return [];
+  const w = rows[0].length, h = rows.length, out = [];
+  for (let x = exit.x + step[0], y = exit.y + step[1]; x >= 0 && y >= 0 && x < w && y < h; x += step[0], y += step[1]) out.push([x, y]);
+  return out;
+}
+
+const findChapter = (id) => ACTS.flatMap((a) => a.chapters).find((c) => c.id === id);
+
 if (import.meta.url === `file://${process.argv[1]}`) {
+  const [flag, cid] = process.argv.slice(2);
+  if (flag === '--rows' || flag === '--exit') {
+    const ch = findChapter(cid);
+    if (!ch) { console.error(`알 수 없는 장 '${cid}'`); process.exit(1); }
+    console.log(JSON.stringify(flag === '--rows' ? ch.map.rows : ch.exit ?? null));
+    process.exit(0);
+  }
   const [id, out] = process.argv.slice(2);
   if (!id || !out) { console.error('사용: node tools/layout-guide.mjs <chapterId> <out.png>'); process.exit(2); }
-  const chapter = ACTS.flatMap((a) => a.chapters).find((c) => c.id === id);
+  const chapter = findChapter(id);
   if (!chapter) { console.error(`알 수 없는 장 '${id}'`); process.exit(1); }
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, renderGuide(chapter.map.rows));

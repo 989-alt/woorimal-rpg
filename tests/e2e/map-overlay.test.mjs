@@ -5,11 +5,14 @@ import { launchBrowser, collectErrors } from './browser.mjs';
 import { ACTS } from '../../data/acts/index.js';
 import { ASSETS } from '../../data/assets.js';
 import { readFileSync } from 'node:fs';
+import { exitPassage } from '../../tools/layout-guide.mjs';
 
 // 맵 그림과 걷기 칸 겹쳐 보기: 걸을 수 있는 칸(길·시작·인물·안개 문·몬스터 자리)은
 // 그림에서도 길 색이 칸의 40% 이상이어야 한다. 길 색 = 길('.'·'S') 칸에서 가장 많이 쓴 색.
 // 거꾸로 막힌 칸('#')은 길 색이 65% 미만이어야 한다(빈 땅처럼 그려 놓고 막아 두면 안 된다).
 // 집 벽처럼 길과 비슷한 밝은 색을 쓰는 곳, 잎 없는 나무 윗가지처럼 땅이 비쳐 보이는 칸이 있어 절반보다 넉넉히 잡는다.
+// 단 출구 통로(출구 칸 다음 칸부터 exit.dir 쪽으로 맵 끝까지)는 길이 화면 밖으로 이어지는 곳이라
+// 막힌 칸이어도 길처럼 그려도 된다(설계 2절, tools/map-fit.py와 같은 규칙).
 const WALK = /[.Sa-eFmM]/;
 const MIN_PATH_SHARE = 0.4; // 물건 바로 앞 칸은 물건 아랫부분이 조금 걸쳐도 된다(인물이 앞에 서 보임)
 const MAX_BLOCKED_PATH_SHARE = 0.65;
@@ -80,7 +83,8 @@ for (const ch of chapters) {
     const bad = shares.tiles.filter((t) => WALK.test(t.ch) && t.share < MIN_PATH_SHARE)
       .map((t) => `(${t.x},${t.y}) '${t.ch}' ${t.share.toFixed(2)}`);
     assert.deepEqual(bad, [], '걸을 수 있는데 그림에서 길이 아닌 칸');
-    const open = shares.tiles.filter((t) => t.ch === '#' && t.share >= MAX_BLOCKED_PATH_SHARE)
+    const passage = new Set(exitPassage(ch.map.rows, ch.exit).map(([x, y]) => `${x},${y}`));
+    const open = shares.tiles.filter((t) => t.ch === '#' && !passage.has(`${t.x},${t.y}`) && t.share >= MAX_BLOCKED_PATH_SHARE)
       .map((t) => `(${t.x},${t.y}) ${t.share.toFixed(2)}`);
     assert.deepEqual(open, [], '막혀 있는데 그림에서 빈 길처럼 보이는 칸');
     assert.deepEqual(errors, []);
