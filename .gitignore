@@ -1,0 +1,5 @@
+node_modules/
+.superpowers/
+.venv/
+.claude/settings.local.json
+project.local.yaml
