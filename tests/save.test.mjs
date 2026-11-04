@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createStore } from '../js/save.js';
-import { newGame, acquireWords, chapterWords } from '../js/rules/game.js';
+import { newGame, acquireWords, chapterWords, exitOpen, fastForward } from '../js/rules/game.js';
 import { parseMap } from '../js/explore/grid.js';
 import ACT1 from '../data/acts/act1.js';
 
@@ -135,7 +135,7 @@ test('revealed가 없는 옛 version 1 저장도 그대로 불러온다(알려 �
   st.setItem('malbit:save:옛', JSON.stringify(old));
   const r = createStore(st).load('옛');
   assert.equal(r.ok, true);
-  assert.equal(r.state.revealed, undefined);
+  assert.deepEqual(r.state.revealed, {});
 });
 
 test('옛 seenTips(옛 id만)인 version 1 저장도 그대로 불러온다', () => {
@@ -145,4 +145,48 @@ test('옛 seenTips(옛 id만)인 version 1 저장도 그대로 불러온다', ()
   const r = createStore(st).load('옛');
   assert.equal(r.ok, true);
   assert.deepEqual(r.state.seenTips, ['move', 'first-npc', 'tip-word', 'tip-boss', 'tip-review']);
+});
+
+test('1막만 있던 옛 저장(q1~q4, seenScenes·revealed 없음)을 불러오면 빈 seenScenes·revealed로 이어진다', () => {
+  const st = fakeStorage();
+  const { seenScenes, revealed, ...old } = newGame({ nickname: '옛', avatar: 'f' });
+  const D = { stage: 'done', gathered: [] };
+  const quests = { q1: D, q2: { stage: 'open', gathered: [] }, q3: { stage: 'locked', gathered: [] }, q4: { stage: 'locked', gathered: [] } };
+  st.setItem('malbit:save:옛', JSON.stringify({ ...old, quests }));
+  const r = createStore(st).load('옛');
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.state.seenScenes, []);
+  assert.deepEqual(r.state.revealed, {});
+  assert.deepEqual(r.state.quests, quests);
+  // 이미 있는 값은 그대로 둔다
+  const kept = { ...old, seenScenes: ['2-2:afterBoss'], revealed: { '1-1': true } };
+  st.setItem('malbit:save:옛', JSON.stringify(kept));
+  const k = createStore(st).load('옛').state;
+  assert.deepEqual(k.seenScenes, ['2-2:afterBoss']);
+  assert.deepEqual(k.revealed, { '1-1': true });
+  // 모양이 틀린 값은 빈 것으로
+  st.setItem('malbit:save:옛', JSON.stringify({ ...old, seenScenes: 'x', revealed: [1] }));
+  const w = createStore(st).load('옛').state;
+  assert.deepEqual(w.seenScenes, []);
+  assert.deepEqual(w.revealed, {});
+});
+
+test('act가 장과 다른 저장은 장의 막으로 고쳐 불러온다', () => {
+  const st = fakeStorage();
+  const g = fastForward(newGame({ nickname: '가', avatar: 'f' }), '2-2');
+  st.setItem('malbit:save:가', JSON.stringify({ ...g, act: 1 }));
+  assert.equal(createStore(st).load('가').state.act, 2);
+  st.setItem('malbit:save:가', JSON.stringify({ ...g, act: 2 }));
+  assert.equal(createStore(st).load('가').state.act, 2);
+});
+
+test('1막을 마친 옛 저장은 1-2에서 출구가 열린 채 불러온다', () => {
+  const st = fakeStorage();
+  const g = { ...fastForward(newGame({ nickname: '가', avatar: 'f' }), '1-2'), clearedActs: [1] };
+  const ch = ACT1.chapters[1];
+  st.setItem('malbit:save:가', JSON.stringify({ ...g, pos: { x: ch.exit.x, y: ch.exit.y } }));
+  const r = createStore(st).load('가');
+  assert.equal(r.ok, true);
+  assert.equal(exitOpen(r.state, ch), true);
+  assert.deepEqual(r.state.pos, { x: ch.exit.x, y: ch.exit.y });
 });

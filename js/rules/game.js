@@ -1,6 +1,5 @@
 // 게임 상태와 장 진행: 모두 순수 함수. 받은 상태를 바꾸지 않고 새 상태를 돌려준다.
-import ACT1 from '../../data/acts/act1.js';
-import { actOfChapter } from '../../data/acts/index.js';
+import { ACTS, actOfChapter } from '../../data/acts/index.js';
 import { parseMap } from '../explore/grid.js';
 
 export function chapterOf(act, chapterId) {
@@ -22,11 +21,13 @@ function startOf(chapter) {
 }
 
 export function newGame({ nickname, avatar }) {
-  const act = ACT1;
+  const act = ACTS[0];
   const first = act.chapters[0];
   const quests = {};
-  for (const ch of act.chapters) {
-    for (const q of ch.quests) quests[q.id] = { stage: 'locked', gathered: [] };
+  for (const a of ACTS) {
+    for (const ch of a.chapters) {
+      for (const q of ch.quests) quests[q.id] = { stage: 'locked', gathered: [] };
+    }
   }
   quests[first.quests[0].id].stage = 'open';
   const { x, y } = startOf(first);
@@ -43,6 +44,7 @@ export function newGame({ nickname, avatar }) {
     bag: [],
     hiddenFound: {},
     revealed: {}, // 장별로 숨은 낱말을 알려 준 인물과 말했는지(옛 저장에는 없다: 없으면 빈 것으로 본다)
+    seenScenes: [], // 이미 본 보스 뒤 장면('<장 id>:afterBoss'). 옛 저장에는 없다: 없으면 빈 것으로 본다
     smallGone: {},
     askedWordIds: [],
     clearedChapters: [],
@@ -95,12 +97,14 @@ export function exitOpen(state, chapter) {
   return last ? actCleared(state, act) : chapterComplete(state, chapter);
 }
 
+export const EXIT_CLOSED_TEXT = '길을 막은 그림자를 먼저 물리치자';
+
 // 닫힌 출구 칸에 들어섰을 때 띄울 한 줄. 열려 있거나 출구가 없으면 null.
 export function exitBlockedText(state, chapter) {
   if (!chapter.exit || exitOpen(state, chapter)) return null;
   const act = actOfChapter(chapter.id);
   const last = act.chapters[act.chapters.length - 1].id === chapter.id;
-  return last ? chapter.exit.closed : wordsLeftText(state, chapter);
+  return last ? (chapter.exit.closed ?? EXIT_CLOSED_TEXT) : wordsLeftText(state, chapter);
 }
 
 const addOnce = (list, v) => (list.includes(v) ? list : [...list, v]);
@@ -122,6 +126,91 @@ export function enterNextChapter(state, act) {
     facing: 'down',
     clearedChapters: addOnce(state.clearedChapters, state.chapter),
     quests,
+  };
+}
+
+// 같은 막의 다음 장, 막의 마지막 장이면 다음 막 첫 장, 게임의 마지막이면 null.
+export function nextChapterOf(chapterId) {
+  const chapters = ACTS.flatMap((a) => a.chapters);
+  const i = chapters.findIndex((c) => c.id === chapterId);
+  if (i < 0) throw new Error(`nextChapterOf: 알 수 없는 장 '${chapterId}'`);
+  return chapters[i + 1] ?? null;
+}
+
+// 마친 막에서 다음 막 첫 장으로 넘어간다(세계 지도의 "떠나기").
+export function enterNextAct(state) {
+  const act = actOfChapter(state.chapter);
+  if (!actCleared(state, act)) throw new Error('enterNextAct: 아직 마치지 않은 막');
+  const next = ACTS[ACTS.indexOf(act) + 1];
+  if (!next) throw new Error('enterNextAct: 마지막 막');
+  const first = next.chapters[0];
+  const firstQuest = first.quests[0].id;
+  const quests = { ...state.quests };
+  const cur = quests[firstQuest] ?? { stage: 'locked', gathered: [] };
+  quests[firstQuest] = cur.stage === 'locked' ? { ...cur, stage: 'open' } : cur;
+  const { x, y } = startOf(first);
+  return {
+    ...state,
+    act: next.id,
+    chapter: first.id,
+    pos: { x, y },
+    facing: 'down',
+    clearedChapters: addOnce(state.clearedChapters, state.chapter),
+    quests,
+  };
+}
+
+// 검사용: 그 장 앞의 모든 장을 끝낸 상태로 그 장 시작에 세운다(낱말·부탁·숨은 낱말·앞 막 기록).
+export function fastForward(state, chapterId) {
+  const target = chapterOf(actOfChapter(chapterId), chapterId);
+  const targetAct = actOfChapter(chapterId);
+  const acquired = { ...state.acquired };
+  const quests = { ...state.quests };
+  const hiddenFound = { ...state.hiddenFound };
+  const revealed = { ...state.revealed };
+  const smallGone = { ...state.smallGone };
+  let clearedChapters = state.clearedChapters;
+  let clearedActs = state.clearedActs;
+  let askedWordIds = state.askedWordIds;
+  let seenScenes = state.seenScenes ?? [];
+  for (const act of ACTS) {
+    if (act.id > targetAct.id) break;
+    for (const ch of act.chapters) {
+      if (ch.id === chapterId) break;
+      for (const id of chapterWords(ch)) if (!(id in acquired)) acquired[id] = { from: '검사' };
+      for (const q of ch.quests) {
+        quests[q.id] = { stage: 'done', gathered: quests[q.id]?.gathered ?? [] };
+        if (q.kind === 'chase') smallGone[ch.id] = true;
+      }
+      hiddenFound[ch.id] = true;
+      revealed[ch.id] = true;
+      clearedChapters = addOnce(clearedChapters, ch.id);
+      if (ch.afterBoss && act.id < targetAct.id) seenScenes = addOnce(seenScenes, `${ch.id}:afterBoss`);
+    }
+    if (act.id < targetAct.id) {
+      clearedActs = addOnce(clearedActs, act.id);
+      for (const id of actWords(act)) askedWordIds = addOnce(askedWordIds, id);
+    }
+  }
+  const first = target.quests[0].id;
+  quests[first] = { stage: 'open', gathered: [] };
+  const { x, y } = startOf(target);
+  return {
+    ...state,
+    act: targetAct.id,
+    chapter: target.id,
+    pos: { x, y },
+    facing: 'down',
+    bag: [],
+    acquired,
+    quests,
+    hiddenFound,
+    revealed,
+    smallGone,
+    clearedChapters,
+    clearedActs,
+    askedWordIds,
+    seenScenes,
   };
 }
 

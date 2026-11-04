@@ -3,6 +3,7 @@
 // 불러오지 못한 그림은 그 장면 동안만 null로 두고, 다음 장면을 열 때(forgetFailed) 한 번 더 받아 본다.
 import { ASSETS } from '../../data/assets.js';
 import { actOfChapter } from '../../data/acts/index.js';
+import { nextChapterOf } from '../rules/game.js';
 
 const cache = new Map(); // path -> { img: HTMLImageElement|null, promise, failed }
 const listeners = new Set();
@@ -80,8 +81,9 @@ export function preloadChapter(chapterId, avatar = 'f') {
   try { act = actOfChapter(chapterId); } catch { return Promise.resolve(); }
   const i = act.chapters.findIndex((c) => c.id === chapterId);
   const now = Promise.all(chapterPaths(act, act.chapters[i], avatar).map(loadImage)).then(() => undefined);
-  const next = act.chapters[i + 1];
-  if (next) now.then(() => { chapterPaths(act, next, avatar).forEach(loadImage); });
+  // 막의 마지막 장이면 다음 막 첫 장을 미리 받는다.
+  const next = nextChapterOf(chapterId);
+  if (next) now.then(() => { chapterPaths(actOfChapter(next.id), next, avatar).forEach(loadImage); });
   return now;
 }
 

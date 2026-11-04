@@ -1,9 +1,8 @@
 import { createRouter } from './router.js';
 import { createStore } from './save.js';
-import { newGame, acquireWords, takeWords, actWords, chapterWords, enterNextChapter, chapterOf, setPos, fogOpen, bossGone } from './rules/game.js';
+import { newGame, acquireWords, takeWords, actWords, chapterWords, enterNextChapter, chapterOf, setPos, fogOpen, bossGone, fastForward } from './rules/game.js';
 import { actOfChapter } from '../data/acts/index.js';
 import { parseMap, isWalkable, reachable } from './explore/grid.js';
-import ACT1 from '../data/acts/act1.js';
 import { explore } from './scenes/explore.js';
 import { title } from './scenes/title.js';
 import { select } from './scenes/select.js';
@@ -96,17 +95,39 @@ if (new URLSearchParams(location.search).get('test') === '1') {
       state = got.state;
       router.show('dialogue', { script, words: got.fresh, from, next });
     },
-    // 필요한 낱말을 얻은 상태로 전투를 연다.
-    // review: 1-1 첫 부탁 낱말 2개 + 꼬마 안개 부탁 진행 중 / boss: 1막 낱말 10개 + 1-2 장
+    // 필요한 낱말을 얻은 상태로 전투를 연다(지금 막 기준).
+    // review: 지금 막에서 쫓기 부탁이 있는 첫 장으로 가서 그 앞 부탁들을 끝내고(낱말 얻음) 쫓기 부탁 진행 중 / boss: 그 막 낱말 10개 + 앞 장이면 뒷 장
     startBattle(mode, seed) {
-      const [first, chase] = ACT1.chapters[0].quests;
+      const act = actOfChapter(state.chapter);
       if (mode === 'boss') {
-        state = enterNextChapter(acquireWords(state, actWords(ACT1), '검사'), ACT1);
+        state = acquireWords(state, actWords(act), '검사');
+        if (state.chapter !== act.chapters[act.chapters.length - 1].id) state = enterNextChapter(state, act);
       } else {
-        state = acquireWords(state, first.words, '도담 할머니');
-        state = { ...state, quests: { ...state.quests, [first.id]: { stage: 'done', gathered: [] }, [chase.id]: { stage: 'active', gathered: [] } } };
+        const chaseChapter = act.chapters.find((c) => c.quests.some((q) => q.kind === 'chase'));
+        if (state.chapter !== chaseChapter.id) {
+          const { x, y } = parseMap(chaseChapter.map.rows).start;
+          state = { ...state, chapter: chaseChapter.id, pos: { x, y }, facing: 'down' };
+        }
+        const quests = { ...state.quests };
+        for (const ch of act.chapters) {
+          for (const q of ch.quests) {
+            if (q.kind === 'chase') {
+              quests[q.id] = { stage: 'active', gathered: [] };
+              break;
+            }
+            state = acquireWords(state, q.words, '검사');
+            quests[q.id] = { stage: 'done', gathered: [] };
+          }
+          if (ch.id === chaseChapter.id) break;
+        }
+        state = { ...state, quests };
       }
       router.show('battle', seed === undefined ? { mode } : { mode, seed });
+    },
+    // 그 장 앞의 모든 장을 끝낸 것으로 하고 그 장 시작에서 탐험을 연다(fastForward).
+    goChapter(chapterId) {
+      state = fastForward(state, chapterId);
+      router.show('explore');
     },
     // 상태의 일부를 바꾸고 탐험을 다시 연다(걸어가기 긴 상황을 빨리 만들 때). 바꾼 상태는 장면이 바뀔 때 저장된다.
     patchState(patch) {

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import ACT from '../data/acts/act1.js';
-import { newGame, chapterOf, chapterWords, acquireWords } from '../js/rules/game.js';
+import { newGame, chapterOf, chapterWords, acquireWords, fastForward } from '../js/rules/game.js';
 import { ACTS, actOfChapter } from '../data/acts/index.js';
 import {
   talkTo, inspect, winSmall, npcMarker, currentTask, hiddenGlow, questList,
@@ -458,5 +458,29 @@ test('fightGate boss: 이미 끝낸 막이면 막는다', () => {
   const s = { ...newGame({ nickname: '하늘', avatar: 'f' }), chapter: '1-2' };
   assert.deepEqual(fightGate(s, ch, 'boss'), { ok: true, message: null });
   assert.deepEqual(fightGate({ ...s, clearedActs: [1] }, ch, 'boss'),
-    { ok: false, message: '1막을 마쳤어요. 다음 막은 준비 중이에요.' });
+    { ok: false, message: '1막을 마쳤어요.' });
+});
+
+test('talkTo: 2막부터는 그 막 첫 부탁 전에도 알려 주는 인물의 chat이 숨은 낱말을 알려 준다', () => {
+  const ch = ACTS[1].chapters[0]; // 2-1, 문지기
+  const s = fastForward(newGame({ nickname: '하늘', avatar: 'f' }), '2-1');
+  assert.equal(inspect(s, ch, '9').words.length, 0); // 알려 주기 전 아치 문 조사: 낱말 없음
+  const r = talkTo(s, ch, 'guard');
+  assert.equal(r.event, 'reveal');
+  assert.equal(r.script, ch.npcs.find((n) => n.id === 'guard').chat);
+  assert.equal(r.state.revealed['2-1'], true);
+  assert.equal(hiddenGlow(r.state, ch), 'dim');
+  assert.deepEqual(inspect(r.state, ch, '9').words, ['들머리']);
+  // 다시 말하면 알려 주지 않고 그냥 이야기
+  const again = talkTo(r.state, ch, 'guard');
+  assert.equal(again.event, 'chat');
+  assert.equal(again.state, r.state);
+});
+
+test('talkTo: 1막 첫 부탁을 받기 전에는 chat만 하는 알려 주는 인물도 알려 주지 않는다', () => {
+  const ch = ACTS[1].chapters[0];
+  const s = fresh(); // q1 open: 주머니 전
+  const r = talkTo(s, ch, 'guard');
+  assert.equal(r.event, 'chat');
+  assert.deepEqual(r.state.revealed, {});
 });

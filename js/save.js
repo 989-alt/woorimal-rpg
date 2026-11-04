@@ -1,5 +1,5 @@
 // 저장소: 닉네임별 localStorage 저장. storage는 주입한다.
-import { ACTS } from '../data/acts/index.js';
+import { ACTS, actOfChapter } from '../data/acts/index.js';
 import { parseMap, isWalkable } from './explore/grid.js';
 import { fogOpen, bossGone } from './rules/game.js';
 const SAVE = 'malbit:save:';
@@ -37,9 +37,14 @@ function chapterById(id) {
 
 // 모양은 맞는 저장을 살펴본다. 없는 장이면 null(깨진 저장),
 // 서 있을 수 없는 자리면 그 장의 시작 자리(아래를 봄)로 고친다.
-function repair(state) {
-  const chapter = chapterById(state.chapter);
+function repair(saved) {
+  const chapter = chapterById(saved.chapter);
   if (!chapter) return null;
+  // 1막만 있던 옛 저장 등: 막은 장이 정하고, 새 필드(seenScenes·revealed)는 없으면 빈 것으로 맞춘다.
+  let state = saved;
+  if (state.act !== actOfChapter(chapter.id).id) state = { ...state, act: actOfChapter(chapter.id).id };
+  if (!typeOk(state.seenScenes, 'array')) state = { ...state, seenScenes: [] };
+  if (!typeOk(state.revealed, 'object')) state = { ...state, revealed: {} };
   const map = parseMap(chapter.map.rows);
   const { x, y } = state.pos;
   const opts = { fogOpen: fogOpen(state, chapter), smallMonsterGone: !!state.smallGone[chapter.id], bossGone: bossGone(state, chapter) };

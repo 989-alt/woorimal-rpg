@@ -2,10 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import ACT from '../data/acts/act1.js';
 import { parseMap } from '../js/explore/grid.js';
+import { ACTS } from '../data/acts/index.js';
 import {
   newGame, chapterOf, chapterWords, actWords, acquireWords, takeWords, acquiredCount,
   fogOpen, chapterComplete, enterNextChapter, finishAct, setPos, markTip, extractWords, wordMark,
-  exitOpen, exitBlockedText, bossGone,
+  exitOpen, exitBlockedText, bossGone, enterNextAct, nextChapterOf, fastForward,
 } from '../js/rules/game.js';
 
 const deepFreeze = (o) => {
@@ -24,9 +25,9 @@ test('새 게임: 1-1 시작 칸, q1만 open', () => {
   assert.equal(s.chapter, '1-1');
   assert.deepEqual(s.pos, start('1-1'));
   assert.equal(s.facing, 'down');
-  assert.deepEqual(Object.keys(s.quests).sort(), ['q1', 'q2', 'q3', 'q4']);
+  assert.equal(Object.keys(s.quests).length, 20);
   assert.equal(s.quests.q1.stage, 'open');
-  for (const q of ['q2', 'q3', 'q4']) assert.equal(s.quests[q].stage, 'locked');
+  for (let i = 2; i <= 20; i++) assert.equal(s.quests[`q${i}`].stage, 'locked');
   assert.deepEqual(s.quests.q1.gathered, []);
   assert.deepEqual(s.askedWordIds, []);
 });
@@ -168,4 +169,78 @@ test('bossGone: 막을 마치면 보스는 사라진다', () => {
   assert.equal(bossGone({ ...fresh(), clearedActs: [1] }, ch2), true);
   const { clearedActs, ...old } = fresh();
   assert.equal(bossGone(old, ch2), false);
+});
+
+test('newGame: 1-1에서 q1만 open, q2~q20은 locked, seenScenes 빈 배열', () => {
+  const s = newGame({ nickname: '하늘', avatar: 'f' });
+  assert.equal(Object.keys(s.quests).length, 20);
+  assert.equal(s.quests.q1.stage, 'open');
+  assert.equal(s.quests.q20.stage, 'locked');
+  assert.deepEqual(s.seenScenes, []);
+});
+
+test('enterNextAct: 막을 마쳐야 넘어가고, 다음 막 첫 장 S에서 첫 부탁 open', () => {
+  const at12 = fastForward(newGame({ nickname: '하늘', avatar: 'f' }), '1-2');
+  assert.throws(() => enterNextAct(at12), /마치지/);
+  const n = enterNextAct({ ...at12, clearedActs: [1] });
+  assert.equal(n.act, 2); assert.equal(n.chapter, '2-1'); assert.equal(n.facing, 'down');
+  assert.deepEqual(n.pos, parseMap(ACTS[1].chapters[0].map.rows).start);
+  assert.equal(n.quests.q5.stage, 'open');
+  assert.ok(n.clearedChapters.includes('1-2'));
+  const D = { stage: 'done', gathered: [] };
+  const old = { ...at12, clearedActs: [1], quests: { q1: D, q2: D, q3: D, q4: D } }; // 1막만 있던 옛 저장
+  assert.equal(enterNextAct(old).quests.q5.stage, 'open');
+  const end = { ...fastForward(at12, '5-2'), clearedActs: [1, 2, 3, 4, 5] };
+  assert.throws(() => enterNextAct(end), /마지막/);
+});
+
+test('enterNextAct: 받은 상태를 바꾸지 않고, 이미 받은 부탁은 그대로 둔다', () => {
+  const at12 = deepFreeze({ ...fastForward(newGame({ nickname: '하늘', avatar: 'f' }), '1-2'), clearedActs: [1] });
+  const n = enterNextAct(at12);
+  assert.notEqual(n, at12);
+  const active = { ...at12, quests: { ...at12.quests, q5: { stage: 'active', gathered: [] } } };
+  assert.equal(enterNextAct(active).quests.q5.stage, 'active');
+});
+
+test('nextChapterOf: 같은 막 다음 장, 막 끝이면 다음 막 첫 장, 끝이면 null', () => {
+  assert.equal(nextChapterOf('2-1').id, '2-2');
+  assert.equal(nextChapterOf('1-2').id, '2-1');
+  assert.equal(nextChapterOf('5-2'), null);
+});
+
+test('fastForward 3-2: 1·2막과 3-1을 마친 상태, q11 open, 2-2 보스 뒤 장면은 본 것', () => {
+  const s = fastForward(newGame({ nickname: '하늘', avatar: 'f' }), '3-2');
+  assert.equal(s.act, 3); assert.equal(s.chapter, '3-2'); assert.deepEqual(s.clearedActs, [1, 2]);
+  assert.equal(s.quests.q10.stage, 'done'); assert.equal(s.quests.q11.stage, 'open');
+  assert.ok('함초롬하다' in s.acquired && !('윤슬' in s.acquired));
+  assert.ok(s.seenScenes.includes('2-2:afterBoss'));
+  assert.deepEqual(s.pos, parseMap(ACTS[2].chapters[1].map.rows).start);
+  assert.deepEqual(s.bag, []);
+  assert.equal(s.facing, 'down');
+});
+
+test('fastForward: 앞 장의 숨은 낱말·알려 주기·쫓기 기록, 앞 막의 출제 기록', () => {
+  const s = fastForward(newGame({ nickname: '하늘', avatar: 'f' }), '2-2');
+  assert.equal(s.hiddenFound['1-1'], true); assert.equal(s.hiddenFound['2-1'], true);
+  assert.equal(s.revealed['1-2'], true); assert.equal(s.revealed['2-1'], true);
+  assert.equal(s.smallGone['1-1'], true); assert.equal(s.smallGone['2-1'], undefined);
+  assert.deepEqual(s.clearedChapters, ['1-1', '1-2', '2-1']);
+  assert.deepEqual(s.clearedActs, [1]);
+  assert.deepEqual(s.askedWordIds.sort(), [...actWords(ACT)].sort());
+  assert.equal(s.quests.q5.stage, 'done'); assert.equal(s.quests.q7.stage, 'open');
+  assert.equal(s.acquired['어스름'].from, '검사');
+  assert.deepEqual(s.seenScenes, []); // 1막 뒷 장에는 보스 뒤 장면이 없다
+  // 받은 상태를 바꾸지 않는다
+  const base = deepFreeze(fresh());
+  fastForward(base, '5-2');
+});
+
+test('막마다 뒷 장 출구는 보스를 이긴 뒤에만 열리고, 닫혔을 때 글은 그림자 글', () => {
+  for (const act of ACTS.slice(1)) {
+    const last = act.chapters[1];
+    const s = fastForward(newGame({ nickname: '하늘', avatar: 'f' }), last.id);
+    assert.equal(exitOpen(s, last), false, last.id);
+    assert.equal(exitBlockedText(s, last), '길을 막은 그림자를 먼저 물리치자');
+    assert.equal(exitOpen({ ...s, clearedActs: [...s.clearedActs, act.id] }, last), true, last.id);
+  }
 });
