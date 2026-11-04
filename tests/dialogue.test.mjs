@@ -55,10 +55,13 @@ test('말하는 사람: 주인공은 닉네임과 쪽빛, 해설은 없음', () 
   assert.equal(resolveSpeaker({ who: 'narration', text: 'a' }, NPCS, '', '하늘'), null);
 });
 
-test('새 낱말: params.words에 있고 아직 못 얻은 것만, 줄 안 차례대로', () => {
-  const text = '[[어스름]]과 [[짬]]과 [[해거름]]';
-  assert.deepEqual(newWordsOf(text, ['어스름', '해거름', '짬'], { 짬: {} }), ['어스름', '해거름']);
-  assert.deepEqual(newWordsOf(text, [], {}), []);
+test('카드 낱말: params.words에 있고 이 대화에서 아직 카드를 보이지 않은 것만, 줄 안 차례대로', () => {
+  const text = '[[어스름]]과 [[짬]]과 [[해거름]]과 [[어스름]]';
+  assert.deepEqual(newWordsOf(text, ['어스름', '해거름', '짬'], new Set(['짬'])), ['어스름', '해거름']);
+  assert.deepEqual(newWordsOf(text, ['어스름', '해거름', '짬']), ['어스름', '짬', '해거름']);
+  // params.words에 없는 [[ ]](앞 대화에서 얻은 낱말 등)는 띠만
+  assert.deepEqual(newWordsOf(text, ['해거름'], new Set()), ['해거름']);
+  assert.deepEqual(newWordsOf(text, [], new Set()), []);
 });
 
 import { keyConfirmAllowed, CARD_GUARD_MS } from '../js/ui/meaning-card.js';

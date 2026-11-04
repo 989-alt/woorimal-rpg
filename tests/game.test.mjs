@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import ACT from '../data/acts/act1.js';
 import { parseMap } from '../js/explore/grid.js';
 import {
-  newGame, chapterOf, chapterWords, actWords, acquireWords, acquiredCount,
+  newGame, chapterOf, chapterWords, actWords, acquireWords, takeWords, acquiredCount,
   fogOpen, chapterComplete, enterNextChapter, finishAct, setPos, markTip, extractWords,
 } from '../js/rules/game.js';
 
@@ -107,4 +107,14 @@ test('상태 함수는 원래 상태를 바꾸지 않는다', () => {
     finishAct(deepFreeze(n), act, actWords(act));
     acquiredCount(s, ch); fogOpen(s, ch); chapterComplete(s, ch);
   });
+});
+
+test('takeWords: 대화 전에 한꺼번에 얻고, 이번에 새로 얻은 낱말만 fresh로 돌려준다', () => {
+  const s0 = deepFreeze(acquireWords(fresh(), ['어스름'], '앞'));
+  const r = takeWords(s0, ['어스름', '아침나절', '아침나절'], '도담 할머니');
+  assert.deepEqual(r.fresh, ['아침나절']);
+  assert.deepEqual(r.state.acquired, { 어스름: { from: '앞' }, 아침나절: { from: '도담 할머니' } });
+  const none = takeWords(s0, [], 'x');
+  assert.equal(none.state, s0);
+  assert.deepEqual(none.fresh, []);
 });

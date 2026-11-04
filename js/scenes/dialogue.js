@@ -1,7 +1,9 @@
-// 대화 장면: 타자 효과, 강조 낱말, 뜻풀이 카드, 낱말 습득.
+// 대화 장면: 타자 효과, 강조 낱말, 뜻풀이 카드.
+// 낱말 습득은 대화를 열기 전에 탐험 장면이 이미 해 둔다(새로 고침해도 낱말을 잃지 않도록).
+// 여기서는 params.words의 낱말마다 뜻풀이 카드를 이 대화에서 한 번씩 보여 주기만 한다.
 import { actOfChapter } from '../../data/acts/index.js';
 import { formatLine } from '../rules/josa.js';
-import { acquireWords, extractWords, markTip } from '../rules/game.js';
+import { extractWords, markTip } from '../rules/game.js';
 import { blockColor, initial, labelBlockEl } from '../ui/placeholder.js';
 import { openMeaningCard } from '../ui/meaning-card.js';
 
@@ -59,9 +61,10 @@ export function resolveSpeaker(line, npcs, from, nickname) {
   return { side: 'npc', name: from, color: blockColor(from) };
 }
 
-// 이 줄에서 새로 얻을 낱말(줄 안 차례, 중복 없음)
-export function newWordsOf(rawText, words, acquired) {
-  return [...new Set(extractWords(rawText))].filter((w) => words.includes(w) && !(w in acquired));
+// 이 줄에서 카드를 보여 줄 낱말(줄 안 차례, 중복 없음): params.words에 있고 이 대화에서 아직 카드를 보이지 않은 것.
+// 이미 얻었는지(state.acquired)는 보지 않는다. 탐험 장면이 대화를 열기 전에 낱말을 얻어 두기 때문이다.
+export function newWordsOf(rawText, words, shown = new Set()) {
+  return [...new Set(extractWords(rawText))].filter((w) => words.includes(w) && !shown.has(w));
 }
 
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -107,6 +110,7 @@ export const dialogue = {
     let spans = [];
     let tipEl = null;
     let lastNpc = null;
+    const shownCards = new Set(); // 이 대화에서 이미 카드를 보인 낱말
 
     const npcFor = (i) => {
       for (let j = i; j >= 0; j--) if (script[j].who === 'npc') return resolveSpeaker(script[j], npcs, from, nickname);
@@ -169,7 +173,7 @@ export const dialogue = {
         heroBust.classList.toggle('listener', sp.side !== 'hero');
         npcBust.classList.toggle('listener', sp.side !== 'npc');
       }
-      for (const w of newWordsOf(raw, words, ctx.getState()?.acquired ?? {})) {
+      for (const w of newWordsOf(raw, words, shownCards)) {
         const s = spans.find((x) => x.hl?.dataset.word === w);
         s?.hl.classList.add('new');
       }
@@ -193,7 +197,7 @@ export const dialogue = {
     function sentenceShown() {
       if (busy) return;
       const raw = formatLine(script[index].text, nickname);
-      const pending = newWordsOf(raw, words, ctx.getState()?.acquired ?? {});
+      const pending = newWordsOf(raw, words, shownCards);
       if (pending.length === 0) { arrow.hidden = false; return; }
       busy = true;
       tipEl?.remove();
@@ -204,13 +208,10 @@ export const dialogue = {
         if (!w) { busy = false; arrow.hidden = false; return; }
         card = openMeaningCard(scene, w, () => {
           card = null;
+          shownCards.add(w);
           spans.find((x) => x.hl?.dataset.word === w)?.hl.classList.remove('new');
           const st = ctx.getState();
-          if (st) {
-            const after = acquireWords(st, [w], from);
-            ctx.setState(after);
-            ctx.store?.save(after); // 낱말을 얻은 순간은 저장 자리
-          }
+          if (st) ctx.store?.save(st); // 안내를 본 표시(seenTips)까지 남긴다. 낱말은 이미 저장되어 있다.
           next();
         });
       };

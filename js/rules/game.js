@@ -57,6 +57,13 @@ export function acquireWords(state, wordIds, from) {
   return { ...state, acquired };
 }
 
+// 대화를 열기 전에 낱말을 한꺼번에 얻는다. fresh는 이번에 새로 얻은 낱말(대화가 카드를 보여 줄 낱말)이다.
+// 부탁 완료·숨은 낱말 찾음과 낱말 습득이 한 상태에 같이 들어가므로, 대화 도중 창을 닫아도 낱말을 잃지 않는다.
+export function takeWords(state, wordIds, from) {
+  const fresh = wordIds.filter((id, i) => !(id in state.acquired) && wordIds.indexOf(id) === i);
+  return { state: acquireWords(state, fresh, from), fresh };
+}
+
 export function acquiredCount(state, chapter) {
   return chapterWords(chapter).filter((id) => id in state.acquired).length;
 }

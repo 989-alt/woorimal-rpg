@@ -188,6 +188,29 @@ test('deliver: 받으면 가방에 편지, 받는 인물에게 말 걸면 완료
   assert.equal(talkTo(lost, ch2, 'gate').state.quests.q4.stage, 'active');
 });
 
+test('deliver: 편지가 가방에서 사라졌으면 맡긴 인물이 다시 준다(부탁이 끝날 수 있게)', () => {
+  const s = talkTo(readyForDeliver(), ch2, 'laundry').state;
+  const lost = deepFreeze({ ...s, bag: [] });
+  const r = talkTo(lost, ch2, 'laundry');
+  assert.equal(r.event, 'waiting');
+  assert.deepEqual(r.state.bag, ['letter']);
+  assert.equal(r.state.quests.q4.stage, 'active');
+  assert.deepEqual(r.script.slice(0, ch2.quests[1].waiting.length), ch2.quests[1].waiting);
+  assert.equal(r.script.at(-1).text, '편지를 다시 받아 가방에 넣었다.');
+  assert.deepEqual(r.words, []);
+  // 다시 받은 편지로 부탁을 끝낼 수 있다
+  assert.equal(talkTo(r.state, ch2, 'gate').event, 'done');
+  // 편지가 있으면 그냥 기다리는 말만, 가방은 그대로
+  const again = talkTo(r.state, ch2, 'laundry');
+  assert.deepEqual(again.script, ch2.quests[1].waiting);
+  assert.deepEqual(again.state.bag, ['letter']);
+  // 가방이 꽉 찼으면 다시 줄 수 없다는 안내만
+  const full = { ...lost, bag: ['a', 'b', 'c'] };
+  const f = talkTo(full, ch2, 'laundry');
+  assert.deepEqual(f.state.bag, ['a', 'b', 'c']);
+  assert.equal(f.script[0].text, '가방이 가득 찼어.');
+});
+
 test('chase: winSmall 뒤 보고하면 완료', () => {
   let s = afterQ1();
   assert.equal(talkTo(s, ch1, 'daon').event, 'offer');

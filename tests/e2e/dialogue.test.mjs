@@ -27,10 +27,14 @@ async function openNewGame() {
 const doneScript = ACT1.chapters[0].quests[0].done;
 const press = async (page) => { await page.keyboard.press('Space'); await page.waitForTimeout(260); };
 
-test('끝난 부탁 대사: 낱말 카드가 뜨고 확인하면 낱말을 얻고 저장된다', async () => {
+test('끝난 부탁 대사: 대화를 열 때 이미 낱말을 얻어 저장했고, 낱말 카드가 한 번씩 뜬다', async () => {
   const { page, errors } = await openNewGame();
   await page.evaluate(([s]) => window.__test.dialogue(s, ['어스름', '아침나절'], '도담 할머니'), [doneScript]);
   await page.waitForSelector('[data-scene="dialogue"]');
+  // 대화를 열기 전에 낱말을 얻고 저장한다(대화 도중 창을 닫아도 잃지 않는다).
+  let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('malbit:save:하늘')));
+  assert.deepEqual(saved.acquired['어스름'], { from: '도담 할머니' });
+  assert.deepEqual(saved.acquired['아침나절'], { from: '도담 할머니' });
   // 줄 1(주인공), 줄 2(할머니): 이름표와 말하는 쪽
   assert.equal(await page.locator('.name-tag').innerText(), '하늘');
   await press(page); // 문장 다 보이기
@@ -49,7 +53,6 @@ test('끝난 부탁 대사: 낱말 카드가 뜨고 확인하면 낱말을 얻�
   // 처음 보는 낱말: 안내
   let s = await page.evaluate(() => window.__test.state());
   assert.ok(s.seenTips.includes('tip-word'));
-  assert.equal('어스름' in s.acquired, false, '확인 전에는 얻지 않는다');
   // 카드가 열린 동안 상자 누름은 무시
   await page.locator('.dialogue-box').click({ force: true });
   assert.equal(await page.locator('.word-card').count(), 1);
@@ -62,10 +65,15 @@ test('끝난 부탁 대사: 낱말 카드가 뜨고 확인하면 낱말을 얻�
   await page.waitForSelector('.word-card', { state: 'detached' });
   // 얻은 뒤에는 '새 낱말' 표시가 사라져, 그 낱말을 눌러도 상자 누름(넘어가기)을 막지 않는다
   assert.equal(await page.locator('.hl.new').count(), 0);
-  s = await page.evaluate(() => window.__test.state());
-  assert.deepEqual(s.acquired['어스름'], { from: '도담 할머니' });
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('malbit:save:하늘')));
-  assert.ok('어스름' in saved.acquired, '낱말을 얻는 즉시 저장');
+  saved = await page.evaluate(() => JSON.parse(localStorage.getItem('malbit:save:하늘')));
+  assert.ok(saved.seenTips.includes('tip-word'), '카드를 확인하면 안내 본 표시도 저장');
+  // 다음 카드(아침나절)도 이 대화에서 한 번 뜬다
+  let next = 0;
+  for (let i = 0; i < 40 && !next; i++) {
+    if (await page.locator('.word-card').count()) next++;
+    else { await page.keyboard.press('Space'); await page.waitForTimeout(250); }
+  }
+  assert.match(await page.locator('.word-card-word').innerText(), /아침나절/);
   await finishDialogue(page);
   s = await page.evaluate(() => window.__test.state());
   assert.ok('아침나절' in s.acquired);

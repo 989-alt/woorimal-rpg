@@ -5,7 +5,7 @@ import { computeScale, BASE_W, BASE_H } from '../explore/scale.js';
 import { bindInput, createTouchControls, isCoarsePointer } from '../explore/input.js';
 import { drawExplore, cameraFor } from '../explore/render.js';
 import { createHud, createToast, fogMessage, HUD_HEIGHT } from '../explore/hud.js';
-import { chapterOf, chapterComplete, fogOpen, setPos, markTip } from '../rules/game.js';
+import { chapterOf, chapterComplete, fogOpen, setPos, markTip, takeWords } from '../rules/game.js';
 import { talkTo, inspect, fightGate } from '../rules/quests.js';
 import { openCodex } from './codex.js';
 import { openTasks } from './quests.js';
@@ -133,18 +133,20 @@ export const explore = {
         const npc = chapter.npcs.find((n) => n.slot === target.slot);
         if (!npc) return;
         const r = talkTo(state, chapter, npc.id);
-        update(npc.id === firstQuest.giver ? markTip(r.state, TIP_FIRST_NPC) : r.state);
-        if (r.script.length > 0) go('dialogue', { script: r.script, words: r.words, from: npc.name });
+        const got = takeWords(r.state, r.words, npc.name);
+        update(npc.id === firstQuest.giver ? markTip(got.state, TIP_FIRST_NPC) : got.state);
+        if (r.script.length > 0) go('dialogue', { script: r.script, words: got.fresh, from: npc.name });
       } else if (target.kind === 'object') {
         const obj = chapter.objects.find((o) => o.slot === target.slot);
         if (!obj) return;
         const r = inspect(state, chapter, obj.slot);
-        update(r.state);
+        const got = takeWords(r.state, r.words, obj.name);
+        update(got.state);
         if (r.script.length === 0) return;
         if (r.script.length === 1 && r.words.length === 0 && r.script[0].who === 'narration') {
           toast.show(formatLine(r.script[0].text, state.nickname));
         } else {
-          go('dialogue', { script: r.script, words: r.words, from: obj.name });
+          go('dialogue', { script: r.script, words: got.fresh, from: obj.name });
         }
       } else if (target.kind === 'small' || target.kind === 'boss') {
         const gate = fightGate(state, chapter, target.kind);

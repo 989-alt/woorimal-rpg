@@ -1,5 +1,5 @@
 // 부탁 규칙: 말 걸기, 물건 조사, 가방, 숨은 낱말, 인물 표시, 현재 할 일. 모두 순수 함수.
-// 낱말 습득 자체는 화면이 acquireWords로 한다. 여기서는 바뀐 상태와 줄 낱말만 돌려준다.
+// 낱말 습득 자체는 탐험 화면이 대화를 열기 전에 takeWords로 한다. 여기서는 바뀐 상태와 줄 낱말만 돌려준다.
 import { actOfChapter } from '../../data/acts/index.js';
 import { chapterComplete } from './game.js';
 import { attachJosa } from './josa.js';
@@ -60,6 +60,16 @@ export function talkTo(state, chapter, npcId) {
     return { state: completeQuest(state, chapter, quest), script: quest.done, event: 'done', words: quest.words };
   }
   if (stage === 'active') {
+    // 전하기 물건이 가방에 없으면(옛 저장 등) 맡긴 인물이 다시 준다. 그래야 부탁을 끝낼 수 있다.
+    if (quest.kind === 'deliver' && !state.bag.includes(quest.item.id)) {
+      if (bagFull(state)) return { state, script: note(BAG_FULL), event: 'chat', words: [] };
+      return {
+        state: { ...state, bag: [...state.bag, quest.item.id] },
+        script: [...quest.waiting, ...note(`${attachJosa(quest.item.name, '을')} 다시 받아 가방에 넣었다.`)],
+        event: 'waiting',
+        words: [],
+      };
+    }
     return { state, script: quest.waiting, event: 'waiting', words: [] };
   }
   // open: 부탁을 받는다. 전하기는 물건을 가방에 받는다.
@@ -159,7 +169,7 @@ export function currentTask(state, chapter) {
   const doing = chapter.quests.find((q) => ['active', 'open', 'ready'].includes(stageOf(state, q)));
   if (doing) return doing.title;
   if (!hiddenFound(state, chapter)) return '숨은 낱말을 찾아라';
-  // 낱말 5개가 다 모이기 전(화면이 낱말을 등록하는 사이)에는 마지막 부탁 제목을 그대로 둔다.
+  // 낱말 5개가 다 모이기 전(옛 저장 등)에는 마지막 부탁 제목을 그대로 둔다.
   if (!chapterComplete(state, chapter)) return chapter.quests[chapter.quests.length - 1].title;
   const { chapters } = actOfChapter(chapter.id);
   return chapter.id === chapters[chapters.length - 1].id ? '그림자를 물리쳐라' : '다음 장으로';

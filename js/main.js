@@ -1,6 +1,6 @@
 import { createRouter } from './router.js';
 import { createStore } from './save.js';
-import { newGame, acquireWords, actWords, enterNextChapter, chapterOf, setPos, fogOpen } from './rules/game.js';
+import { newGame, acquireWords, takeWords, actWords, enterNextChapter, chapterOf, setPos, fogOpen } from './rules/game.js';
 import { actOfChapter } from '../data/acts/index.js';
 import { parseMap, isWalkable, reachable } from './explore/grid.js';
 import ACT1 from '../data/acts/act1.js';
@@ -82,7 +82,12 @@ if (new URLSearchParams(location.search).get('test') === '1') {
       state = acquireWords(state, wordIds, from);
       router.show('explore');
     },
-    dialogue: (script, words = [], from = '', next) => router.show('dialogue', { script, words, from, next }),
+    // 탐험 장면처럼 낱말을 먼저 얻고 대화를 연다. 이미 얻은 낱말은 카드 없이 띠만 보인다.
+    dialogue(script, words = [], from = '', next) {
+      const got = takeWords(state, words, from);
+      state = got.state;
+      router.show('dialogue', { script, words: got.fresh, from, next });
+    },
     // 필요한 낱말을 얻은 상태로 전투를 연다.
     // review: 1-1 첫 부탁 낱말 2개 + 꼬마 안개 부탁 진행 중 / boss: 1막 낱말 10개 + 1-2 장
     startBattle(mode, seed) {
