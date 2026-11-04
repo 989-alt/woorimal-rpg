@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { cameraFor, inViewWorld, questObjectSlots } from '../js/explore/render.js';
 import { parseMap } from '../js/explore/grid.js';
-import { newGame, chapterOf } from '../js/rules/game.js';
+import { newGame, chapterOf, chapterWords } from '../js/rules/game.js';
 import { talkTo } from '../js/rules/quests.js';
 import ACT1 from '../data/acts/act1.js';
 
@@ -181,4 +181,95 @@ test('animKey: 깜박이는 인물 표시는 화면 안에서 250ms마다 바뀌
   assert.equal(at(0, 'daon'), at(100, 'daon'));
   assert.equal(at(0, null), at(300, null));
   assert.equal(at(0, null), '');
+});
+
+// ── 열린 출구 표지 ──
+const completeChapter = (ch, extra = {}) => {
+  const s = newGame({ nickname: '하늘', avatar: 'f' });
+  const acquired = {};
+  for (const w of chapterWords(ch)) acquired[w] = { from: 'x' };
+  return { ...s, acquired, ...extra };
+};
+
+test('exitStep: 200ms 단계 8개가 한 바퀴(1.6초)', async () => {
+  const { exitStep, EXIT_STEP_MS, EXIT_STEPS } = await import('../js/explore/render.js');
+  assert.equal(EXIT_STEP_MS, 200);
+  assert.equal(EXIT_STEPS, 8);
+  assert.deepEqual([0, 199, 200, 1399, 1400, 1599, 1600].map(exitStep), [0, 0, 1, 6, 7, 7, 0]);
+});
+
+test('animKey: 열린 출구가 화면 안이면 단계마다 바뀌고, 닫혀 있거나 화면 밖이거나 움직임 줄이기면 그대로다', async () => {
+  const { animKey } = await import('../js/explore/render.js');
+  const ch = chapterOf(ACT1, '1-1');
+  const map = parseMap(ch.map.rows);
+  const open = { ...completeChapter(ch, { hiddenFound: { '1-1': true } }), pos: { x: ch.exit.x, y: ch.exit.y + 3 } };
+  const at = (state, time, extra = {}) => animKey({ map, state, chapter: ch, camera: cameraFor(map, state.pos), time, ...extra });
+  assert.notEqual(at(open, 0), at(open, 400));
+  assert.equal(at(open, 0), at(open, 150));
+  assert.match(at(open, 0), /x0/);
+  assert.equal(at(open, 0, { still: true }), at(open, 400, { still: true }));
+  // 낱말이 모자라 닫혀 있으면 표지가 없다
+  const closed = { ...open, acquired: {} };
+  assert.equal(at(closed, 0), at(closed, 400));
+  // 출구가 화면 밖
+  assert.equal(at(open, 0, { camera: { x: 0, y: 200 }, view: { w: 100, h: 50 } }), at(open, 400, { camera: { x: 0, y: 200 }, view: { w: 100, h: 50 } }));
+});
+
+// 그리기 호출과 색 지정을 기록하는 가짜 캔버스
+function recordingCtx() {
+  const fills = [];
+  const strokes = [];
+  const noop = () => {};
+  const base = {
+    createRadialGradient: () => ({ addColorStop: noop }),
+  };
+  const ctx = new Proxy(base, {
+    get: (t, k) => (k in t ? t[k] : noop),
+    set: (t, k, v) => {
+      if (k === 'strokeStyle') strokes.push(v);
+      if (k === 'fillStyle') fills.push(v);
+      t[k] = v;
+      return true;
+    },
+  });
+  return { ctx, fills, strokes };
+}
+
+test('drawExplore: 출구 표지는 열렸을 때만 놋쇠·한지색으로 그린다(낱말 금빛은 쓰지 않는다)', async () => {
+  const { drawExplore } = await import('../js/explore/render.js');
+  const ch = chapterOf(ACT1, '1-1');
+  const map = parseMap(ch.map.rows);
+  const draw = (state, extra = {}) => {
+    const rec = recordingCtx();
+    drawExplore(rec.ctx, { map, state, chapter: ch, camera: cameraFor(map, state.pos), time: 400, ...extra });
+    return rec;
+  };
+  const open = { ...completeChapter(ch, { hiddenFound: { '1-1': true } }), pos: { x: ch.exit.x, y: ch.exit.y + 3 } };
+  const a = draw(open);
+  assert.ok(a.strokes.includes('#C9963F'), '놋쇠색 화살표');
+  assert.ok(a.strokes.includes('#8A5E2A') && a.strokes.includes('#FBF5E6'));
+  assert.ok(![...a.fills, ...a.strokes].some((c) => String(c).toUpperCase() === '#F2C14E'), '금빛은 낱말에만');
+  const closed = draw({ ...open, acquired: {} });
+  assert.ok(!closed.strokes.includes('#C9963F'), '닫힌 출구에는 표지가 없다');
+  // 움직임 줄이기에서도 그려지고(깜박이지 않을 뿐), 네 방향 모두 오류 없이 그려진다
+  assert.ok(draw(open, { still: true }).strokes.includes('#C9963F'));
+  for (const dir of ['up', 'down', 'left', 'right']) {
+    const rec = recordingCtx();
+    const withDir = { ...ch, exit: { ...ch.exit, dir } };
+    assert.doesNotThrow(() => drawExplore(rec.ctx, { map, state: open, chapter: withDir, camera: cameraFor(map, open.pos), time: 0 }));
+  }
+});
+
+test('drawExplore: 막 보스를 이기면 보스 자리에는 아무것도 그리지 않는다', async () => {
+  const { drawExplore } = await import('../js/explore/render.js');
+  const ch = chapterOf(ACT1, '1-2');
+  const map = parseMap(ch.map.rows);
+  const base = { ...newGame({ nickname: '하늘', avatar: 'f' }), chapter: '1-2', pos: { x: ch.exit.x, y: ch.exit.y + 2 } };
+  const drawsBoss = (state) => { // 그림이 없으면 보스는 짙은 잿빛(#5E6266) 원으로 그려진다
+    const rec = recordingCtx();
+    drawExplore(rec.ctx, { map, state, chapter: ch, camera: cameraFor(map, state.pos), time: 0 });
+    return rec.fills.includes('#5E6266');
+  };
+  assert.equal(drawsBoss(base), true);
+  assert.equal(drawsBoss({ ...base, clearedActs: [1] }), false);
 });

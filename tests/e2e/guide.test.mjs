@@ -152,6 +152,7 @@ test('할 일 두루마리와 할 일 창(Q)은 늘 지금 할 일 한 가지를
 async function atJar(page) {
   await talk(page, 'dodam'); await finishDialogue(page);
   await talk(page, '우물'); await page.waitForSelector('.toast:not([hidden])');
+  await talk(page, 'gardener'); await finishDialogue(page); // 텃밭 아저씨가 알려 준 뒤에야 장독대가 반짝인다
   await page.evaluate(() => window.__test.teleportTo('장독대'));
   await page.waitForSelector('[data-scene="explore"]');
   await page.waitForLoadState('networkidle');

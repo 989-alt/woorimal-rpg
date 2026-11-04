@@ -7,7 +7,7 @@ import { drawExplore, cameraFor, animKey, inViewWorld } from '../explore/render.
 import { nextGlide, drawnPos, glideEnd } from '../explore/motion.js';
 import { onImageLoaded, preloadChapter } from '../ui/images.js';
 import { createHud, createToast, fogMessage, HUD_INSET } from '../explore/hud.js';
-import { chapterOf, chapterComplete, fogOpen, setPos, markTip, takeWords } from '../rules/game.js';
+import { chapterOf, fogOpen, bossGone, exitOpen, exitBlockedText, setPos, markTip, takeWords } from '../rules/game.js';
 import { talkTo, inspect, fightGate } from '../rules/quests.js';
 import { openCodex } from './codex.js';
 import { openTasks } from './quests.js';
@@ -32,13 +32,9 @@ export const explore = {
     el.dataset.scene = 'explore';
     root.appendChild(el);
 
-    // 앞 장의 낱말을 다 모았으면(대화에서 돌아온 때 등) 장 클리어로 넘어간다.
+    // 낱말을 다 모았거나 막 보스를 이겨도 저절로 넘어가지 않는다. 열린 출구 칸으로 걸어 들어서야 장·막 클리어가 열린다.
+    // (옛 저장도 마찬가지로 탐험에 세운다.)
     const isLast = actData.chapters[actData.chapters.length - 1].id === chapter.id;
-    if (!isLast && chapterComplete(state, chapter)) {
-      leaving = true;
-      queueMicrotask(() => { if (el.isConnected) ctx.router.show('clear', { kind: 'chapter' }); });
-      return () => el.remove();
-    }
 
     const go = (name, routeParams) => {
       if (leaving) return;
@@ -134,10 +130,12 @@ export const explore = {
       }
       if (goal.kind === 'fight') return state.smallGone?.[chapter.id] ? null : map.smallMonster;
       if (goal.kind === 'boss') return map.boss;
+      if (goal.kind === 'exit') return chapter.exit ?? null;
       return null;
     }
-    // 이긴 직후: 돌아가 알리라는 한마디와 깜박이는 표시
+    // 이긴 직후: 돌아가 알리라는 한마디와 깜박이는 표시. 막 보스를 이겼으면 길 끝(출구)으로 가 보라는 한마디.
     function wonGuide() {
+      if (goal.kind === 'exit') { sayGuide(GUIDE.WON, chapter.exit.won ?? goal.text, GUIDE_MS.WON); return; }
       if (goal.kind !== 'talk') return;
       flashGiver();
       sayGuide(GUIDE.WON, goal.text, GUIDE_MS.WON);
@@ -283,7 +281,7 @@ export const explore = {
     let first = true;
     raf = requestAnimationFrame(frame);
 
-    const opts = () => ({ fogOpen: fogOpen(state, chapter), smallMonsterGone: !!state.smallGone?.[chapter.id] });
+    const opts = () => ({ fogOpen: fogOpen(state, chapter), smallMonsterGone: !!state.smallGone?.[chapter.id], bossGone: bossGone(state, chapter) });
 
     function move(dir) {
       if (leaving || overlay) return;
@@ -293,7 +291,16 @@ export const explore = {
       const tooSoon = moved && leavingTooSoon(state, chapter, state.pos, r.pos, map);
       hints.done('move');
       guideOnMove();
-      update(setPos(state, r.pos, r.facing));
+      const next = setPos(state, r.pos, r.facing);
+      // 출구 칸에 들어섰을 때: 열려 있으면 클리어 화면(앞 장은 장 클리어, 보스 장은 막 클리어), 닫혀 있으면 막지 않고 알림만.
+      const entersExit = moved && chapter.exit && r.pos.x === chapter.exit.x && r.pos.y === chapter.exit.y;
+      if (entersExit && exitOpen(next, chapter)) {
+        update(next, false); // 떠나는 장면에서는 안내를 띄우지 않는다
+        go('clear', { kind: isLast ? 'act' : 'chapter' });
+        return;
+      }
+      update(next);
+      if (entersExit) toast.show(exitBlockedText(next, chapter));
       if (tooSoon) leaveGuide();
       guideReached();
     }

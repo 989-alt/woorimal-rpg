@@ -1,10 +1,14 @@
 // 1막 화면 사진을 docs/screenshots/act1/에 남긴다(검사가 아니라 손으로 돌리는 도구).
 // 실행: node tests/e2e/capture-screenshots.mjs   (PW_CHROMIUM_PATH로 브라우저 지정 가능)
+// 일부만 다시 찍으려면 ONLY에 사진 이름의 정규식을 준다. 예: ONLY='explore|exit' node tests/e2e/capture-screenshots.mjs (그 사진만 지우고 다시 찍는다)
 // 사진은 JPEG 품질 85(저장소 용량을 줄이려고). 1366×768(크롬북 1:1)과 1024×768 @2x(태블릿) 두 가지.
 import { mkdir, readdir, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { startServer } from './server.mjs';
 import { launchBrowser, finishDialogue } from './browser.mjs';
+import { pathTo, KEYS } from './helpers.mjs';
+import { parseMap } from '../../js/explore/grid.js';
+import { chapterWords } from '../../js/rules/game.js';
 import ACT1 from '../../data/acts/act1.js';
 
 const OUT = fileURLToPath(new URL('../../docs/screenshots/act1/', import.meta.url));
@@ -14,6 +18,8 @@ const SIZES = [
 ];
 const NICK = '하늘';
 const AVATAR = process.env.AVATAR === 'm' ? 'm' : 'f';
+const ONLY = process.env.ONLY ? new RegExp(process.env.ONLY) : null;
+const wanted = (label) => !ONLY || ONLY.test(label);
 
 async function fresh(ctx, url) {
   const page = await ctx.newPage();
@@ -26,6 +32,7 @@ async function fresh(ctx, url) {
 
 // 화면의 그림(<img>)이 모두 다 받아졌을 때까지 기다린 뒤 찍는다.
 async function shoot(page, size, label) {
+  if (!wanted(label)) return;
   await page.evaluate(() => document.fonts.ready);
   await page.waitForFunction(() => [...document.images].every((i) => i.complete));
   await page.waitForTimeout(450); // 패널 나타나기(180ms)·캔버스 다시 그리기
@@ -47,7 +54,7 @@ async function openDialogue(page, script, words, from) {
 const server = await startServer();
 const browser = await launchBrowser();
 await mkdir(OUT, { recursive: true });
-for (const f of await readdir(OUT)) if (/\.(png|jpg)$/.test(f)) await rm(OUT + f); // 앞 사진(임시 그림 시절 것 포함)을 지운다
+for (const f of await readdir(OUT)) if (/\.(png|jpg)$/.test(f) && wanted(f)) await rm(OUT + f); // 앞 사진(임시 그림 시절 것 포함)을 지운다
 try {
   for (const size of SIZES) {
     const ctx = await browser.newContext({ viewport: size.viewport, deviceScaleFactor: size.deviceScaleFactor });
@@ -94,6 +101,42 @@ try {
     await shoot(page, size, '06-dialogue-1-2-baker');
     await page.close();
 
+    // 낱말을 다 모은 1-1: 출구가 열려 표지가 깜박인다(출구 바로 앞 골목 끝에서). 사진은 표지가 가장 또렷한 단계에서 찍는다.
+    page = await fresh(ctx, server.url);
+    await page.evaluate(([n, a]) => window.__test.newGame(n, a), [NICK, AVATAR]);
+    await page.waitForSelector('[data-scene="explore"]');
+    const ch1 = ACT1.chapters[0];
+    const done = await page.evaluate(([words]) => {
+      const s = window.__test.state();
+      const acquired = { ...s.acquired };
+      for (const w of words) acquired[w] = { from: '사진' };
+      const quests = Object.fromEntries(Object.entries(s.quests).map(([id, q]) => [id, id === 'q1' || id === 'q2' ? { stage: 'done', gathered: [] } : q]));
+      return { acquired, quests, smallGone: { '1-1': true }, hiddenFound: { '1-1': true }, pos: s.pos };
+    }, [chapterWords(ch1)]);
+    await page.evaluate((p) => window.__test.patchState(p), done);
+    const map1 = parseMap(ch1.map.rows);
+    for (const dir of pathTo(map1, done.pos, { x: ch1.exit.x, y: ch1.exit.y + 3 }, { smallMonsterGone: true })) await page.keyboard.press(KEYS[dir]);
+    await page.waitForTimeout(500);
+    await page.waitForFunction(() => Math.floor(performance.now() / 200) % 8 === 0, null, { polling: 'raf' }); // 찍기 직전(450ms 뒤)에 표지가 가장 밝은 단계가 되도록
+    await shoot(page, size, '13-exit-open-1-1');
+    await page.close();
+
+    // 텃밭 아저씨 이야기를 들은 뒤 장독대가 반짝인다(빛무리가 가장 큰 때에 찍는다)
+    page = await fresh(ctx, server.url);
+    await page.evaluate(([n, a]) => window.__test.newGame(n, a), [NICK, AVATAR]);
+    await page.waitForSelector('[data-scene="explore"]');
+    await page.evaluate(() => window.__test.patchState({ quests: { ...window.__test.state().quests, q1: { stage: 'done', gathered: [] } } }));
+    await page.evaluate(() => window.__test.teleportTo('gardener'));
+    await page.waitForSelector('[data-scene="explore"]');
+    await page.keyboard.press('Space');
+    await finishDialogue(page);
+    await page.evaluate(() => window.__test.teleportTo('장독대'));
+    await page.waitForSelector('[data-scene="explore"]');
+    await page.waitForTimeout(300);
+    await page.waitForFunction(() => performance.now() % 6000 > 150 && performance.now() % 6000 < 250, null, { polling: 'raf' }); // 찍는 순간(450ms 뒤)에 빛무리가 한창 퍼져 있도록
+    await shoot(page, size, '14-hidden-glow-1-1');
+    await page.close();
+
     page = await fresh(ctx, server.url);
     await page.evaluate(([n, a]) => window.__test.newGame(n, a), [NICK, AVATAR]);
     await startBattle(page, 'review');
@@ -120,6 +163,14 @@ try {
       }, qn);
     }
     if (seen.size < 3) console.warn(`보스전 문제 유형 ${[...seen]}만 나왔다(씨앗을 바꿔 보세요)`);
+    // 이긴 뒤에는 그 자리에 남는다. 열린 출구로 걸어가야 막 클리어가 열린다.
+    await page.waitForSelector('[data-scene="explore"] canvas');
+    await page.waitForFunction(() => window.__test.view);
+    const ch2 = ACT1.chapters[1];
+    const map2 = parseMap(ch2.map.rows);
+    const from = await page.evaluate(() => window.__test.state().pos);
+    const dirs = pathTo(map2, from, ch2.exit, { fogOpen: true, smallMonsterGone: true, bossGone: true });
+    for (const dir of dirs) await page.keyboard.press(KEYS[dir]);
     await page.waitForSelector('[data-scene="clear"]');
     await shoot(page, size, '11-act-clear');
     await page.close();

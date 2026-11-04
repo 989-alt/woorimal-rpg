@@ -71,7 +71,15 @@ test('키보드: 첫 몇 분 동안 안내가 하나씩 한 번만', async () =>
   assert.ok(gap(quest, tasksButton) <= 200, `quest 안내가 할 일 단추에서 ${gap(quest, tasksButton)}px`);
   assert.ok(quest.y >= tasksButton.y + tasksButton.height, '단추 아래에 놓인다(HUD를 가리지 않는다)');
 
-  // 부탁 안내 다음, 숨은 낱말 반짝임이 화면에 들어오면 한 번 알려 준다(말빛 주머니를 받은 뒤)
+  // 부탁 안내 다음, 숨은 낱말 반짝임이 화면에 들어오면 한 번 알려 준다(말빛 주머니를 받고 텃밭 아저씨가 알려 준 뒤)
+  await page.evaluate(() => window.__test.teleportTo('장독대'));
+  await page.waitForTimeout(400);
+  assert.equal(await hintOf(page, 'sparkle').count(), 0, '아저씨가 알려 주기 전에는 반짝임 안내도 없다');
+  await page.evaluate(() => window.__test.teleportTo('gardener'));
+  await page.waitForSelector('[data-scene="explore"]');
+  await page.keyboard.press('Space');
+  await page.waitForSelector('[data-scene="dialogue"]');
+  await finishDialogue(page);
   await page.evaluate(() => window.__test.teleportTo('장독대'));
   await hintOf(page, 'sparkle').waitFor();
   assert.match(await hintOf(page, 'sparkle').innerText(), /반짝이는 곳/);

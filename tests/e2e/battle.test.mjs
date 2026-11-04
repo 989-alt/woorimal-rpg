@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
 import { launchBrowser, collectErrors, finishDialogue, startFromTitle } from './browser.mjs';
 import { parseMap } from '../../js/explore/grid.js';
-import { pathTo, KEYS } from './helpers.mjs';
+import { pathTo, KEYS, walkToExit } from './helpers.mjs';
 import ACT1 from '../../data/acts/act1.js';
 
 let server, browser;
@@ -59,7 +59,7 @@ async function answer(page, correct, { via = 'key' } = {}) {
   }, qn);
 }
 
-test('보스전: 첫 안내 말풍선, 정답만 6번 → 1막 클리어, 출제 기록 10개와 막 클리어가 저장된다', async () => {
+test('보스전: 첫 안내 말풍선, 정답만 6번 → 이겨도 그 자리에 남고 출구로 걸어가면 1막 클리어, 출제 기록 10개와 막 클리어가 저장된다', async () => {
   const { page, errors } = await openNewGame();
   const tip = await startBattle(page, 'boss');
   assert.ok(tip.includes(BOSS_TIP), tip);
@@ -68,6 +68,10 @@ test('보스전: 첫 안내 말풍선, 정답만 6번 → 1막 클리어, 출제
   assert.equal(await page.locator('.hp-cell').count(), 6);
   assert.equal(await page.locator('.heart.full').count(), 5);
   assert.match(await scene.innerText(), /안개 덩이/);
+  await page.evaluate(() => { // 이겼다는 말은 탐험으로 돌아가면 사라지므로 뜬 글을 적어 둔다
+    new MutationObserver(() => { const w = document.querySelector('.battle-win'); if (w) window.__winText = w.innerText; })
+      .observe(document.body, { childList: true, subtree: true, characterData: true });
+  });
   for (let i = 0; i < 6; i++) {
     await answer(page, true);
     if (i === 1) {
@@ -76,15 +80,21 @@ test('보스전: 첫 안내 말풍선, 정답만 6번 → 1막 클리어, 출제
     }
     if (i < 5) assert.equal(await page.locator('.hp-cell.lost').count(), i + 1);
   }
+  // 이긴 뒤에는 막 클리어가 바로 열리지 않는다: 이겼다는 말 → 탐험(그 자리)
+  await page.waitForSelector('[data-scene="explore"] canvas');
+  assert.equal(await page.evaluate(() => window.__winText), '안개 덩이를 물리쳤다!');
+  assert.equal(await page.locator('[data-scene="clear"]').count(), 0);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('malbit:save:하늘')));
+  assert.equal(saved.askedWordIds.length, 10);
+  assert.deepEqual(saved.clearedActs, [1]);
+  assert.ok(saved.seenTips.includes('tip-boss'));
+  // 열린 출구로 걸어가야 막 클리어
+  await walkToExit(page);
   await page.waitForSelector('[data-scene="clear"]');
   const text = await page.locator('[data-scene="clear"]').innerText();
   assert.match(text, /1막 클리어!/);
   assert.match(text, /다음 막은 준비 중이에요/);
   assert.equal(await page.locator('.clear-card').count(), 10);
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('malbit:save:하늘')));
-  assert.equal(saved.askedWordIds.length, 10);
-  assert.deepEqual(saved.clearedActs, [1]);
-  assert.ok(saved.seenTips.includes('tip-boss'));
   await page.getByRole('button', { name: '처음 화면으로' }).click();
   await page.waitForSelector('[data-scene="title"]');
   assert.deepEqual(errors, []);
@@ -305,7 +315,7 @@ test('공격 연출: 연속 정답 3번이면 파동 2겹, 마지막 일격은 �
     await page.waitForFunction((n) => document.querySelector('[data-scene="battle"]')?.dataset.qn !== n, qn);
   }
   assert.deepEqual(rings, [1, 1, 2, 2, 2, 2]);
-  await page.waitForSelector('[data-scene="clear"]');
+  await page.waitForSelector('[data-scene="explore"] canvas'); // 이긴 뒤에는 탐험으로 돌아온다(막 클리어는 출구에서)
   assert.deepEqual(errors, []);
   await page.close();
 });
@@ -370,6 +380,8 @@ test('클리어: 낱말 카드 틀 + 단추 .btn-green(처음 초점)', async ()
   const { page, errors } = await openNewGame();
   await startBattle(page, 'boss');
   for (let i = 0; i < 6; i++) await answer(page, true);
+  await page.waitForSelector('[data-scene="explore"] canvas');
+  await walkToExit(page);
   await page.waitForSelector('[data-scene="clear"]');
   assert.equal(await page.locator('.end-panel.frame-panel').count(), 1);
   assert.equal(await page.locator('.clear-card.frame-card').count(), 10);
@@ -379,9 +391,14 @@ test('클리어: 낱말 카드 틀 + 단추 .btn-green(처음 초점)', async ()
   await page.close();
 });
 
-test('장 클리어: 1장 클리어! + 낱말 5장 → 다음 장으로 → 2장 첫 이야기 → 탐험(1-2)', async () => {
+test('장 클리어: 낱말을 다 모아도 탐험에 남고, 출구로 걸어가면 1장 클리어! + 낱말 5장 → 다음 장으로 → 2장 첫 이야기 → 탐험(1-2)', async () => {
   const { page, errors } = await openNewGame();
   await page.evaluate(() => window.__test.acquire(['어스름', '아침나절', '매무새', '손사래', '오롯이'], '도담 할머니'));
+  await page.evaluate(() => window.__test.patchState({ smallGone: { '1-1': true } }));
+  await page.waitForSelector('[data-scene="explore"] canvas');
+  await page.waitForTimeout(300);
+  assert.equal(await page.locator('[data-scene="clear"]').count(), 0);
+  await walkToExit(page, { smallMonsterGone: true });
   await page.waitForSelector('[data-scene="clear"]');
   assert.match(await page.locator('[data-scene="clear"]').innerText(), /1장 클리어!/);
   assert.equal(await page.locator('.clear-card').count(), 5);
@@ -431,10 +448,12 @@ test('꼬마 안개: 다온의 부탁(q2)이 open이면 안내만 뜨고 전투�
   await page.close();
 });
 
-test('막 보스: 이긴 뒤 처음 화면 → 이어하기 → 보스 앞에서 스페이스면 안내만 뜨고 전투는 없다', async () => {
+test('막 보스: 이긴 뒤 출구로 걸어가 클리어 → 처음 화면 → 이어하기 → 보스 자리는 길이 되어 스페이스를 눌러도 전투는 없다', async () => {
   const { page, errors } = await openNewGame();
   await startBattle(page, 'boss');
   for (let i = 0; i < 6; i++) await answer(page, true);
+  await page.waitForSelector('[data-scene="explore"] canvas');
+  await walkToExit(page);
   await page.waitForSelector('[data-scene="clear"]');
   await page.getByRole('button', { name: '처음 화면으로' }).click();
   await page.waitForSelector('[data-scene="title"]');
@@ -443,11 +462,17 @@ test('막 보스: 이긴 뒤 처음 화면 → 이어하기 → 보스 앞에서
   const s = await page.evaluate(() => window.__test.state());
   assert.equal(s.chapter, '1-2');
   assert.deepEqual(s.clearedActs, [1]);
+  assert.equal(await page.locator('[data-scene="clear"]').count(), 0, '이어 해도 저절로 클리어로 넘어가지 않는다');
+  assert.equal(await page.locator('.hud-task').innerText(), ACT1.chapters[1].exit.goal);
   const map = parseMap(ACT1.chapters[1].map.rows);
-  await faceFromBelow(page, map, map.boss, { fogOpen: true });
-  await page.waitForSelector('.toast:not([hidden])');
-  assert.equal(await page.locator('.toast').innerText(), '1막을 마쳤어요. 다음 막은 준비 중이에요.');
-  await page.waitForTimeout(200);
+  // 보스가 서 있던 칸 아래에서 위로 걸으면 그 칸으로 들어서진다(막지 않는다), 스페이스를 눌러도 싸우지 않는다
+  const below = { x: map.boss.x, y: map.boss.y + 1 };
+  for (const dir of pathTo(map, s.pos, below, { fogOpen: true, bossGone: true })) await page.keyboard.press(KEYS[dir]);
+  await page.keyboard.press('ArrowUp');
+  assert.deepEqual((await page.evaluate(() => window.__test.state())).pos, { x: map.boss.x, y: map.boss.y });
+  await page.keyboard.press('Space');
+  await page.waitForTimeout(300);
+  assert.equal(await page.locator('.toast:not([hidden])').count(), 0);
   assert.equal(await page.locator('[data-scene="battle"]').count(), 0);
   assert.deepEqual(errors, []);
   await page.close();

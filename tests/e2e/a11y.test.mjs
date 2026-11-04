@@ -7,6 +7,7 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
 import { launchBrowser, collectErrors, finishDialogue } from './browser.mjs';
+import { walkToExit } from './helpers.mjs';
 import ACT1 from '../../data/acts/act1.js';
 
 let server, browser;
@@ -216,6 +217,11 @@ for (const blocked of [false, true]) {
       await page.keyboard.press(`Digit${j + 1}`);
       if (i < 5) await page.waitForFunction((n) => document.querySelector('[data-scene="battle"]')?.dataset.qn !== n, qn);
     }
+    // 이긴 뒤에는 그 자리에 남는다(이겼다는 말 → 탐험). 열린 출구로 걸어가야 막 클리어가 열린다.
+    await page.waitForSelector('.battle-win');
+    await check('보스를 이긴 말');
+    await page.waitForSelector('[data-scene="explore"] canvas');
+    await walkToExit(page);
     await page.waitForSelector('[data-scene="clear"]');
     await check('클리어');
 

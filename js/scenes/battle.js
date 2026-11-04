@@ -202,9 +202,15 @@ export const battle = {
 
     function win() {
       if (b) {
+        // 막 보스를 이겨도 막 클리어 화면은 바로 열지 않는다. 그 자리에 남아, 길이 열린 출구로 직접 걸어가야 열린다.
         state = finishAct(ctx.getState(), act, b.order);
         ctx.setState(state);
-        go('clear', { kind: 'act' });
+        ctx.store?.save?.(state);
+        setPhase('won');
+        const msg = el('div', 'battle-win frame-panel', `${attachJosa(act.boss.name, '을')} 물리쳤다!`);
+        msg.setAttribute('role', 'status');
+        scene.appendChild(msg);
+        later(() => go('explore', { guide: 'won' }), WIN_MSG_MS); // 탐험에서 "길 끝으로 가 보자" 길잡이를 띄운다
         return;
       }
       const before = ctx.getState();

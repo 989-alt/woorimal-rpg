@@ -70,6 +70,9 @@ test('숨은 낱말 대사 도중 새로 고침해도 숨은 낱말이 남는다
   await interact(page, 'dodam');
   await page.waitForSelector('[data-scene="dialogue"]');
   await finishDialogue(page);
+  await interact(page, 'gardener'); // 텃밭 아저씨가 알려 준 뒤에야 장독대에서 낱말을 얻는다
+  await page.waitForSelector('[data-scene="dialogue"]');
+  await finishDialogue(page);
   await interact(page, '장독대');
   await page.waitForSelector('[data-scene="dialogue"]');
   await page.reload();

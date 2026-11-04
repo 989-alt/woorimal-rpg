@@ -1,6 +1,6 @@
 import { createRouter } from './router.js';
 import { createStore } from './save.js';
-import { newGame, acquireWords, takeWords, actWords, chapterWords, enterNextChapter, chapterOf, setPos, fogOpen } from './rules/game.js';
+import { newGame, acquireWords, takeWords, actWords, chapterWords, enterNextChapter, chapterOf, setPos, fogOpen, bossGone } from './rules/game.js';
 import { actOfChapter } from '../data/acts/index.js';
 import { parseMap, isWalkable, reachable } from './explore/grid.js';
 import ACT1 from '../data/acts/act1.js';
@@ -59,7 +59,7 @@ function teleportTo(target) {
     : target === 'boss' ? map.boss
     : null;
   if (!spot) throw new Error(`teleportTo: ${state.chapter} 장 지도에 '${target}'이(가) 없습니다`);
-  const opts = { fogOpen: fogOpen(state, chapter), smallMonsterGone: !!state.smallGone?.[chapter.id] };
+  const opts = { fogOpen: fogOpen(state, chapter), smallMonsterGone: !!state.smallGone?.[chapter.id], bossGone: bossGone(state, chapter) };
   const canReach = reachable(map, state.pos, opts);
   const sides = [[0, 1, 'up'], [-1, 0, 'right'], [1, 0, 'left'], [0, -1, 'down']];
   for (const [dx, dy, facing] of sides) {
@@ -107,6 +107,11 @@ if (new URLSearchParams(location.search).get('test') === '1') {
         state = { ...state, quests: { ...state.quests, [first.id]: { stage: 'done', gathered: [] }, [chase.id]: { stage: 'active', gathered: [] } } };
       }
       router.show('battle', seed === undefined ? { mode } : { mode, seed });
+    },
+    // 상태의 일부를 바꾸고 탐험을 다시 연다(걸어가기 긴 상황을 빨리 만들 때). 바꾼 상태는 장면이 바뀔 때 저장된다.
+    patchState(patch) {
+      state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
+      router.show('explore');
     },
     // 지금 장의 낱말을 모두 얻은 것으로 하고 다음 장 첫 자리에서 탐험을 연다(화면 사진용).
     nextChapter() {

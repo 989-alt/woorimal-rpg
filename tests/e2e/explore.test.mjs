@@ -216,12 +216,15 @@ test('할머니에게 걸어가 말을 걸면 대화 장면으로 가고, 저장
   await page.close();
 });
 
-test('앞 장의 낱말 5개를 다 얻으면 장 클리어로 간다', async () => {
+test('앞 장의 낱말 5개를 다 얻어도 장 클리어로 저절로 넘어가지 않고 그 자리에 남는다(출구는 exit.test)', async () => {
   const { page, errors } = await openGame();
   await page.waitForFunction(() => window.__test);
   await page.evaluate(() => window.__test.newGame('하늘', 'f'));
   await page.evaluate(() => window.__test.acquire(['어스름', '아침나절', '매무새', '손사래', '오롯이'], '도담 할머니'));
-  await page.waitForSelector('[data-scene="clear"]');
+  await page.waitForSelector('[data-scene="explore"] canvas');
+  await page.waitForTimeout(500);
+  assert.equal(await page.locator('[data-scene="clear"]').count(), 0);
+  assert.equal(await page.locator('[data-scene="explore"]').count(), 1);
   assert.deepEqual(errors, []);
   await page.close();
 });

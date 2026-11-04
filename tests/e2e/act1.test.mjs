@@ -4,7 +4,7 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
 import { launchBrowser, collectErrors, finishDialogue, startFromTitle } from './browser.mjs';
-import { pathTo, KEYS } from './helpers.mjs';
+import { pathTo, KEYS, walkToExit } from './helpers.mjs';
 import { parseMap } from '../../js/explore/grid.js';
 import ACT1 from '../../data/acts/act1.js';
 
@@ -114,7 +114,7 @@ test('teleportTo: 맞닿은 칸에서 대상을 보고, 이 장에 없거나 갈
   await page.close();
 });
 
-test('1막 끝까지: 시작 화면 → 부탁 4개 → 숨은 낱말 2개 → 안개 문 → 보스(중간 새로 고침) → 1막 클리어', async () => {
+test('1막 끝까지: 시작 화면 → 부탁 4개 → 숨은 낱말 2개(알려 준 뒤에만) → 출구 → 안개 문 → 보스(중간 새로 고침) → 출구 → 1막 클리어', async () => {
   const page = await browser.newPage({ viewport: { width: 1366, height: 768 } });
   const errors = collectErrors(page);
   await page.goto(server.url + '/?test=1');
@@ -167,10 +167,26 @@ test('1막 끝까지: 시작 화면 → 부탁 4개 → 숨은 낱말 2개 → �
   assert.equal(await marker(page, 'daon'), '?');
   assert.deepEqual(await talkThrough(page, 'daon'), ['매무새', '손사래']);
   assert.match(await hudCount(page), /4\/5/);
-  assert.equal(await hudTask(page), '반짝이는 곳을 찾아 조사해 보자');
+  // 부탁을 다 끝냈어도 텃밭 아저씨 이야기를 듣기 전에는 장독대가 반짝이지 않는다: 지금 할 일은 아저씨에게 가는 것
+  assert.equal(await hudTask(page), '텃밭 아저씨 이야기를 들어 보자');
+  await interact(page, '장독대');
+  assert.equal(await toast(page), '크고 작은 장독들이 가지런히 놓여 있다.');
+  assert.match(await hudCount(page), /4\/5/);
+  assert.equal((await state(page)).revealed?.['1-1'], undefined);
 
-  // ── 숨은 낱말: 장독대 → 1장 클리어 → 2장 ──
-  assert.deepEqual(await talkThrough(page, '장독대', 'clear'), ['오롯이']);
+  // ── 텃밭 아저씨 이야기 → 숨은 낱말: 장독대 → 낱말 5/5, 그 자리에 남는다 → 출구로 걸어가 1장 클리어 → 2장 ──
+  assert.deepEqual(await talkThrough(page, 'gardener'), []);
+  assert.equal((await state(page)).revealed['1-1'], true);
+  assert.equal(await hudTask(page), '반짝이는 곳을 찾아 조사해 보자');
+  assert.deepEqual(await talkThrough(page, '장독대'), ['오롯이']);
+  assert.match(await hudCount(page), /5\/5/);
+  await page.waitForTimeout(400);
+  assert.equal(await page.locator('[data-scene="clear"]').count(), 0, '낱말을 다 모아도 저절로 넘어가지 않는다');
+  assert.equal(await hudTask(page), ACT1.chapters[0].exit.goal);
+  s = await state(page);
+  assert.equal(s.chapter, '1-1');
+  await walkToExit(page, { smallMonsterGone: true });
+  await page.waitForSelector('[data-scene="clear"]');
   assert.match(await page.locator('[data-scene="clear"]').innerText(), /1장 클리어!/);
   await page.getByRole('button', { name: '다음 장으로' }).click();
   await playDialogue(page); // 2장 인트로
@@ -214,7 +230,10 @@ test('1막 끝까지: 시작 화면 → 부탁 4개 → 숨은 낱말 2개 → �
   const blocked = await page.evaluate(() => { try { window.__test.teleportTo('boss'); return null; } catch (e) { return e.message; } });
   assert.ok(blocked, '안개가 막고 있으면 보스 옆으로 옮길 수 없다');
 
-  // ── 숨은 낱말: 빨랫줄 → 5/5, 할 일 "그림자를 물리쳐라" ──
+  // ── 숨은 낱말: 빨래터 아주머니가 알려 주기 전에는 지금 할 일이 아주머니, 알려 준 뒤 빨랫줄 → 5/5 ──
+  assert.equal(await hudTask(page), '빨래터 아주머니 이야기를 들어 보자');
+  assert.deepEqual(await talkThrough(page, 'laundry'), []);
+  assert.equal(await hudTask(page), '반짝이는 곳을 찾아 조사해 보자');
   assert.deepEqual(await talkThrough(page, '빨랫줄'), ['해거름']);
   assert.match(await hudCount(page), /5\/5/);
   assert.equal(await hudTask(page), '안개 덩이와 맞서자');
@@ -243,6 +262,12 @@ test('1막 끝까지: 시작 화면 → 부탁 4개 → 숨은 낱말 2개 → �
   assert.equal(await page.locator('.hp-cell').count(), 6);
   assert.equal(await page.locator('.hp-cell.lost').count(), 0);
   for (let i = 0; i < 6; i++) await answerRight(page);
+  // 이겨도 그 자리에 남는다: 길잡이가 길 끝을 알려 주고, 출구로 걸어가야 1막 클리어가 열린다
+  await page.waitForSelector('[data-scene="explore"] canvas');
+  assert.equal(await page.locator('[data-scene="clear"]').count(), 0);
+  assert.equal(await hudTask(page), ACT1.chapters[1].exit.goal);
+  assert.deepEqual((await state(page)).clearedActs, [1]);
+  await walkToExit(page);
   await page.waitForSelector('[data-scene="clear"]');
   assert.match(await page.locator('[data-scene="clear"]').innerText(), /1막 클리어!/);
   assert.equal(await page.locator('.clear-card').count(), 10);
@@ -251,15 +276,17 @@ test('1막 끝까지: 시작 화면 → 부탁 4개 → 숨은 낱말 2개 → �
   assert.equal(saved.askedWordIds.length, 10);
   assert.equal(Object.keys(saved.acquired).length, 10);
 
-  // ── 막을 마친 뒤: 처음 화면 → 이어하기 → 할 일 "1막을 마쳤어요", 보스는 막는다 ──
+  // ── 막을 마친 뒤: 처음 화면 → 이어하기 → 저절로 넘어가지 않고 출구가 열린 채 탐험, 보스 자리는 길이다 ──
   await page.getByRole('button', { name: '처음 화면으로' }).click();
   await page.waitForSelector('[data-scene="title"]');
   await startFromTitle(page, { name: '하늘', mode: 'continue' });
   await page.waitForSelector('[data-scene="explore"]');
-  assert.equal(await hudTask(page), '1막을 마쳤어요');
+  await page.waitForTimeout(400);
+  assert.equal(await page.locator('[data-scene="clear"]').count(), 0);
+  assert.equal(await hudTask(page), ACT1.chapters[1].exit.goal);
   await interact(page, 'boss');
-  assert.equal(await toast(page), '1막을 마쳤어요. 다음 막은 준비 중이에요.');
   assert.equal(await page.locator('[data-scene="battle"]').count(), 0);
+  assert.equal(await page.locator('.toast:not([hidden])').count(), 0);
   assert.deepEqual(errors, []);
   await page.close();
 });

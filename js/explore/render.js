@@ -1,7 +1,7 @@
 // 탐험 캔버스 그리기. ctx에는 이미 배율(ART=3)이 걸려 있어 좌표는 384×216 세계 기준(칸 16)이다.
 // 그림은 칸당 48픽셀이므로 세계 상자 크기를 정해서 그린다(맵 512×384 상자에 1536×1152 그림이 1:1).
 import { BASE_W, BASE_H, TILE, ART } from './scale.js';
-import { fogOpen } from '../rules/game.js';
+import { fogOpen, bossGone, exitOpen } from '../rules/game.js';
 import { npcMarker, hiddenGlow } from '../rules/quests.js';
 import { drawLabelBlock, initial, MEOK } from '../ui/placeholder.js';
 import { ASSETS } from '../../data/assets.js';
@@ -249,6 +249,52 @@ function drawHalo(ctx, cx, cy, step, still) {
   ctx.restore();
 }
 
+// 열린 출구 표지: 출구 칸 위에서 맵 밖 쪽을 가리키는 놋쇠색 겹화살표가 천천히 깜박인다(금빛은 낱말에만 쓰므로 놋쇠·한지색).
+// 200ms 단계 8개가 한 바퀴(1.6초). 같은 단계면 같은 그림이다(animKey).
+export const EXIT_STEP_MS = 200;
+export const EXIT_STEPS = 8;
+export const exitStep = (time) => Math.floor(time / EXIT_STEP_MS) % EXIT_STEPS;
+const EXIT_ANGLE = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
+const BRASS = '#C9963F';
+const BRASS_DARK = '#8A5E2A';
+const PAPER = '#FBF5E6';
+
+function drawExitMarker(ctx, exit, step, still) {
+  const wave = still ? 1 : 0.5 + 0.5 * Math.sin((2 * Math.PI * step) / EXIT_STEPS); // 0 → 1 → 0
+  const alpha = still ? 1 : 0.55 + 0.45 * wave;
+  const push = still ? 0 : Math.round(wave * 2); // 가리키는 쪽으로 살짝 밀린다
+  const cx = exit.x * TILE + TILE / 2, cy = exit.y * TILE + TILE / 2;
+  ctx.save();
+  ctx.translate(cx, cy);
+  // 바닥에 깔리는 흰빛
+  const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, 11);
+  glow.addColorStop(0, 'rgba(255, 250, 236, 0.85)');
+  glow.addColorStop(1, 'rgba(255, 250, 236, 0)');
+  ctx.globalAlpha = alpha * 0.9;
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(0, 0, 11, 0, Math.PI * 2);
+  ctx.fill();
+  // 겹화살표 둘(바깥 쪽이 앞)
+  ctx.rotate(EXIT_ANGLE[exit.dir] ?? EXIT_ANGLE.up);
+  ctx.translate(push, 0);
+  ctx.globalAlpha = alpha;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  for (const dx of [-3.5, 2.5]) {
+    ctx.beginPath();
+    ctx.moveTo(dx - 3.5, -5);
+    ctx.lineTo(dx + 1.5, 0);
+    ctx.lineTo(dx - 3.5, 5);
+    for (const [w, c] of [[4.2, BRASS_DARK], [2.6, BRASS], [1, PAPER]]) {
+      ctx.lineWidth = w;
+      ctx.strokeStyle = c;
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
 // 첫 부탁 인물 칸에 도트 그림이 그려지면 8(머리 위 표시가 그만큼 높다), 아니면 0
 export function tipLift(chapter, map, target) {
   const npc = chapter.npcs.find((n) => { const p = map.slots[n.slot]; return p && p.x === target.x && p.y === target.y; });
@@ -318,12 +364,15 @@ export function drawExplore(ctx, { map, state, chapter, camera, view = { w: BASE
     if (art) drawFeet(ctx, art, x, y, ...SMALL_BOX);
     else drawCircle(ctx, x * TILE + 8, y * TILE + 8, 7, '#8A8D91', '#5E6266');
   }
-  if (map.boss) {
+  if (map.boss && !bossGone(state, chapter)) {
     const { x, y } = map.boss;
     const art = getLoaded(ASSETS.bossPixel[actId]);
     if (art) drawFeet(ctx, art, x, y, ...BOSS_BOX);
     else drawCircle(ctx, x * TILE + 8, y * TILE + 4, 14, '#5E6266', MEOK);
   }
+
+  // 열린 출구 표지(인물·주인공보다 아래에 깔린다)
+  if (chapter.exit && exitOpen(state, chapter)) drawExitMarker(ctx, chapter.exit, exitStep(time), still);
 
   // 인물과 주인공: 아래쪽에 있는 것을 나중에 그린다(그림은 16×32 상자, 임시 블록은 16×24, 발이 칸 아래에 닿게)
   const people = [];
@@ -379,5 +428,6 @@ export function animKey({ map, state, chapter, camera, view = { w: BASE_W, h: BA
   const glow = hiddenGlow(state, chapter);
   const spot = map.objects[chapter.hidden.object];
   if (glow !== 'none' && spot && inView(spot)) parts.push(`g${haloStep(glow, time) ?? '-'}`); // 빛무리 단계(쉴 때는 '-'로 그대로)
+  if (!still && chapter.exit && exitOpen(state, chapter) && inView(chapter.exit)) parts.push(`x${exitStep(time)}`); // 출구 표지 깜박임 단계
   return parts.join('|');
 }
