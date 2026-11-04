@@ -69,3 +69,12 @@ test('낱말 카드: 열린 뒤 300ms 안의 키보드 확인은 막고, 그 뒤
   assert.equal(keyConfirmAllowed(1000, 1299), false);
   assert.equal(keyConfirmAllowed(1000, 1300), true);
 });
+
+test('타자 효과 0ms: 처음부터 다 보이고, 다 나온 뒤 200ms 동안은 넘어가지 않는다', () => {
+  const t = createTypewriter({ full: '가나다', msPerChar: 0 });
+  assert.equal(t.done(), true);
+  assert.equal(t.shown(), '가나다');
+  assert.equal(t.press(), 'ignored');
+  t.tick(150); assert.equal(t.press(), 'ignored');
+  t.tick(60); assert.equal(t.press(), 'next');
+});

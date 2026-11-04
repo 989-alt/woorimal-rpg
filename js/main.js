@@ -1,10 +1,12 @@
 import { createRouter } from './router.js';
 import { createStore } from './save.js';
-import { newGame, acquireWords, actWords, enterNextChapter } from './rules/game.js';
+import { newGame, acquireWords, actWords, enterNextChapter, chapterOf, setPos, fogOpen } from './rules/game.js';
+import { actOfChapter } from '../data/acts/index.js';
+import { parseMap, isWalkable, reachable } from './explore/grid.js';
 import ACT1 from '../data/acts/act1.js';
 import { explore } from './scenes/explore.js';
 import { title } from './scenes/title.js';
-import { dialogue } from './scenes/dialogue.js';
+import { dialogue, setTypeSpeed } from './scenes/dialogue.js';
 import { battle, battleProbe } from './scenes/battle.js';
 import { gameover } from './scenes/gameover.js';
 import { clear } from './scenes/clear.js';
@@ -34,6 +36,34 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 function startNew(nickname, avatar) {
   state = newGame({ nickname, avatar });
   router.show('explore');
+}
+
+// 검사용: 대상(인물 id, 물건 이름, 'small', 'boss') 옆의 걸을 수 있는 칸으로 옮기고 대상을 보게 한다.
+// 지금 자리에서 걸어서 갈 수 없는 칸(안개 너머 등)으로는 옮기지 않는다.
+function teleportTo(target) {
+  if (!state) throw new Error('teleportTo: 게임이 시작되지 않았습니다');
+  const chapter = chapterOf(actOfChapter(state.chapter), state.chapter);
+  const map = parseMap(chapter.map.rows);
+  const npc = chapter.npcs.find((n) => n.id === target);
+  const obj = chapter.objects.find((o) => o.name === target);
+  const spot = npc ? map.slots[npc.slot]
+    : obj ? map.objects[obj.slot]
+    : target === 'small' ? map.smallMonster
+    : target === 'boss' ? map.boss
+    : null;
+  if (!spot) throw new Error(`teleportTo: ${state.chapter} 장 지도에 '${target}'이(가) 없습니다`);
+  const opts = { fogOpen: fogOpen(state, chapter), smallMonsterGone: !!state.smallGone?.[chapter.id] };
+  const canReach = reachable(map, state.pos, opts);
+  const sides = [[0, 1, 'up'], [-1, 0, 'right'], [1, 0, 'left'], [0, -1, 'down']];
+  for (const [dx, dy, facing] of sides) {
+    const x = spot.x + dx, y = spot.y + dy;
+    if (isWalkable(map, x, y, opts) && canReach.has(`${x},${y}`)) {
+      state = setPos(state, { x, y }, facing);
+      router.show('explore');
+      return { x, y, facing };
+    }
+  }
+  throw new Error(`teleportTo: '${target}' 옆에 지금 걸어서 갈 수 있는 칸이 없습니다`);
 }
 
 router.register('title', title);
@@ -67,6 +97,8 @@ if (new URLSearchParams(location.search).get('test') === '1') {
     },
     answerIndex: () => battleProbe()?.answerIndex() ?? -1,
     battle: () => battleProbe()?.snapshot() ?? null,
+    teleportTo,
+    fastText: (on) => setTypeSpeed(on ? 0 : 30),
   };
 }
 

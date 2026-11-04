@@ -2,7 +2,8 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
 import { launchBrowser, collectErrors, finishDialogue } from './browser.mjs';
-import { parseMap, isWalkable } from '../../js/explore/grid.js';
+import { parseMap } from '../../js/explore/grid.js';
+import { pathTo, KEYS } from './helpers.mjs';
 import ACT1 from '../../data/acts/act1.js';
 
 let server, browser;
@@ -268,28 +269,6 @@ test('장 클리어: 1장 클리어! + 낱말 5장 → 다음 장으로 → 2장
 });
 
 // ── 싸움 막기: 부탁 순서와 끝낸 막 ──
-const KEYS = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
-const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
-function pathTo(map, from, to, opts) {
-  const prev = new Map([[`${from.x},${from.y}`, null]]);
-  const queue = [from];
-  while (queue.length) {
-    const p = queue.shift();
-    if (p.x === to.x && p.y === to.y) break;
-    for (const [dir, [dx, dy]] of Object.entries(DIRS)) {
-      const n = { x: p.x + dx, y: p.y + dy };
-      const k = `${n.x},${n.y}`;
-      if (!prev.has(k) && isWalkable(map, n.x, n.y, opts)) { prev.set(k, { from: p, dir }); queue.push(n); }
-    }
-  }
-  const dirs = [];
-  for (let k = `${to.x},${to.y}`; prev.get(k); ) {
-    const { from: p, dir } = prev.get(k);
-    dirs.unshift(dir);
-    k = `${p.x},${p.y}`;
-  }
-  return dirs;
-}
 // target 칸 아래에 서서 위를 바라보고 스페이스
 async function faceFromBelow(page, map, target, opts) {
   const s = await page.evaluate(() => window.__test.state());

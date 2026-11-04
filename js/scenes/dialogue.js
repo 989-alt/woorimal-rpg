@@ -8,6 +8,11 @@ import { openMeaningCard } from '../ui/meaning-card.js';
 export const TIP_WORD = 'tip-word';
 const HERO_COLOR = '#3B5BA5'; // 쪽빛
 const GUARD_MS = 200;
+const MS_PER_CHAR = 30;
+
+// 글자가 나오는 빠르기(ms). 검사용(?test=1) fastText만 바꾼다.
+let typeSpeed = MS_PER_CHAR;
+export function setTypeSpeed(ms) { typeSpeed = ms; }
 
 // 글을 [[낱말]] 기준으로 나눈다.
 export function splitHighlights(text) {
@@ -23,14 +28,15 @@ export function splitHighlights(text) {
 }
 
 // 타자 효과. 시간은 tick(ms)로만 흐른다(화면과 무관한 순수 객체).
-export function createTypewriter({ full, msPerChar = 30 }) {
+export function createTypewriter({ full, msPerChar = MS_PER_CHAR }) {
   const chars = Array.from(full);
   const total = chars.length * msPerChar;
   let elapsed = 0;
   let sinceDone = 0;
   const done = () => elapsed >= total;
+  const count = () => (msPerChar > 0 ? Math.floor(Math.min(elapsed, total) / msPerChar) : chars.length);
   return {
-    shown: () => chars.slice(0, Math.floor(Math.min(elapsed, total) / msPerChar)).join(''),
+    shown: () => chars.slice(0, count()).join(''),
     done,
     press() {
       if (!done()) { elapsed = total; sinceDone = 0; return 'reveal'; }
@@ -128,7 +134,7 @@ export const dialogue = {
       const line = script[i];
       const raw = formatLine(line.text, nickname);
       const plain = splitHighlights(raw).map((seg) => seg.text).join('');
-      tw = createTypewriter({ full: plain, msPerChar: 30 });
+      tw = createTypewriter({ full: plain, msPerChar: typeSpeed });
       busy = false;
       tipEl?.remove();
       tipEl = null;
@@ -169,6 +175,7 @@ export const dialogue = {
       }
       maybeTip();
       render();
+      if (tw.done()) sentenceShown(); // 타자 효과 없이 바로 다 나온 줄
     }
 
     // 처음 보는 새 낱말이 나오면 한 번만 안내한다.
