@@ -9,7 +9,7 @@ import { winSmall } from '../rules/quests.js';
 import { makeRng } from '../rules/rng.js';
 import { attachJosa } from '../rules/josa.js';
 import {
-  TYPE_LABEL, COLUMNS, buildFrame, drawFrame, renderPrompt, buildOptions, markOptions, moveFocus, feedbackPanel, tipCard,
+  TYPE_LABEL, COLUMNS, buildFrame, layoutTail, drawFrame, renderPrompt, buildOptions, markOptions, moveFocus, feedbackPanel, tipCard,
 } from '../ui/battle-layout.js';
 import { HIT_MS, playHit, playMiss } from '../ui/battle-fx.js';
 import { ASSETS } from '../../data/assets.js';
@@ -63,7 +63,7 @@ export const battle = {
     // 복습전은 얻은 낱말(어느 막이든)로 문제를 낸다. 얻은 낱말이 없으면 돌아간다.
     const pool = Object.keys(state.acquired);
     if (mode === 'review' && pool.length === 0) {
-      const msg = el('div', 'battle-win panel', '아직 복습할 낱말이 없어요.');
+      const msg = el('div', 'battle-win frame-panel', '아직 복습할 낱말이 없어요.');
       scene.appendChild(msg);
       later(() => go('explore'), WIN_MSG_MS);
       return () => { leaving = true; timers.forEach(clearTimeout); scene.remove(); };
@@ -90,6 +90,9 @@ export const battle = {
 
     const f = buildFrame({ mode, nickname: state.nickname, monsterName, hearts: HEARTS, hp: HP });
     scene.append(f.stage, f.bottom);
+    layoutTail(f);
+    const onResize = () => layoutTail(f);
+    window.addEventListener('resize', onResize);
     // 그림이 있으면 무대·주인공·몬스터를 그림으로, 없거나 못 불러오면 임시 그림 그대로
     setArt(f.bg, ASSETS.battleBg[act.id], 'battle-bg-img art');
     const avatar = state.avatar === 'm' ? 'm' : 'f';
@@ -153,14 +156,18 @@ export const battle = {
       blank.fill(q.options[q.answer]);
       const won = b ? b.result === 'win' : r.result === 'win';
       drawHud({ crackCell: true });
-      playHit(f.stage, { hero: f.hand, monster: f.monster, streak, lastHit: won });
+      const info = WORDS.find((w) => w.id === q.wordId);
+      playHit(f.fx, {
+        hand: f.hand, monster: f.monster, world: f.world, word: info?.word ?? q.wordId, streak, lastHit: won,
+        cell: b ? f.cells.children[b.hp] : f.lightLeft, // 복습전은 "남은 빛" 글자에서 금 조각
+      });
       later(() => (won ? win() : ask()), HIT_MS);
     }
 
     function onMiss() {
       blank.fill(q.options[q.answer]);
       drawHud({ crackHeart: true });
-      playMiss(f.fog);
+      playMiss(f.fog, { monster: f.monster, review: !b });
       const info = WORDS.find((w) => w.id === q.wordId);
       const { el: panel, nextBtn } = feedbackPanel({ answer: q.options[q.answer], word: info.word, meaning: info.meaning });
       const shownAt = performance.now();
@@ -190,7 +197,7 @@ export const battle = {
       if (state === before) { go('explore'); return; }
       ctx.setState(state);
       ctx.store?.save?.(state);
-      const msg = el('div', 'battle-win panel', `${attachJosa(act.small.name, '을')} 쫓아냈다!`);
+      const msg = el('div', 'battle-win frame-panel', `${attachJosa(act.small.name, '을')} 쫓아냈다!`);
       msg.setAttribute('role', 'status');
       scene.appendChild(msg);
       later(() => go('explore'), WIN_MSG_MS);
@@ -240,6 +247,7 @@ export const battle = {
       probe = null;
       timers.forEach(clearTimeout);
       document.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', onResize);
       scene.remove();
     };
   },

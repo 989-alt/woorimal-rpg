@@ -1,4 +1,4 @@
-// 전투 화면 틀: 위 무대(배경·안개·주인공·몬스터·HP) + 아래 묶음(이름표·하트, 문제 상자, 보기).
+// 전투 화면 틀: 위 무대(배경·안개·주인공·몬스터·HP 명판) + 아래 묶음(주인공 명판, 문제 말풍선과 이름·유형 표, 보기).
 // 보기 배치: 빈칸 채우기 = 낱말 카드 4장 가로 · 뜻 고르기 = 2×2 · 알맞은 문장 고르기 = 1열 4줄.
 import { initial } from './placeholder.js';
 
@@ -13,16 +13,20 @@ const el = (tag, className, text) => {
 };
 
 // 화면 틀을 만든다. 보기는 문제마다 buildOptions로 bottom 끝에 붙인다.
+// 무대: world(배경·안개·주인공·몬스터, 화면 흔들림은 이 층이 움직임) < fx(날아가는 낱말·파동·알갱이) 위에 명판들.
 export function buildFrame({ mode, nickname, monsterName, hearts: heartCount = 5, hp = 6 }) {
   const stage = el('div', 'battle-stage');
+  const world = el('div', 'battle-world');
   const fog = el('div', 'battle-fog');
   const hero = el('div', 'battle-hero');
-  const hand = el('span', 'battle-hero-hand'); // 빛줄기가 시작하는 손끝
+  const hand = el('span', 'battle-hero-hand'); // 낱말이 날아오르는 손끝
   hero.append(el('span', 'battle-hero-face', initial(nickname)), hand);
   hero.setAttribute('aria-hidden', 'true');
   const monster = el('div', 'battle-monster');
   monster.setAttribute('aria-hidden', 'true');
-  const mhp = el('div', 'battle-mhp panel');
+  const bg = el('div', 'battle-bg');
+  world.append(bg, fog, hero, monster);
+  const mhp = el('div', 'battle-mhp frame-plate');
   mhp.append(el('span', 'mhp-name', monsterName));
   const cells = el('span', 'hp-cells');
   const lightLeft = el('span', 'light-left');
@@ -32,14 +36,15 @@ export function buildFrame({ mode, nickname, monsterName, hearts: heartCount = 5
   } else {
     mhp.appendChild(lightLeft); // 복습전은 HP 대신 "남은 빛 n/3"
   }
-  const combo = el('div', 'battle-combo panel');
+  const combo = el('div', 'battle-combo frame-plate');
   combo.hidden = true;
   combo.setAttribute('aria-live', 'polite');
-  const bg = el('div', 'battle-bg');
-  stage.append(bg, fog, hero, monster, mhp, combo);
+  const fx = el('div', 'battle-fx');
+  fx.setAttribute('aria-hidden', 'true');
+  stage.append(world, mhp, combo, fx);
 
   const bottom = el('div', 'battle-bottom');
-  const status = el('div', 'battle-status panel');
+  const status = el('div', 'battle-status frame-plate');
   status.append(el('span', 'status-name', nickname));
   const hearts = el('span', 'hearts');
   if (mode === 'boss') {
@@ -48,13 +53,27 @@ export function buildFrame({ mode, nickname, monsterName, hearts: heartCount = 5
   } else {
     status.appendChild(el('span', 'practice-tag', '연습')); // 복습전은 하트 대신 "연습"
   }
-  const question = el('div', 'battle-question panel');
+  const question = el('div', 'battle-question frame-panel');
+  const tail = el('span', 'battle-tail'); // 말풍선 꼬리: 몬스터 쪽으로(layoutTail이 자리를 잡는다)
+  tail.setAttribute('aria-hidden', 'true');
+  const who = el('span', 'battle-who frame-plate', monsterName);
   const typeTag = el('span', 'battle-type');
   const prompt = el('p', 'battle-prompt');
   prompt.setAttribute('aria-live', 'polite');
-  question.append(el('span', 'battle-who', monsterName), typeTag, prompt);
-  bottom.append(status, question);
-  return { stage, bg, fog, hero, hand, monster, combo, cells, hearts, lightLeft, bottom, typeTag, prompt, monsterName };
+  question.appendChild(prompt);
+  bottom.append(status, who, typeTag, tail, question);
+  return { stage, world, bg, fog, hero, hand, monster, fx, combo, cells, hearts, lightLeft, bottom, tail, typeTag, prompt, monsterName };
+}
+
+// 말풍선 꼬리를 몬스터 상자 가운데 x에 놓는다(묶음 왼쪽 끝 기준 px, --tail-x). 창 크기가 바뀌면 다시 부른다.
+const TAIL_EDGE = 120; // 꼬리 가운데가 묶음 양 끝에서 이만큼은 안쪽에 있게(이름 표·유형 표와 겹치지 않게)
+export function layoutTail(f) {
+  const box = f.bottom.getBoundingClientRect();
+  const mon = f.monster.getBoundingClientRect();
+  if (!box.width || !mon.width) return;
+  const x = mon.left + mon.width / 2 - box.left;
+  const clamped = Math.min(Math.max(x, TAIL_EDGE), Math.max(TAIL_EDGE, box.width - TAIL_EDGE));
+  f.bottom.style.setProperty('--tail-x', `${Math.round(clamped)}px`);
 }
 
 // 하트·HP 칸·남은 빛·연속 표를 다시 그린다. crack*은 방금 잃은 칸에 금 가는 효과를 단다.
@@ -62,13 +81,12 @@ export function drawFrame(f, { hearts, hp, maxHp, light, need, streak = 0, crack
   if (hp !== undefined) {
     [...f.cells.children].forEach((c, i) => {
       c.classList.toggle('lost', i >= hp);
-      if (crackCell && i === hp) c.classList.add('crack');
+      c.classList.toggle('crack', crackCell && i === hp); // 방금 잃은 칸만(앞서 깨진 칸의 조각은 치운다)
     });
     [...f.hearts.children].forEach((h, i) => {
       const full = i < hearts;
-      h.className = `heart ${full ? 'full' : 'empty'}`;
+      h.className = `heart ${full ? 'full' : 'empty'}${crackHeart && i === hearts ? ' crack' : ''}`;
       h.textContent = full ? '♥' : '♡';
-      if (crackHeart && i === hearts) h.classList.add('crack');
     });
     f.hearts.setAttribute('aria-label', `하트 ${hearts}개`);
     f.cells.setAttribute('aria-label', `${f.monsterName} 남은 칸 ${hp}`);
@@ -118,9 +136,9 @@ export function buildOptions(type, options, onPick) {
   box.setAttribute('role', 'group');
   box.setAttribute('aria-label', '보기');
   const buttons = options.map((text, i) => {
-    const b = el('button', 'battle-option');
+    const b = el('button', 'battle-option frame-card');
     b.type = 'button';
-    const num = el('b', 'opt-num', String(i + 1));
+    const num = el('b', 'opt-num coin', String(i + 1));
     num.setAttribute('aria-hidden', 'true');
     b.append(num, el('span', 'opt-text', text));
     b.setAttribute('aria-label', `${i + 1}번 ${text}`);
@@ -131,7 +149,8 @@ export function buildOptions(type, options, onPick) {
   return { el: box, buttons };
 }
 
-// 고른 보기와 정답에 ○/×를 단다. 색 + 모양 + 글자(정답/오답)로 알린다.
+// 고른 보기(.picked)와 정답에 ○/×를 단다. 색 + 모양 + 글자(정답/오답)로 알린다.
+// 맞혔으면 그 보기에 "맞았어!" 표가 붙는다.
 export function markOptions(buttons, picked, answer) {
   const mark = (b, ok) => {
     b.classList.add(ok ? 'right' : 'wrong');
@@ -144,6 +163,7 @@ export function markOptions(buttons, picked, answer) {
   buttons[picked]?.classList.add('picked');
   if (picked !== answer) mark(buttons[picked], false);
   mark(buttons[answer], true);
+  if (picked === answer) buttons[answer].appendChild(el('span', 'opt-say', '맞았어!'));
 }
 
 export const COLUMNS = { blank: 4, meaning: 2, usage: 1 };
@@ -159,7 +179,7 @@ export function moveFocus(buttons, key, cols = 1) {
 
 // 오답 뒤: 정답과 낱말 뜻, '다음' 단추
 export function feedbackPanel({ answer, word, meaning }) {
-  const panel = el('div', 'battle-feedback panel');
+  const panel = el('div', 'battle-feedback frame-panel');
   panel.setAttribute('role', 'status');
   const head = el('p', 'battle-answer');
   head.append(el('span', 'x-mark', '×'), ` 정답: ${answer}`);
@@ -167,7 +187,9 @@ export function feedbackPanel({ answer, word, meaning }) {
   m.append(el('b', 'battle-meaning-word', word), `: ${meaning}`);
   const nextBtn = el('button', 'btn btn-wood battle-next', '다음');
   nextBtn.type = 'button';
-  panel.append(head, m, nextBtn);
+  const body = el('div', 'battle-feedback-body');
+  body.append(head, m, nextBtn);
+  panel.appendChild(body);
   return { el: panel, nextBtn };
 }
 
@@ -177,10 +199,12 @@ export function tipCard(title, text) {
   card.setAttribute('role', 'dialog');
   card.setAttribute('aria-modal', 'true');
   card.setAttribute('aria-label', '전투 규칙');
-  const inner = el('div', 'battle-tip-card panel');
+  const inner = el('div', 'battle-tip-card frame-panel');
   const start = el('button', 'btn btn-green', '시작');
   start.type = 'button';
-  inner.append(el('p', 'battle-tip-title', title), el('p', 'battle-tip-text', text), start);
+  const body = el('div', 'battle-tip-body');
+  body.append(el('p', 'battle-tip-title', title), el('p', 'battle-tip-text', text), start);
+  inner.appendChild(body);
   card.appendChild(inner);
   return { el: card, start };
 }

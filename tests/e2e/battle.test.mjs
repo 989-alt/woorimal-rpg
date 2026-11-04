@@ -231,22 +231,153 @@ test('문제 상자 아래 끝과 첫 보기 위 끝 사이는 12±2px (빈칸·
   assert.deepEqual([...seen.keys()].sort(), ['blank', 'meaning', 'usage']);
   for (const [type, m] of seen) assert.ok(Math.abs(m.gap - 12) <= 2, `${type} 간격 ${m.gap}`);
   assert.equal(seen.get('blank').rows, 1);
-  assert.ok(Math.abs(seen.get('blank').h - 110) <= 1);
   assert.equal(seen.get('meaning').rows, 2);
-  assert.ok(seen.get('meaning').h >= 72);
   assert.equal(seen.get('usage').rows, 4);
-  assert.ok(seen.get('usage').h >= 48);
+  // 유형별 보기 높이: 낱말 카드 110, 뜻 72, 문장 48
+  for (const [type, h] of [['blank', 110], ['meaning', 72], ['usage', 48]]) {
+    assert.ok(Math.abs(seen.get(type).h - h) <= 2, `${type} 보기 높이 ${seen.get(type).h} (기대 ${h}±2)`);
+  }
   assert.deepEqual(errors, []);
   await page.close();
 });
 
-test('움직임 줄이기: 맞혀도 빛줄기 없이 서서히 나타나기만', async () => {
+test('움직임 줄이기: 맞혀도 날아가기·파동·빛줄기 없이, 흔들림 움직임도 없고 서서히 나타나기만', async () => {
   const { page, errors } = await openNewGame({ reducedMotion: 'reduce' });
   await startBattle(page, 'boss', 9);
   const idx = await page.evaluate(() => window.__test.answerIndex());
   await page.keyboard.press(`Digit${idx + 1}`);
-  await page.waitForTimeout(50);
-  assert.equal(await page.locator('.battle-beam').count(), 0);
+  await page.waitForSelector('.fx-glow');
+  assert.equal(await page.locator('.battle-beam, .fx-word-fly, .fx-ring, .fx-spark, .fx-burst').count(), 0);
+  // 무대 안 어떤 움직임도 이동·크기·회전(translate/transform/scale/rotate) 틀을 갖지 않는다
+  const moving = await page.evaluate(() => document.getAnimations()
+    .filter((a) => a.effect?.target?.closest?.('.battle-stage'))
+    .flatMap((a) => a.effect.getKeyframes())
+    .filter((k) => ['translate', 'scale', 'rotate'].some((p) => p in k) || (k.transform && k.transform !== 'none')).length);
+  assert.equal(moving, 0, '움직임 줄이기에서 이동·크기 변화 프레임이 없다');
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('공격 연출: 맞히면 낱말이 날아가고 금빛 파동이 생겼다가 0.8초 안에 지워진다, 모든 움직임은 0.8초 이하', async () => {
+  const { page, errors } = await openNewGame();
+  await startBattle(page, 'boss', 9);
+  await page.evaluate(() => {
+    window.__fx = {};
+    const seen = (el, c, t) => { const k = c; if (el.classList?.contains(k) && !(k in window.__fx)) window.__fx[k] = { added: t, removed: null }; };
+    new MutationObserver((list) => {
+      const t = performance.now();
+      for (const m of list) {
+        m.addedNodes.forEach((n) => ['fx-word-fly', 'fx-ring', 'fx-spark'].forEach((c) => seen(n, c, t)));
+        m.removedNodes.forEach((n) => { for (const c of ['fx-word-fly', 'fx-ring', 'fx-spark']) if (n.classList?.contains(c) && window.__fx[c] && !window.__fx[c].removed) window.__fx[c].removed = t; });
+      }
+    }).observe(document.querySelector('.battle-fx'), { childList: true });
+  });
+  const word = await page.evaluate(() => window.__test.answerIndex());
+  await page.keyboard.press(`Digit${word + 1}`);
+  await page.waitForSelector('.fx-word-fly');
+  await page.waitForSelector('.fx-ring');
+  assert.ok((await page.locator('.fx-word-fly').innerText()).length >= 1, '맞힌 낱말이 날아간다');
+  const lens = await page.evaluate(() => document.getAnimations().map((a) => a.effect.getComputedTiming().endTime).filter(Number.isFinite));
+  assert.ok(lens.length > 10 && Math.max(...lens) <= 800, `가장 긴 움직임 ${Math.max(...lens)}ms`);
+  await page.waitForSelector('[data-phase="ask"] .battle-option:not([aria-disabled])');
+  const fx = await page.evaluate(() => window.__fx);
+  for (const c of ['fx-word-fly', 'fx-ring', 'fx-spark']) {
+    assert.ok(fx[c]?.removed, `${c}는 지워진다`);
+    assert.ok(fx[c].removed - fx[c].added <= 800, `${c} 수명 ${fx[c].removed - fx[c].added}ms`);
+  }
+  assert.equal(await page.locator('.battle-fx > *').count(), 0, '연출이 끝나면 효과 층이 비어 있다');
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('공격 연출: 연속 정답 3번이면 파동 2겹, 마지막 일격은 안개 조각이 흩어진 뒤 클리어', async () => {
+  const { page, errors } = await openNewGame();
+  await startBattle(page, 'boss', 9);
+  const rings = [];
+  for (let i = 0; i < 6; i++) {
+    const idx = await page.evaluate(() => window.__test.answerIndex());
+    const qn = await page.locator('[data-scene="battle"]').getAttribute('data-qn');
+    await page.keyboard.press(`Digit${idx + 1}`);
+    await page.waitForSelector('.fx-ring');
+    rings.push(await page.locator('.fx-ring').count());
+    if (i === 5) {
+      assert.ok((await page.locator('.fx-mist').count()) >= 10, '마지막 일격: 안개 조각');
+      assert.equal(await page.locator('.fx-bloom').count(), 1, '그 자리에 빛이 퍼진다');
+      break;
+    }
+    await page.waitForFunction((n) => document.querySelector('[data-scene="battle"]')?.dataset.qn !== n, qn);
+  }
+  assert.deepEqual(rings, [1, 1, 2, 2, 2, 2]);
+  await page.waitForSelector('[data-scene="clear"]');
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('맞히면 고른 보기에 "맞았어!"와 ○, 틀리면 × 보기와 정답 보기(.right)', async () => {
+  const { page, errors } = await openNewGame();
+  await startBattle(page, 'boss', 4);
+  // 오답
+  const idx = await page.evaluate(() => window.__test.answerIndex());
+  const wrong = (idx + 1) % 4;
+  await page.keyboard.press(`Digit${wrong + 1}`);
+  await page.waitForSelector('.battle-feedback');
+  const opts = page.locator('.battle-option');
+  assert.equal(await opts.nth(wrong).evaluate((b) => b.classList.contains('wrong') && b.classList.contains('picked')), true, '고른 오답 보기는 .wrong + .picked');
+  assert.equal(await opts.nth(wrong).locator('.opt-mark').textContent(), '×');
+  assert.equal(await opts.nth(idx).evaluate((b) => b.classList.contains('right')), true, '정답 보기는 .right');
+  assert.equal(await opts.nth(idx).locator('.opt-mark').textContent(), '○');
+  assert.equal(await page.locator('.opt-say').count(), 0, '틀리면 "맞았어!"는 없다');
+  assert.equal(await page.locator('.battle-option[aria-disabled="true"]').count(), 4, '풀면 보기는 모두 잠긴다');
+  // 오답 보기 색: 글자 #5E6266, 면은 잿빛 쪽
+  const look = await opts.nth(wrong).evaluate((b) => { const c = getComputedStyle(b); return { color: c.color, parchment: c.getPropertyValue('--parchment').trim() }; });
+  assert.equal(look.color, 'rgb(94, 98, 102)');
+  assert.notEqual(look.parchment.toLowerCase(), '#fbf5e6');
+  await page.locator('.battle-next').click();
+  await waitAsk(page);
+  // 정답
+  const idx2 = await page.evaluate(() => window.__test.answerIndex());
+  await page.keyboard.press(`Digit${idx2 + 1}`);
+  const right = page.locator('.battle-option').nth(idx2);
+  assert.equal(await right.locator('.opt-say').textContent(), '맞았어!');
+  assert.equal(await right.locator('.opt-mark').textContent(), '○');
+  assert.equal(await right.evaluate((b) => b.classList.contains('picked') && b.classList.contains('right')), true);
+  assert.equal(await page.locator('.opt-say').count(), 1);
+  assert.equal(await page.locator('.battle-option.wrong').count(), 0);
+  const say = await page.locator('.opt-say').evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+  assert.equal(say, 20, '"맞았어!"는 주아 20');
+  assert.match(await page.locator('.opt-say').evaluate((e) => getComputedStyle(e).fontFamily), /Jua/);
+  assert.match(await right.getAttribute('aria-label'), /정답/);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('게임 오버: 다시 도전에 처음 초점, 두 단추 48px 이상, 패널은 틀', async () => {
+  const { page, errors } = await openNewGame();
+  await startBattle(page, 'boss', 11);
+  for (let i = 0; i < 5; i++) await answer(page, false);
+  await page.waitForSelector('[data-scene="gameover"]');
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), '다시 도전');
+  assert.equal(await page.locator('.end-panel.frame-panel').count(), 1);
+  assert.equal(await page.locator('.end-title').evaluate((e) => parseFloat(getComputedStyle(e).fontSize)), 36);
+  assert.equal(await page.getByRole('button', { name: '도감 다시 보기' }).evaluate((b) => b.classList.contains('btn-wood')), true);
+  assert.equal(await page.getByRole('button', { name: '다시 도전' }).evaluate((b) => b.classList.contains('btn-green')), true);
+  for (const name of ['도감 다시 보기', '다시 도전']) {
+    const b = await page.getByRole('button', { name }).boundingBox();
+    assert.ok(Math.round(b.height) >= 48 && Math.round(b.width) >= 48, `${name} ${b.width}x${b.height}`);
+  }
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('클리어: 낱말 카드 틀 + 단추 .btn-green(처음 초점)', async () => {
+  const { page, errors } = await openNewGame();
+  await startBattle(page, 'boss');
+  for (let i = 0; i < 6; i++) await answer(page, true);
+  await page.waitForSelector('[data-scene="clear"]');
+  assert.equal(await page.locator('.end-panel.frame-panel').count(), 1);
+  assert.equal(await page.locator('.clear-card.frame-card').count(), 10);
+  assert.equal(await page.locator('.clear-word').first().evaluate((e) => getComputedStyle(e).backgroundImage.includes('gradient')), true, '낱말에 금빛 띠');
+  assert.equal(await page.evaluate(() => document.activeElement?.classList.contains('btn-green')), true);
   assert.deepEqual(errors, []);
   await page.close();
 });

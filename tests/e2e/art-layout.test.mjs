@@ -106,6 +106,36 @@ for (const avatar of ['f', 'm']) {
     assert.match(await page.locator('.battle-hero img').getAttribute('src'), new RegExp(`battle_hero_${avatar}\\.`));
     const bgFilter = await page.evaluate(() => getComputedStyle(document.querySelector('.battle-bg')).filter);
     assert.match(bgFilter, /grayscale\(0\.9\)/, '무대 배경은 무채색 잿빛');
+    // 시안 ui-04: 몬스터 명판(위 12·오른쪽 끝 1342), 주인공 명판(묶음 위끝 8 위), 말풍선 꼬리는 몬스터 쪽
+    const mhp = await box(page, '.battle-mhp.frame-plate');
+    near(mhp.y, 12, 2, '몬스터 명판 위');
+    near(mhp.x + mhp.width, 1342, 2, '몬스터 명판 오른쪽 끝');
+    near(mhp.width, 440, 2, '몬스터 명판 폭');
+    near(mhp.height, 56, 2, '몬스터 명판 높이');
+    const status = await box(page, '.battle-status.frame-plate');
+    const bundle = await box(page, '.battle-bottom');
+    near(status.y + status.height, bundle.y - 8, 2, '주인공 명판 아래끝 = 묶음 위끝 - 8');
+    near(status.x, 24, 2, '주인공 명판 왼쪽');
+    near(status.width, 300, 2, '주인공 명판 폭');
+    near(status.height, 52, 2, '주인공 명판 높이');
+    const tail = await box(page, '.battle-tail');
+    near(tail.x + tail.width / 2, mon.x + mon.width / 2, 24, '꼬리 가운데 x = 몬스터 상자 가운데 x');
+    const q = await box(page, '.battle-question.frame-panel');
+    near(q.width, 1318, 2, '말풍선 폭');
+    assert.ok(q.height >= 99, `말풍선 높이 ${q.height}`);
+    near(await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.battle-prompt')).fontSize)), 28, 0.5, '문제 글자');
+    assert.equal(await page.locator('.battle-who.frame-plate').count(), 1, '이름 표는 나무 명판');
+    assert.equal(await page.locator('.battle-option.frame-card').count(), 4, '보기는 카드 틀');
+    assert.equal(await page.locator('.battle-option .opt-num.coin').count(), 4, '번호는 동전');
+    // 하트·HP 칸: 그림이 오면 32px · 32×20
+    await page.waitForFunction(() => document.documentElement.classList.contains('ui-heart-full') && document.documentElement.classList.contains('ui-hp-cell'));
+    const heart = await box(page, '.heart.full');
+    near(heart.width, 32, 1, '하트');
+    near(heart.height, 32, 1, '하트');
+    assert.equal(await page.locator('.hearts').getAttribute('aria-label'), '하트 5개');
+    const cell = await box(page, '.hp-cell:not(.lost)');
+    near(cell.width, 32, 1, 'HP 칸 폭');
+    near(cell.height, 20, 1, 'HP 칸 높이');
     assert.deepEqual(errors, []);
     await page.close();
   });
