@@ -26,22 +26,16 @@ async function openNewGame(opts = {}) {
   return { page, errors };
 }
 
-const BOSS_TIP = '하트 5개, 몬스터 6칸. 6번 맞히면 이겨요.';
-const REVIEW_TIP = '얻은 낱말을 복습해요. 3번 맞히면 이겨요.';
+const BOSS_TIP = '하트 5개, 몬스터 HP 6칸이에요';
+const REVIEW_TIP = '1~4를 누르거나 보기를 눌러 골라요';
 
-// 전투를 연다. 처음이면 규칙 카드가 뜨고, '시작'을 누르면 첫 문제가 나온다.
+// 전투를 연다. 첫 문제가 바로 나오고, 처음이면 안내 말풍선이 함께 뜬다(그 글을 돌려준다. 없으면 null).
 async function startBattle(page, mode, seed = 7) {
   await page.evaluate(([m, s]) => window.__test.startBattle(m, s), [mode, seed]);
   await page.waitForSelector('[data-scene="battle"]');
-  const tip = page.locator('.battle-tip');
-  if (await tip.count()) {
-    const text = await tip.innerText();
-    await page.locator('.battle-tip button', { hasText: '시작' }).click();
-    await waitAsk(page);
-    return text;
-  }
   await waitAsk(page);
-  return null;
+  const tip = page.locator('.hint');
+  return (await tip.count()) ? tip.innerText() : null;
 }
 
 const waitAsk = (page) => page.waitForSelector('[data-scene="battle"][data-phase="ask"] .battle-option');
@@ -65,10 +59,11 @@ async function answer(page, correct, { via = 'key' } = {}) {
   }, qn);
 }
 
-test('보스전: 첫 규칙 카드, 정답만 6번 → 1막 클리어, 출제 기록 10개와 막 클리어가 저장된다', async () => {
+test('보스전: 첫 안내 말풍선, 정답만 6번 → 1막 클리어, 출제 기록 10개와 막 클리어가 저장된다', async () => {
   const { page, errors } = await openNewGame();
   const tip = await startBattle(page, 'boss');
-  assert.match(tip, new RegExp(BOSS_TIP.replace(/\./g, '\\.')));
+  assert.ok(tip.includes(BOSS_TIP), tip);
+  assert.equal(await page.locator('.hint[data-tip="tip-boss"]').count(), 1);
   const scene = page.locator('[data-scene="battle"]');
   assert.equal(await page.locator('.hp-cell').count(), 6);
   assert.equal(await page.locator('.heart.full').count(), 5);
@@ -131,7 +126,8 @@ test('보스전: 오답만 5번 → 게임 오버 → 도감 다시 보기 → �
   assert.equal(await page.locator('.codex').count(), 0);
   await page.getByRole('button', { name: '다시 도전' }).click();
   await waitAsk(page);
-  assert.equal(await page.locator('.battle-tip').count(), 0, '규칙 카드는 한 번만');
+  assert.equal(await page.locator('.hint').count(), 0, '안내는 한 번만(두 번째 보스전엔 없음)');
+  assert.equal((await page.evaluate(() => window.__test.hints)).filter((h) => h.id === 'tip-boss').length, 1);
   assert.equal(await page.locator('.heart.full').count(), 5);
   assert.equal(await page.locator('.hp-cell').count(), 6);
   assert.equal(await page.locator('.hp-cell.lost').count(), 0);
@@ -143,10 +139,11 @@ test('보스전: 오답만 5번 → 게임 오버 → 도감 다시 보기 → �
   await page.close();
 });
 
-test('복습전: 규칙 카드, 오답 2번 뒤 정답 3번 → 꼬마 안개를 쫓아내고 탐험으로, q2는 보고 가능(?)', async () => {
+test('복습전: 첫 안내 말풍선, 오답 2번 뒤 정답 3번 → 꼬마 안개를 쫓아내고 탐험으로, q2는 보고 가능(?)', async () => {
   const { page, errors } = await openNewGame();
   const tip = await startBattle(page, 'review');
-  assert.match(tip, new RegExp(REVIEW_TIP.replace(/\./g, '\\.')));
+  assert.ok(tip.includes(REVIEW_TIP), tip);
+  assert.equal(await page.locator('.hint[data-tip="tip-review"]').count(), 1);
   const scene = page.locator('[data-scene="battle"]');
   assert.match(await scene.innerText(), /남은 빛 3\/3/);
   assert.match(await scene.innerText(), /연습/);

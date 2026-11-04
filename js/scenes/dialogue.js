@@ -4,6 +4,9 @@
 import { actOfChapter } from '../../data/acts/index.js';
 import { formatLine } from '../rules/josa.js';
 import { extractWords, markTip } from '../rules/game.js';
+import { TIP, dueHint } from '../rules/tutorial.js';
+import { createHintLayer } from '../ui/hint.js';
+import { isCoarsePointer } from '../explore/input.js';
 import { blockColor, initial, labelBlockEl } from '../ui/placeholder.js';
 import { openMeaningCard } from '../ui/meaning-card.js';
 import { ASSETS, bustFor } from '../../data/assets.js';
@@ -11,12 +14,13 @@ import { setArt, preloadChapter } from '../ui/images.js';
 import { ribbonInk } from '../ui/ink.js';
 import { igniteWord, prefersReducedMotion } from '../ui/word-glow.js';
 
-export const TIP_WORD = 'tip-word';
 const HERO_COLOR = '#3B5BA5'; // 쪽빛
 const GUARD_MS = 200;
 const MS_PER_CHAR = 30;
 // 줄이 다 찍힌 뒤 낱말이 잿빛에서 금빛이 되는 것을 눈으로 보게 하는 시간(ms). 이 동안은 누름을 받지 않고, 지나면 뜻풀이 카드가 열린다.
 export const GLOW_MS = 700;
+// 처음 보는 새 낱말은 안내 글을 읽을 시간만큼 더 기다린 뒤 카드를 연다(누르면 바로 열린다).
+export const TIP_GLOW_MS = 2600;
 
 // 글자가 나오는 빠르기(ms). 검사용(?test=1) fastText만 바꾼다.
 let typeSpeed = MS_PER_CHAR;
@@ -112,6 +116,7 @@ export const dialogue = {
     box.append(tag, text, arrow);
     scene.append(heroBust, npcBust, box);
     root.appendChild(scene);
+    const hints = createHintLayer(scene);
     // 그림이 있으면 배경·상반신을 그림으로, 없거나 못 불러오면 지금의 임시 그림 그대로
     const avatar = initState?.avatar === 'm' ? 'm' : 'f';
     if (chapter) {
@@ -125,14 +130,15 @@ export const dialogue = {
     let card = null; // 열려 있는 뜻풀이 카드
     let busy = false; // 이 줄의 낱말 카드를 다 보여 주는 동안(낱말이 빛나는 동안 포함)
     let glowTimer = 0; // 낱말이 빛을 되찾는 동안(이 동안 누름은 받지 않는다)
+    let pendingNext = null; // glowTimer가 끝나면 부를 '다음 카드 열기'(안내 글을 읽는 중 누르면 앞당겨 부른다)
     let leaving = false;
     let raf = 0;
     let running = false; // 타자 효과 고리가 도는 중
     let last = 0;
     let spans = [];
     let renderedCount = -1; // 마지막으로 그린 글자 수
-    let tipEl = null;
     let lastNpc = null;
+    let wordHint = null; // 이 줄에서 낱말이 금빛이 되면 띄울 안내(보인 뒤에는 null)
     const shownCards = new Set(); // 이 대화에서 이미 카드를 보인 낱말
 
     // 이 줄에서 보일 인물: 지금 줄 또는 가까운 앞 줄, 없으면 뒤 줄의 말하는 이와 그 줄
@@ -168,8 +174,8 @@ export const dialogue = {
       clearTimeout(glowTimer);
       glowTimer = 0;
       scene.removeAttribute('data-ready');
-      tipEl?.remove();
-      tipEl = null;
+      hints.clear();
+      wordHint = null;
       arrow.hidden = true;
       text.textContent = '';
       spans = splitHighlights(raw).map((seg) => {
@@ -218,22 +224,41 @@ export const dialogue = {
         if (isNew) s.hl.classList.add('new');
         s.hl.classList.add(isNew && !prefersReducedMotion() ? 'word-dim' : 'word-lit');
       }
-      maybeTip();
       render();
+      pickHint();
       if (tw.done()) sentenceShown(); // 타자 효과 없이 바로 다 나온 줄
       kick();
     }
 
-    // 처음 보는 새 낱말이 나오면 한 번만 안내한다.
-    function maybeTip() {
+    // 안내 앵커: 글 상자, 그리고 새 낱말(상자 위에 놓되 꼬리는 낱말을 가리킨다: 글 줄을 가리지 않도록)
+    const wordAnchor = () => {
+      const w = text.querySelector('.hl.new');
+      const a = (w ?? box).getBoundingClientRect();
+      const b = box.getBoundingClientRect();
+      const l = scene.getBoundingClientRect();
+      return { x: a.left - l.left, y: b.top - l.top, w: a.width, h: b.height };
+    };
+
+    // 카드 안내는 카드 위(이름 리본 위)에 놓는다. 확인 단추 바로 위는 뜻풀이 글이고, 카드 아래는 뒤에 깔린 대사 글줄이다.
+    const cardAnchor = (ok) => () => {
+      const ribbon = ok.closest('.word-card')?.querySelector('.word-card-title')?.getBoundingClientRect();
+      const l = scene.getBoundingClientRect();
+      return ribbon ? { x: ribbon.left - l.left, y: ribbon.top - l.top - 10, w: ribbon.width, h: ribbon.height } : null; // 리본 그림 윗단이 상자보다 조금 솟아 있어 10px 더 띄운다
+    };
+
+    // 이 줄에서 띄울 안내를 묻는다(규칙은 tutorial.js). 낱말 안내는 낱말이 금빛이 된 뒤(sentenceShown)에 띄우고, 나머지는 바로 띄운다.
+    function pickHint() {
       const st = ctx.getState();
-      const target = spans.find((s) => s.hl?.classList.contains('new'));
-      if (!st || !target || st.seenTips.includes(TIP_WORD)) return;
-      ctx.setState(markTip(st, TIP_WORD));
-      tipEl = el('p', 'word-tip', '반짝이는 낱말을 눌러 보세요');
-      text.appendChild(tipEl);
-      tipEl.style.left = `${target.hl.offsetLeft}px`;
-      tipEl.style.top = `${target.hl.offsetTop - 48}px`;
+      if (!st || !chapter) return;
+      const newWord = !!text.querySelector('.hl.new');
+      const hint = dueHint(st, chapter, { type: 'dialogue-line', newWord }, { touch: isCoarsePointer() });
+      if (!hint) return;
+      if (hint.id === TIP.WORD) { wordHint = hint; return; }
+      showHint(hint, box);
+    }
+    function showHint(hint, anchor, opts) {
+      ctx.setState(markTip(ctx.getState(), hint.id));
+      hints.show(hint, anchor, opts);
     }
 
     function sentenceShown() {
@@ -242,8 +267,6 @@ export const dialogue = {
       const pending = newWordsOf(raw, words, shownCards);
       if (pending.length === 0) { arrow.hidden = false; return; }
       busy = true;
-      tipEl?.remove();
-      tipEl = null;
       const cards = [...pending];
       let ignited = false;
       for (const s of spans) if (s.hl?.classList.contains('word-dim')) { igniteWord(s.hl); ignited = true; }
@@ -251,7 +274,9 @@ export const dialogue = {
         const w = cards.shift();
         if (!w) { busy = false; arrow.hidden = false; syncReady(); return; }
         glowTimer = 0;
+        hints.clear(); // 낱말 안내는 카드가 열리면 끝(누른 것이든, 시간이 다 된 것이든)
         card = openMeaningCard(scene, w, () => {
+          hints.done('confirm');
           card = null;
           kick(); // 카드가 열린 동안 멈췄던 시간(다음 줄로 넘어가기 전 기다림)을 다시 흘린다
           shownCards.add(w);
@@ -260,13 +285,29 @@ export const dialogue = {
           if (st) ctx.store?.save(st); // 안내를 본 표시(seenTips)까지 남긴다. 낱말은 이미 저장되어 있다.
           next();
         });
+        const cardHint = chapter && dueHint(ctx.getState(), chapter, { type: 'word-card' }, { touch: isCoarsePointer() });
+        if (cardHint) showHint(cardHint, cardAnchor(card.okButton), { place: 'above' });
       };
-      if (ignited) glowTimer = window.setTimeout(next, GLOW_MS);
-      else next();
+      // 낱말이 금빛이 된 지금 낱말 안내를 띄운다. 읽을 시간 동안 카드를 미룬다.
+      let wait = ignited ? GLOW_MS : 0;
+      if (wordHint) {
+        showHint(wordHint, wordAnchor);
+        wordHint = null;
+        wait = TIP_GLOW_MS;
+      }
+      if (wait > 0) {
+        pendingNext = next;
+        glowTimer = window.setTimeout(() => { pendingNext = null; next(); }, wait);
+      } else next();
     }
 
     function press() {
-      if (card || leaving || !tw || glowTimer) return;
+      if (card || leaving || !tw) return;
+      if (glowTimer) { // 낱말 안내가 떠 있는 동안에는 누르면 바로 카드를 연다. 그 밖의 빛나는 동안은 누름을 받지 않는다.
+        if (hints.done('press')) { clearTimeout(glowTimer); glowTimer = 0; const go = pendingNext; pendingNext = null; go?.(); }
+        return;
+      }
+      hints.done('press');
       const r = tw.press();
       if (r === 'reveal') { render(); sentenceShown(); syncReady(); kick(); }
       else if (r === 'next') advance();
@@ -287,6 +328,8 @@ export const dialogue = {
       else press();
     };
     window.addEventListener('keydown', onKey);
+    const onResize = () => hints.reposition();
+    window.addEventListener('resize', onResize);
     box.addEventListener('click', press);
     text.addEventListener('click', (e) => {
       const hl = e.target.closest?.('.hl.new');
@@ -335,8 +378,10 @@ export const dialogue = {
     return () => {
       leaving = true;
       clearTimeout(glowTimer);
+      hints.dispose();
       cancelAnimationFrame(raf);
       window.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', onResize);
       scene.remove();
     };
   },

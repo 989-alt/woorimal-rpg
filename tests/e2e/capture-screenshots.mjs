@@ -35,8 +35,6 @@ async function shoot(page, size, label) {
 async function startBattle(page, mode) {
   await page.evaluate((m) => window.__test.startBattle(m, 7), mode);
   await page.waitForSelector('[data-scene="battle"]');
-  await page.waitForSelector('.battle-tip button, [data-phase="ask"] .battle-option');
-  if (await page.locator('.battle-tip').count()) await page.locator('.battle-tip button').click();
   await page.waitForSelector('[data-phase="ask"] .battle-option');
 }
 

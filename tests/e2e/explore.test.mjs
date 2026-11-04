@@ -62,8 +62,8 @@ test('새 게임을 열면 1366×768에서 캔버스가 화면을 꽉 채우고 
   assert.match(await hud.innerText(), /이 장의 낱말 0\/5/);
   assert.match(await hud.innerText(), /우물에서 물 길어 오기/);
   // 처음 하는 학생 안내는 움직이면 사라진다.
-  const tip = page.locator('.explore-tip');
-  assert.equal(await tip.innerText(), '방향키로 걸어 보세요');
+  const tip = page.locator('.hint[data-tip="move"]');
+  assert.match(await tip.innerText(), /방향키로 걸어 보세요/);
   await page.keyboard.press('ArrowRight');
   await tip.waitFor({ state: 'detached' });
   const s = await page.evaluate(() => window.__test.state());

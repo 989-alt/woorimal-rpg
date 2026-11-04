@@ -111,10 +111,6 @@ async function askType(page, want) {
 async function battle(page, mode, seed = 7) {
   await page.evaluate(([m, s]) => window.__test.startBattle(m, s), [mode, seed]);
   await page.waitForSelector('[data-scene="battle"]');
-  if (await page.locator('.battle-tip').count()) {
-    await settle(page);
-    await page.locator('.battle-tip button').click();
-  }
   await page.waitForSelector('[data-phase="ask"] .battle-option');
 }
 

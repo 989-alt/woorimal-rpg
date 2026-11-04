@@ -297,7 +297,6 @@ canvas, img {
 .explore-stage:focus { outline: none; }
 .explore-stage canvas { display: block; }
 
-.explore-tip,
 .toast {
   position: absolute;
   left: 50%;
@@ -312,7 +311,6 @@ canvas, img {
   white-space: nowrap;
   animation: panel-in 180ms ease-out;
 }
-.explore-tip { top: 104px; } /* HUD(88px) 아래 */
 .toast { bottom: 24px; }
 .toast[hidden] { display: none; }
 
@@ -483,14 +481,6 @@ canvas, img {
 }
 .dialogue-arrow[hidden] { display: none; }
 @keyframes arrow-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
-
-.word-tip {
-  position: absolute; margin: 0; padding: 6px 14px;
-  border: 3px solid var(--wood); border-radius: 14px;
-  background: var(--parchment); box-shadow: 0 3px 0 var(--wood-dark), 0 6px 10px rgba(20, 10, 0, .35);
-  font-size: 20px; white-space: nowrap;
-  animation: panel-in 180ms ease-out;
-}
 
 /* ── 낱말이 빛을 되찾는 순간 ───────────────
    [[낱말]]은 잿빛으로 찍히고(.word-dim), 줄이 끝나면 0.6초 동안 말빛 금색(.word-lit)이 되며 빛이 번지고 알갱이가 흩어진다.
@@ -1159,22 +1149,7 @@ canvas, img {
 .opts-usage { display: grid; gap: 8px; }
 .opts-usage .battle-option { --bt: 12px; --br: 12px; --bb: 12px; --bl: 12px; --ring: 2px; min-height: 48px; font-size: 22px; line-height: 24px; }
 
-/* 처음 전투 규칙 카드(모양만 틀, 말은 Task 9가 바꾼다), 이김 메시지 */
-.battle-tip {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  display: grid;
-  place-items: center;
-  background: rgba(43, 38, 34, .55);
-  animation: panel-in 180ms ease-out;
-}
-.battle-tip-card { width: min(560px, 90vw); }
-.battle-tip-body { display: grid; justify-items: center; gap: 14px; padding: 12px 20px 8px; text-align: center; }
-.battle-tip-body p { margin: 0; }
-.battle-tip-title { font-family: var(--font-title); font-size: 28px; }
-.battle-tip-text { font-size: 24px; line-height: 1.5; }
-.battle-tip-card .btn { min-width: 160px; }
+/* 이김 메시지 */
 .battle-win {
   position: absolute;
   left: 50%;

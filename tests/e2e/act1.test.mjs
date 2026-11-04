@@ -62,12 +62,10 @@ async function toast(page) {
 
 const waitAsk = (page) => page.waitForSelector('[data-scene="battle"][data-phase="ask"] .battle-option');
 
-// 전투를 연다: 규칙 카드가 있으면 '시작'
+// 전투를 연다(첫 문제가 바로 나온다)
 async function enterBattle(page, target) {
   await interact(page, target);
   await page.waitForSelector('[data-scene="battle"]');
-  await page.waitForSelector('.battle-tip button, [data-scene="battle"][data-phase="ask"] .battle-option');
-  if (await page.locator('.battle-tip').count()) await page.locator('.battle-tip button', { hasText: '시작' }).click();
   await waitAsk(page);
 }
 

@@ -76,8 +76,6 @@ for (const avatar of ['f', 'm']) {
 
 async function battle(page, mode) {
   await page.evaluate((m) => window.__test.startBattle(m, 7), mode);
-  await page.waitForSelector('.battle-tip button');
-  await page.click('.battle-tip button');
   await page.waitForSelector('[data-phase="ask"] .battle-option');
   await page.waitForSelector('.battle-hero img.battle-hero-img');
   await page.waitForSelector('.battle-monster img.battle-monster-img');

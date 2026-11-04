@@ -5,22 +5,19 @@ import { actOfChapter } from '../../data/acts/index.js';
 import { createBattle, currentWord, answer, retry, optionOrder } from '../rules/battle.js';
 import { createReview, answerReview } from '../rules/review.js';
 import { actWords, chapterOf, finishAct, markTip } from '../rules/game.js';
+import { dueHint } from '../rules/tutorial.js';
+import { createHintLayer } from '../ui/hint.js';
+import { isCoarsePointer } from '../explore/input.js';
 import { winSmall } from '../rules/quests.js';
 import { makeRng } from '../rules/rng.js';
 import { attachJosa } from '../rules/josa.js';
 import {
-  TYPE_LABEL, COLUMNS, buildFrame, layoutTail, drawFrame, renderPrompt, buildOptions, markOptions, moveFocus, feedbackPanel, tipCard,
+  TYPE_LABEL, COLUMNS, buildFrame, layoutTail, drawFrame, renderPrompt, buildOptions, markOptions, moveFocus, feedbackPanel,
 } from '../ui/battle-layout.js';
 import { HIT_MS, playHit, playMiss } from '../ui/battle-fx.js';
 import { ASSETS } from '../../data/assets.js';
 import { setArt } from '../ui/images.js';
 
-export const TIP_BOSS = 'tip-boss';
-export const TIP_REVIEW = 'tip-review';
-const TIPS = {
-  boss: { id: TIP_BOSS, text: '하트 5개, 몬스터 6칸. 6번 맞히면 이겨요.' },
-  review: { id: TIP_REVIEW, text: '얻은 낱말을 복습해요. 3번 맞히면 이겨요.' },
-};
 const HEARTS = 5;
 const HP = 6;
 const KEY_GUARD_MS = 300; // '다음'이 뜬 직후 키 연타로 넘어가지 않게
@@ -56,7 +53,7 @@ export const battle = {
     const scene = el('section', `battle-scene mode-${mode}`);
     scene.dataset.scene = 'battle';
     scene.dataset.mode = mode;
-    scene.dataset.phase = 'intro';
+    scene.dataset.phase = 'ask';
     scene.dataset.qn = '0';
     root.appendChild(scene);
 
@@ -91,7 +88,8 @@ export const battle = {
     const f = buildFrame({ mode, nickname: state.nickname, monsterName, hearts: HEARTS, hp: HP });
     scene.append(f.stage, f.bottom);
     layoutTail(f);
-    const onResize = () => layoutTail(f);
+    const hints = createHintLayer(scene);
+    const onResize = () => { layoutTail(f); hints.reposition(); };
     window.addEventListener('resize', onResize);
     // 그림이 있으면 무대·주인공·몬스터를 그림으로, 없거나 못 불러오면 임시 그림 그대로
     setArt(f.bg, ASSETS.battleBg[act.id], 'battle-bg-img art');
@@ -110,7 +108,7 @@ export const battle = {
     // ── 문제 ──
     let q = null; // { wordId, type, prompt, options, answer }
     let blank = null;
-    let phase = 'intro';
+    let phase = 'ask';
     let qn = 0;
     const setPhase = (p) => { phase = p; scene.dataset.phase = p; };
 
@@ -121,6 +119,23 @@ export const battle = {
         return { wordId, type: raw.type, prompt: raw.prompt, ...optionOrder(raw, rng) };
       }
       return { wordId: r.word, type: 'meaning', ...r.question };
+    }
+
+    // 안내 앵커: 보기 묶음은 문제 말풍선 위에, 하트는 주인공 명판에. (보기 묶음 바로 위는 문제 글이므로 말풍선 위로 올려 글을 가리지 않는다)
+    const optionsAnchor = () => {
+      const l = scene.getBoundingClientRect();
+      const o = options.el.getBoundingClientRect();
+      const qb = f.question.getBoundingClientRect();
+      return { x: o.left - l.left, y: qb.top - l.top, w: o.width, h: qb.height };
+    };
+    const anchorOf = { options: optionsAnchor, hearts: f.status };
+
+    // 처음 문제가 나올 때 이 전투의 안내를 묻는다(규칙은 tutorial.js). 띄우면 본 것으로 기록한다.
+    function pickHint() {
+      const hint = dueHint(ctx.getState(), chapter, { type: 'battle', mode }, { touch: isCoarsePointer() });
+      if (!hint) return;
+      ctx.setState(markTip(ctx.getState(), hint.id));
+      hints.show(hint, anchorOf[hint.anchor]);
     }
 
     function ask() {
@@ -135,10 +150,12 @@ export const battle = {
       scene.dataset.qn = String(qn);
       setPhase('ask');
       options.el.focus({ preventScroll: true });
+      if (qn === 1) pickHint();
     }
 
     function pick(i) {
       if (phase !== 'ask' || leaving) return; // 한 문제에 한 번만
+      hints.done('pick');
       const ok = i === q.answer;
       setPhase(ok ? 'hit' : 'miss');
       markOptions(options.buttons, i, q.answer);
@@ -225,26 +242,12 @@ export const battle = {
     };
 
     drawHud();
-    // 처음 하는 전투: 규칙 한 장을 보여 주고 '시작'으로 첫 문제
-    const tip = TIPS[mode];
-    if (!state.seenTips.includes(tip.id)) {
-      const { el: card, start } = tipCard(mode === 'boss' ? '보스 전투' : '복습 전투', tip.text);
-      scene.appendChild(card);
-      start.addEventListener('click', () => {
-        if (phase !== 'intro') return;
-        state = markTip(ctx.getState(), tip.id);
-        ctx.setState(state);
-        card.remove();
-        ask();
-      });
-      start.focus({ preventScroll: true });
-    } else {
-      ask();
-    }
+    ask();
 
     return () => {
       leaving = true;
       probe = null;
+      hints.dispose();
       timers.forEach(clearTimeout);
       document.removeEventListener('keydown', onKey);
       window.removeEventListener('resize', onResize);

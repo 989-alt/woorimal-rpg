@@ -128,9 +128,15 @@ test('낱말을 누르면 문장이 다 보이기 전에도 카드가 뜨고, �
   const script = [{ who: 'narration', text: '[[짬]]이 나서 [[얼추]] 끝냈다. 그리고 한참 더 긴 글이 이어진다, 아주 길게 길게 이어진다.' }];
   await page.evaluate((sc) => window.__test.dialogue(sc, ['짬', '얼추'], '우물'), script);
   await page.waitForSelector('.hl');
-  assert.equal(await page.locator('.word-tip').innerText(), '반짝이는 낱말을 눌러 보세요');
-  await page.locator('.hl').first().click();
+  // 낱말 안내는 낱말이 금빛이 된 뒤에 뜬다(줄이 다 찍히기 전에는 없다)
+  assert.equal(await page.locator('.hint').count(), 0);
+  await page.locator('.hl').first().click(); // 글이 다 나오게 한다
+  await page.waitForSelector('.hint[data-tip="tip-word"]');
+  assert.match(await page.locator('.hint[data-tip="tip-word"]').innerText(), /낱말이 금빛으로 빛나면/);
+  assert.ok(await page.locator('.hl.word-lit').count() > 0, '안내가 뜰 때 낱말은 금빛');
+  await page.locator('.hl').first().click(); // 한 번 더 누르면 기다리지 않고 카드가 열린다
   await page.waitForSelector('.word-card');
+  assert.equal(await page.locator('.hint[data-tip="tip-word"]').count(), 0);
   assert.match(await page.locator('.word-card-word').innerText(), /짬/);
   await page.locator('.word-card button').click();
   await page.waitForFunction(() => document.querySelector('.word-card-word')?.textContent === '얼추');
@@ -138,7 +144,7 @@ test('낱말을 누르면 문장이 다 보이기 전에도 카드가 뜨고, �
   await page.waitForSelector('.word-card', { state: 'detached' });
   const s = await page.evaluate(() => window.__test.state());
   assert.deepEqual(Object.keys(s.acquired).sort(), ['얼추', '짬']);
-  assert.equal(await page.locator('.word-tip').count(), 0);
+  assert.equal(await page.locator('.hint').count(), 0);
   await finishDialogue(page);
   assert.deepEqual(errors, []);
   await page.close();

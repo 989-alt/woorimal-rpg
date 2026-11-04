@@ -62,7 +62,7 @@ export function buildFrame({ mode, nickname, monsterName, hearts: heartCount = 5
   prompt.setAttribute('aria-live', 'polite');
   question.appendChild(prompt);
   bottom.append(status, who, typeTag, tail, question);
-  return { stage, world, bg, fog, hero, hand, monster, fx, combo, cells, hearts, lightLeft, bottom, tail, typeTag, prompt, monsterName };
+  return { stage, world, bg, fog, hero, hand, monster, fx, combo, cells, hearts, lightLeft, bottom, status, question, tail, typeTag, prompt, monsterName };
 }
 
 // 말풍선 꼬리를 몬스터 상자 가운데 x에 놓는다(묶음 왼쪽 끝 기준 px, --tail-x). 창 크기가 바뀌면 다시 부른다.
@@ -191,20 +191,4 @@ export function feedbackPanel({ answer, word, meaning }) {
   body.append(head, m, nextBtn);
   panel.appendChild(body);
   return { el: panel, nextBtn };
-}
-
-// 처음 하는 전투 앞의 규칙 한 장
-export function tipCard(title, text) {
-  const card = el('div', 'battle-tip');
-  card.setAttribute('role', 'dialog');
-  card.setAttribute('aria-modal', 'true');
-  card.setAttribute('aria-label', '전투 규칙');
-  const inner = el('div', 'battle-tip-card frame-panel');
-  const start = el('button', 'btn btn-green', '시작');
-  start.type = 'button';
-  const body = el('div', 'battle-tip-body');
-  body.append(el('p', 'battle-tip-title', title), el('p', 'battle-tip-text', text), start);
-  inner.appendChild(body);
-  card.appendChild(inner);
-  return { el: card, start };
 }
