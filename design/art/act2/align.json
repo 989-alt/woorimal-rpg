@@ -1,0 +1,22 @@
+{
+ "haesol_base": {
+  "src": "bust_haesol_base_a1",
+  "quality": 85
+ },
+ "haesol_pout": {
+  "src": "bust_haesol_pout_a1",
+  "quality": 85,
+  "iou_head": 0.9883,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ },
+ "haesol_surprise": {
+  "src": "bust_haesol_surprise_a1",
+  "quality": 85,
+  "iou_head": 0.9954,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ }
+}

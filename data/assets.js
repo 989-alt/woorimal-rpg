@@ -42,7 +42,7 @@ export const ASSETS = {
     laundry: { base: 'assets/illust/bust_laundry_base.webp', joy: 'assets/illust/bust_laundry_joy.webp' },
     gate: { base: 'assets/illust/bust_gate_base.webp', joy: 'assets/illust/bust_gate_joy.webp' },
     // 2막 (그림은 다음 계획에서)
-    haesol: { base: null, pout: null, surprise: null },
+    haesol: { base: 'assets/illust/bust_haesol_base.webp', pout: 'assets/illust/bust_haesol_pout.webp', surprise: 'assets/illust/bust_haesol_surprise.webp' },
     fruit: { base: null, joy: null },
     guard: { base: null, joy: null },
     shopper: { base: null },
