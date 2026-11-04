@@ -2,6 +2,7 @@
 import { ACTS } from '../../data/acts/index.js';
 import { acquiredCount, chapterWords, wordsLeftText } from '../rules/game.js';
 import { nextGoal } from '../rules/guide.js';
+import { visibleNpcs } from '../rules/quests.js';
 import { ASSETS, bustFor } from '../../data/assets.js';
 import { setArt } from '../ui/images.js';
 import { blockColor, initial, labelBlockEl, textOn } from '../ui/placeholder.js';
@@ -65,6 +66,27 @@ function bagSlot(id) {
   return li;
 }
 
+// 동료 초상 하나(지름 48): 상반신 그림을 얼굴 쪽으로 잘라 쓰고, 그림이 없으면 인물 색 바탕에 이름 첫 글자
+function companionBadge(npc) {
+  const el = document.createElement('span');
+  el.className = 'medallion hud-companion';
+  el.dataset.npc = npc.id;
+  el.setAttribute('role', 'img');
+  el.setAttribute('aria-label', `동료 ${npc.name}`);
+  el.title = npc.name;
+  const clip = document.createElement('span');
+  clip.className = 'hud-companion-clip';
+  const face = document.createElement('span');
+  face.className = 'hud-companion-initial';
+  face.setAttribute('aria-hidden', 'true');
+  face.textContent = initial(npc.name);
+  face.style.background = npc.color;
+  face.style.color = textOn(npc.color);
+  el.append(clip, face);
+  setArt(clip, bustFor(npc.id, 'base'), 'hud-companion-face');
+  return el;
+}
+
 // 위쪽 HUD(캔버스 위의 HTML 층): 왼쪽 메달 + 지금 할 일 두루마리, 오른쪽 낱말·가방 명판과 도감·할 일 단추.
 // 두루마리 글은 setTaskText 한 곳에서만 바꾸고, 늘 지금 할 일(nextGoal)을 보여 준다.
 export function createHud({ onCodex, onTasks, avatar = 'f' }) {
@@ -80,6 +102,9 @@ export function createHud({ onCodex, onTasks, avatar = 'f' }) {
   clip.className = 'hud-face-clip';
   medallion.append(clip, face);
   setArt(clip, bustFor(`hero_${avatar === 'm' ? 'm' : 'f'}`, 'base'), 'hud-face');
+
+  const companions = document.createElement('div'); // 함께 다니는 동료(지금 맵에 서 있는 동료만)
+  companions.className = 'hud-companions';
 
   const task = document.createElement('p');
   task.className = 'hud-task frame-scroll';
@@ -101,9 +126,10 @@ export function createHud({ onCodex, onTasks, avatar = 'f' }) {
 
   const codexButton = button('도감', 'E', 'icon-book', onCodex);
   const tasksButton = button('할 일', 'Q', 'icon-scroll', onTasks);
-  el.append(medallion, task, words, codexButton, tasksButton);
+  el.append(medallion, companions, task, words, codexButton, tasksButton);
 
   let bagKey = null;
+  let companionKey = null;
   const setTaskText = (text) => { if (taskText.textContent !== text) taskText.textContent = text; };
 
   return {
@@ -117,7 +143,13 @@ export function createHud({ onCodex, onTasks, avatar = 'f' }) {
       face.style.background = blockColor(state.nickname);
       face.style.color = textOn(blockColor(state.nickname));
       count.textContent = `이 장의 낱말 ${acquiredCount(state, chapter)}/${chapterWords(chapter).length}`;
-      // 걸을 때마다 불리므로, 가방이 바뀐 때만 칸을 다시 만든다(그림이 깜박이지 않게).
+      // 걸을 때마다 불리므로, 동료와 가방은 바뀐 때만 칸을 다시 만든다(그림이 깜박이지 않게).
+      const here = visibleNpcs(state, chapter).filter((n) => n.companion);
+      const cKey = here.map((n) => n.id).join(',');
+      if (cKey !== companionKey) {
+        companionKey = cKey;
+        companions.replaceChildren(...here.map(companionBadge));
+      }
       const key = Array.from({ length: BAG_SLOTS }, (_, i) => state.bag[i] ?? '').join(',');
       if (key === bagKey) return;
       bagKey = key;

@@ -213,6 +213,41 @@ canvas, img {
 :root.ui-medallion .hud-initial { inset: 15px; border-radius: 50%; font-size: 32px; }
 .hud-face-clip.has-art ~ .hud-initial { display: none; }
 
+/* 동료 초상: 메달 오른쪽에 작은 메달(지름 48, 놋쇠 테)을 늘어놓는다. 동료가 없으면 자리도 없다 */
+.hud-companions { flex: none; display: flex; gap: 6px; margin-top: 26px; z-index: 2; }
+.hud-companions:empty { display: none; }
+.hud-companion.medallion {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-width: 3px;
+  filter: drop-shadow(0 3px 3px rgba(20, 10, 0, .5));
+}
+:root.ui-medallion .hud-companion.medallion { border: 0; background: radial-gradient(circle at center, var(--parchment-deep) 0 16px, transparent 17px); }
+.hud-companion-clip { position: absolute; inset: 0; overflow: hidden; border-radius: 50%; }
+:root.ui-medallion .hud-companion-clip { inset: 7px; }
+.hud-companion-clip > .hud-companion-face {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 15%; /* 상반신에서 얼굴 쪽만 */
+  transform: scale(1.8); transform-origin: 50% 20%;
+  image-rendering: auto; border-radius: 0;
+}
+.hud-companion-initial {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-family: var(--font-title);
+  font-size: 26px;
+  line-height: 1;
+}
+:root.ui-medallion .hud-companion-initial { inset: 7px; font-size: 22px; }
+.hud-companion-clip.has-art ~ .hud-companion-initial { display: none; }
+/* 동료 초상이 있으면 두루마리는 그 오른쪽에서 시작한다(메달 밑으로 말려 들어가지 않는다) */
+.hud-companions:not(:empty) + .hud-task { margin-left: 0; }
+.hud-companions:not(:empty) + .hud-task .hud-dot { margin-left: 22px; }
+
 /* 지금 할 일 두루마리: 메달 오른쪽에 물린다 */
 .hud-task {
   flex: 1 1 auto;

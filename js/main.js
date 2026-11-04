@@ -2,6 +2,7 @@ import { createRouter } from './router.js';
 import { createStore } from './save.js';
 import { newGame, acquireWords, takeWords, actWords, chapterWords, enterNextChapter, chapterOf, setPos, fogOpen, bossGone, fastForward } from './rules/game.js';
 import { actOfChapter } from '../data/acts/index.js';
+import { visibleNpcs } from './rules/quests.js';
 import { parseMap, isWalkable, reachable } from './explore/grid.js';
 import { explore } from './scenes/explore.js';
 import { title } from './scenes/title.js';
@@ -51,7 +52,7 @@ function teleportTo(target) {
   if (!state) throw new Error('teleportTo: 게임이 시작되지 않았습니다');
   const chapter = chapterOf(actOfChapter(state.chapter), state.chapter);
   const map = parseMap(chapter.map.rows);
-  const npc = chapter.npcs.find((n) => n.id === target);
+  const npc = visibleNpcs(state, chapter).find((n) => n.id === target); // 안 보이는 인물은 지도에 없는 것과 같다
   const obj = chapter.objects.find((o) => o.name === target);
   const spot = npc ? map.slots[npc.slot]
     : obj ? map.objects[obj.slot]

@@ -6,6 +6,8 @@ import { newGame, chapterOf, chapterWords, acquireWords } from '../js/rules/game
 import { talkTo, inspect, winSmall } from '../js/rules/quests.js';
 import { nextGoal, leavingTooSoon } from '../js/rules/guide.js';
 import { parseMap } from '../js/explore/grid.js';
+import { ACTS } from '../data/acts/index.js';
+import { fastForward } from '../js/rules/game.js';
 
 const fresh = () => newGame({ nickname: '하늘', avatar: 'f' });
 const ch1 = chapterOf(ACT, '1-1');
@@ -154,4 +156,21 @@ test('leavingTooSoon: 돌아갈 부탁(ready)이 없으면 false', () => {
   const m = map1.smallMonster;
   assert.equal(leavingTooSoon(s, ch1, { x: m.x, y: m.y + 1 }, { x: m.x, y: m.y }, map1), false);
   assert.equal(leavingTooSoon(fresh(), ch1, { x: 5, y: 8 }, { x: 6, y: 8 }, map1), false);
+});
+
+test('leavingTooSoon·nextGoal은 안 보이는 인물을 목표로 삼지 않는다', () => {
+  // leavingTooSoon: 1-1의 다온을 "보스 뒤에만 서는 인물"로 바꾸면, 같은 걸음이 더는 "돌아갈 인물에게서 멀어짐"이 아니다.
+  const s = winSmall(talkTo(afterQ1Done(), ch1, 'daon').state, ch1);
+  const m = map1.smallMonster;
+  const [from, to] = [{ x: m.x, y: m.y + 1 }, { x: m.x, y: m.y }];
+  assert.equal(leavingTooSoon(s, ch1, from, to, map1), true);
+  const hiddenDaon = { ...ch1, npcs: ch1.npcs.map((n) => (n.id === 'daon' ? { ...n, show: 'afterBoss' } : n)) };
+  assert.equal(leavingTooSoon(s, hiddenDaon, from, to, map1), false);
+  // nextGoal: 4-2 보스를 이긴 뒤에는 사라진 나래가 아니라 출구를 가리킨다(나래의 부탁이 남아 있어도)
+  const ch = ACTS[3].chapters[1];
+  const cleared = { ...fastForward(fresh(), '4-2'), clearedActs: [1, 2, 3, 4] };
+  const withReady = { ...cleared, quests: { ...cleared.quests, q16: { stage: 'ready', gathered: [] } } };
+  assert.deepEqual([nextGoal(withReady, ch).kind, nextGoal(withReady, ch).npcId], ['exit', undefined]);
+  // 보스 전에는 나래가 목표
+  assert.equal(nextGoal({ ...withReady, clearedActs: [1, 2, 3] }, ch).npcId, 'narae');
 });

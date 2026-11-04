@@ -44,21 +44,33 @@ export const hiddenRevealed = (state, chapter) =>
   !chapter.hidden.revealedBy || state.revealed?.[chapter.id] === true || hiddenFound(state, chapter);
 const questsDone = (state, chapter) => chapter.quests.every((q) => stageOf(state, q) === 'done');
 
+// 지금 맵에 서 있는 인물: show가 없으면 늘, 'beforeBoss'는 그 막을 마치기 전에만, 'afterBoss'는 마친 뒤에만. 순서는 chapter.npcs 그대로.
+export function visibleNpcs(state, chapter) {
+  const cleared = actCleared(state, actOfChapter(chapter.id));
+  return chapter.npcs.filter((n) => !n.show || (n.show === 'beforeBoss' ? !cleared : cleared));
+}
+
+// 그냥 이야기할 때의 대사: chatAfter의 부탁을 끝낸 뒤에는 chatAfter.lines, 아니면 chat.
+export function chatLines(state, npc) {
+  return npc.chatAfter && stageOf(state, { id: npc.chatAfter.quest }) === 'done' ? npc.chatAfter.lines : npc.chat;
+}
+
 // 말 걸기. 숨은 낱말을 알려 주는 인물(hidden.revealedBy)은, 주머니를 받은 뒤 그냥 이야기하는 때에 처음으로 알려 준다
 // (reveal 대사가 없으면 chat 대사가 알려 주는 대사다. 이벤트 'reveal'). 알려 준 뒤에는 after 대사, 주머니를 받기 전에는 chat 대사가 나온다.
 export function talkTo(state, chapter, npcId) {
-  const r = talk(state, chapter, npcId);
-  const npc = chapter.npcs.find((n) => n.id === npcId);
+  const npc = visibleNpcs(state, chapter).find((n) => n.id === npcId);
+  if (!npc) return { state, script: [], event: 'chat', words: [] }; // 맵에 없는 인물
+  const r = talk(state, chapter, npc);
   // 그냥 이야기하는 때만(가방이 가득 찼다는 말 같은 알림은 이야기가 아니다)
-  if (!npc || r.script !== npc.chat || chapter.hidden.revealedBy !== npcId) return r;
+  if (r.script !== chatLines(state, npc) || chapter.hidden.revealedBy !== npcId) return r;
   if (hiddenRevealed(state, chapter)) return npc.after ? { ...r, script: npc.after } : r;
   if (!holdsPouch(state)) return r;
   return { state: { ...state, revealed: { ...state.revealed, [chapter.id]: true } }, script: npc.reveal ?? npc.chat, event: 'reveal', words: [] };
 }
 
-function talk(state, chapter, npcId) {
-  const npc = chapter.npcs.find((n) => n.id === npcId);
-  const chat = { state, script: npc ? npc.chat : [], event: 'chat', words: [] };
+function talk(state, chapter, npc) {
+  const npcId = npc.id;
+  const chat = { state, script: chatLines(state, npc), event: 'chat', words: [] };
 
   // 받는 인물: 전하기 부탁이 active이고 물건이 가방에 있으면 완료 (주는 인물 일보다 먼저)
   const delivery = chapter.quests.find((q) =>
