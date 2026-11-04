@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { WORDS } from '../data/words.js';
 import { ACTS } from '../data/acts/index.js';
+import ENDING from '../data/ending.js';
 import { parseMap, reachable } from '../js/explore/grid.js';
 import { formatLine } from '../js/rules/josa.js';
 import { newGame, exitOpen } from '../js/rules/game.js';
@@ -374,4 +375,55 @@ test('부탁 id는 q1부터 빈틈없이 차례대로, 물건 id는 게임 전�
   const items = questItemIds();
   assert.deepEqual(items, EXPECT.items.slice(0, items.length));
   assert.equal(new Set(items).size, items.length);
+});
+
+test('게임 전체: 막 1~5, 낱말 50개를 한 번씩, 부탁 q1~q20, 물건 15개', () => {
+  assert.deepEqual(ACTS.map((a) => a.id), [1, 2, 3, 4, 5]);
+  assert.deepEqual(gainedWordIds().sort(), WORDS.map((w) => w.id).sort()); // gainedWordIds: done·hidden.lines의 [[ ]] id(중복 포함)
+  assert.deepEqual(ACTS.flatMap((a) => a.chapters.flatMap((c) => c.quests.map((q) => q.id))), Array.from({ length: 20 }, (_, i) => `q${i + 1}`));
+  assert.deepEqual(questItemIds(), EXPECT.items);
+});
+
+test('5막: 나래는 마지막 문제(빈칸)이고 finalCue가 있다', () => {
+  const act5 = ACTS[4];
+  assert.equal(act5.finalWordId, '나래');
+  assert.equal(act5.bossQuizzes['나래'].type, 'blank');
+  assert.equal(act5.bossQuizzes['나래'].prompt, '아기 새가 처음으로 ___를 펴고 둥지를 떠났다.');
+  assert.equal(act5.finalCue, '그림자 한가운데에서 하늘색 숄 자락이 희미하게 펄럭인다.');
+});
+
+test('엔딩: cast가 말하는 인물을 덮고, 줄 규칙, [[ ]] 없음, 마지막 말', () => {
+  // cast의 id·name·color는 막 데이터의 같은 id와 같다.
+  const npcs = new Map(ACTS.flatMap((a) => a.chapters.flatMap((c) => c.npcs)).map((n) => [n.id, n]));
+  for (const c of ENDING.cast) {
+    const n = npcs.get(c.id);
+    assert.ok(n, `cast ${c.id}가 막 데이터에 없음`);
+    assert.deepEqual({ name: c.name, color: c.color }, { name: n.name, color: n.color }, `cast ${c.id}`);
+  }
+  const castIds = new Set(ENDING.cast.map((c) => c.id));
+  assert.equal(castIds.size, ENDING.cast.length);
+  assert.equal(ENDING.scenes.length, 4);
+  ENDING.scenes.forEach((sc, i) => {
+    assert.ok(['ending01', 'ending02', 'ending03'].includes(sc.bg), `장면 ${i + 1} bg ${sc.bg}`);
+    assert.equal(sc.still === true, i === 3, `still은 scenes[3]에만 (장면 ${i + 1})`);
+    assert.ok(Array.isArray(sc.lines) && sc.lines.length > 0, `장면 ${i + 1} 줄`);
+    for (const l of sc.lines) {
+      assert.ok(['npc', 'hero', 'narration'].includes(l.who), l.text);
+      assert.ok(typeof l.text === 'string' && l.text.trim() === l.text && l.text.length > 0, l.text);
+      assert.deepEqual(brackets(l.text), [], `엔딩에는 [[ ]]가 없음: ${l.text}`);
+      assert.ok(!/[.?!]["'”’]?\s+\S/.test(l.text), `한 줄에 한 문장: ${l.text}`);
+      assert.ok(!formatLine(l.text, LONG_NAME).includes('{'), `바꾸지 못한 {}: ${l.text}`);
+      assert.ok(shownText(l.text).length <= 56, `56자 초과: ${l.text}`);
+      if (l.who === 'npc') {
+        assert.ok(castIds.has(l.npc), `cast에 없는 인물 ${l.npc}`);
+        if (l.face) assert.ok((FACES[l.npc] ?? FACES.other).includes(l.face), `${l.npc} 표정 ${l.face}`);
+      } else {
+        assert.equal(l.npc, undefined);
+        if (l.who === 'hero' && l.face) assert.ok(FACES.hero.includes(l.face), `주인공 표정 ${l.face}`);
+        if (l.who === 'narration') assert.equal(l.face, undefined);
+      }
+    }
+  });
+  assert.equal(ENDING.message, '우리가 쓰면 말은 살아난다.');
+  assert.equal(formatLine(ENDING.thanks, '하늘'), '하늘아, 끝까지 함께해 줘서 고마워!');
 });

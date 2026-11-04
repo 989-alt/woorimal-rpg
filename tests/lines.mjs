@@ -3,7 +3,7 @@ import { formatLine } from '../js/rules/josa.js';
 import { wordMark } from '../js/rules/game.js';
 import { ACTS } from '../data/acts/index.js';
 
-export const BUILT_ACTS = [1, 2, 3, 4];
+export const BUILT_ACTS = [1, 2, 3, 4, 5];
 
 export const EXPECT = {
   acts: {

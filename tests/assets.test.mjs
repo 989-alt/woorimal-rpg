@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import { ASSETS, UI_KIT, bustFor } from '../data/assets.js';
 import { loadImage, getLoaded, preloadChapter, onImageLoaded } from '../js/ui/images.js';
 import { ACTS } from '../data/acts/index.js';
+import ENDING from '../data/ending.js';
 
 const NAME_RULE = /^assets\/(pixel|illust|ui)\/[a-z0-9_.\-]+\.(png|webp)$/;
 
@@ -57,16 +58,19 @@ test('UI 키트: ASSETS.ui는 assets/ui/<이름>.v1.png이고 UI_KIT과 키가 �
   }
 });
 
-test('대본의 인물·표정이 상반신 틀에 있다', () => {
+test('대본(막·엔딩)의 인물·표정이 상반신 틀에 있다', () => {
   const lines = [];
   const walk = (n) => {
     if (Array.isArray(n)) n.forEach(walk);
     else if (n && typeof n === 'object') { if (n.who) lines.push(n); else Object.values(n).forEach(walk); }
   };
   walk(ACTS);
+  walk(ENDING.scenes);
+  for (const c of ENDING.cast) assert.ok(ASSETS.busts[c.id], `엔딩 cast ${c.id}`);
   assert.ok(lines.length > 20);
   for (const l of lines) {
     if (l.who === 'npc' && l.npc) assert.ok(ASSETS.busts[l.npc], `인물 ${l.npc}`); // 표정 그림이 없으면 base로 대신한다
+    if (l.who === 'npc' && l.face) assert.ok(l.face in ASSETS.busts[l.npc], `${l.npc}.${l.face} 칸`); // 칸은 있어야 한다(그림은 null이어도)
     if (l.who === 'hero' && l.face) assert.ok(l.face in ASSETS.busts.hero_f && l.face in ASSETS.busts.hero_m, `hero.${l.face}`);
   }
 });
