@@ -6,6 +6,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WORDS } from '../data/words.js';
 import { formatLine, attachJosa } from '../js/rules/josa.js';
+import { wordMark } from '../js/rules/game.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const actNo = Number(process.argv[2] ?? 1);
@@ -17,7 +18,7 @@ const TYPE = { meaning: '뜻 고르기', blank: '빈칸 채우기', usage: '알�
 const FACE = { base: '', joy: '기쁨', surprise: '놀람', worry: '걱정', laugh: '웃음' };
 const wordById = Object.fromEntries(WORDS.map((w) => [w.id, w]));
 
-const text = (t) => formatLine(t, nickname).replace(/\[\[(.+?)\]\]/g, '**$1**');
+const text = (t) => formatLine(t, nickname).replace(/\[\[(.+?)\]\]/g, (_, inner) => `**${wordMark(inner).form}**`);
 
 function lines(ch, list) {
   const name = (id) => ch.npcs.find((n) => n.id === id)?.name ?? id;

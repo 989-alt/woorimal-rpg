@@ -10,6 +10,10 @@ test('강조 조각 나누기', () => {
     { text: '가', word: '가' }, { text: ' 와 ' }, { text: '나', word: '나' }]);
 });
 
+test('splitHighlights: [[id|꼴]]은 꼴을 보이고 낱말 id를 단다', () => {
+  assert.deepEqual(splitHighlights('넌 참 [[살갑다|살갑구나]]!'), [{ text: '넌 참 ' }, { text: '살갑구나', word: '살갑다' }, { text: '!' }]);
+});
+
 test('타자 효과: 첫 누름은 다 보이기, 200ms 안은 무시, 그 뒤는 다음', () => {
   const t = createTypewriter({ full: '가나다', msPerChar: 30 });
   assert.equal(t.press(), 'reveal'); assert.equal(t.shown(), '가나다');

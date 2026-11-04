@@ -392,7 +392,7 @@ test('규칙 함수는 받은 상태를 바꾸지 않는다', () => {
 test('막은 넘겨 받은 장에서 찾는다 (1막 하드코딩 금지)', () => {
   assert.equal(actOfChapter('1-2'), ACT);
   assert.throws(() => actOfChapter('9-9'));
-  // 시험용 2막: ACTS에 잠깐 넣었다가 빼낸다
+  // 시험용 막(9): ACTS에 잠깐 넣었다가 빼낸다
   const rename = (c, id, prefix) => {
     const k = structuredClone(c);
     k.id = id;
@@ -401,12 +401,12 @@ test('막은 넘겨 받은 장에서 찾는다 (1막 하드코딩 금지)', () =
     k.quests.forEach((q) => { q.words = q.words.map((w) => prefix + w); });
     return k;
   };
-  const a = rename(ch1, '2-1', 'x');
-  const b = rename(ch2, '2-2', 'y');
-  const act2 = { id: 2, chapters: [a, b] };
+  const a = rename(ch1, '9-1', 'x');
+  const b = rename(ch2, '9-2', 'y');
+  const act2 = { id: 9, chapters: [a, b] };
   ACTS.push(act2);
   try {
-    assert.equal(actOfChapter('2-2'), act2);
+    assert.equal(actOfChapter('9-2'), act2);
     const base = fresh(); // 1막 첫 부탁(q1)은 open
     const quests = { ...base.quests };
     for (const q of [...a.quests, ...b.quests]) quests[q.id] = { stage: 'locked', gathered: [] };
@@ -437,7 +437,7 @@ test('막은 넘겨 받은 장에서 찾는다 (1막 하드코딩 금지)', () =
   } finally {
     ACTS.pop();
   }
-  assert.throws(() => actOfChapter('2-2'));
+  assert.throws(() => actOfChapter('9-9'));
 });
 
 test('fightGate small: chase 부탁이 active일 때만 싸운다, 아니면 주는 인물 이름으로 안내', () => {

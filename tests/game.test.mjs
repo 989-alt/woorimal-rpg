@@ -4,7 +4,7 @@ import ACT from '../data/acts/act1.js';
 import { parseMap } from '../js/explore/grid.js';
 import {
   newGame, chapterOf, chapterWords, actWords, acquireWords, takeWords, acquiredCount,
-  fogOpen, chapterComplete, enterNextChapter, finishAct, setPos, markTip, extractWords,
+  fogOpen, chapterComplete, enterNextChapter, finishAct, setPos, markTip, extractWords, wordMark,
   exitOpen, exitBlockedText, bossGone,
 } from '../js/rules/game.js';
 
@@ -84,6 +84,12 @@ test('보스전 출제 기록은 finishAct에서만 남는다 (전투 중 새로
   const g = finishAct(f, ACT, ids);
   assert.equal(g.askedWordIds.length, 10);
   assert.deepEqual(g.clearedActs, [1]);
+});
+
+test('wordMark·extractWords: [[id|꼴]]은 id로 센다', () => {
+  assert.deepEqual(wordMark('살갑다|살갑구나'), { id: '살갑다', form: '살갑구나' });
+  assert.deepEqual(wordMark('윤슬'), { id: '윤슬', form: '윤슬' });
+  assert.deepEqual(extractWords('넌 참 [[살갑다|살갑구나]], [[서름하다|서름해]].'), ['살갑다', '서름하다']);
 });
 
 test('setPos, markTip, extractWords', () => {

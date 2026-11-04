@@ -145,6 +145,14 @@ export function markTip(state, tipId) {
   return { ...state, seenTips: [...state.seenTips, tipId] };
 }
 
+// [[낱말]] 또는 [[낱말|보이는 꼴]]의 안쪽 글을 낱말 id와 화면에 보이는 꼴로 나눈다(| 가 없으면 꼴 = id).
+export function wordMark(inner) {
+  const i = inner.indexOf('|');
+  if (i < 0) return { id: inner, form: inner };
+  return { id: inner.slice(0, i), form: inner.slice(i + 1) };
+}
+
+// 글 속 [[ ]]의 낱말 id 목록(보이는 꼴이 아니라 id).
 export function extractWords(text) {
-  return [...text.matchAll(/\[\[(.+?)\]\]/g)].map((m) => m[1]);
+  return [...text.matchAll(/\[\[(.+?)\]\]/g)].map((m) => wordMark(m[1]).id);
 }

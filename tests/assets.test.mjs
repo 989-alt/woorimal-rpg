@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { ASSETS, UI_KIT, bustFor } from '../data/assets.js';
 import { loadImage, getLoaded, preloadChapter, onImageLoaded } from '../js/ui/images.js';
-import ACT1 from '../data/acts/act1.js';
+import { ACTS } from '../data/acts/index.js';
 
 const NAME_RULE = /^assets\/(pixel|illust|ui)\/[a-z0-9_.\-]+\.(png|webp)$/;
 
@@ -28,20 +28,22 @@ test('모든 값은 문자열 경로 또는 null이다', () => {
   walk(ASSETS, 'ASSETS');
 });
 
-test('틀: 장·인물·물건·표정이 데이터와 맞는다', () => {
-  const chapters = ACT1.chapters;
+test('틀: 장·인물·물건·표정·막 번호 키가 데이터와 맞는다', () => {
+  const chapters = ACTS.flatMap((a) => a.chapters);
   assert.deepEqual(Object.keys(ASSETS.maps), chapters.map((c) => c.id));
   assert.deepEqual(Object.keys(ASSETS.dialogueBg), chapters.map((c) => c.id));
-  const npcIds = chapters.flatMap((c) => c.npcs.map((n) => n.id));
+  const npcIds = [...new Set(chapters.flatMap((c) => c.npcs.map((n) => n.id)))];
   assert.deepEqual(Object.keys(ASSETS.npcs).sort(), [...npcIds].sort());
   for (const id of npcIds) assert.ok(ASSETS.busts[id], `상반신 ${id}`);
-  assert.deepEqual(Object.keys(ASSETS.items).sort(), ['firewood', 'letter', 'water']);
+  const itemIds = chapters.flatMap((c) => c.quests.map((q) => q.item?.id)).filter(Boolean);
+  assert.deepEqual(Object.keys(ASSETS.items).sort(), [...itemIds].sort());
   assert.deepEqual(Object.keys(ASSETS.walk).sort(), ['f', 'm']);
   assert.deepEqual(Object.keys(ASSETS.battleHero).sort(), ['f', 'm']);
   assert.deepEqual(Object.keys(ASSETS.busts.dodam).sort(), ['base', 'laugh', 'worry']);
   assert.deepEqual(Object.keys(ASSETS.busts.hero_f).sort(), ['base', 'joy', 'surprise']);
   assert.deepEqual(Object.keys(ASSETS.busts.hero_m).sort(), ['base', 'joy', 'surprise']);
-  assert.ok('1' in ASSETS.small && '1' in ASSETS.bossPixel && '1' in ASSETS.battleBg && '1' in ASSETS.monster);
+  const actNos = ACTS.map((a) => String(a.id));
+  for (const key of ['small', 'bossPixel', 'battleBg', 'monster']) assert.deepEqual(Object.keys(ASSETS[key]), actNos, key);
   assert.ok('title' in ASSETS);
 });
 
@@ -61,7 +63,7 @@ test('대본의 인물·표정이 상반신 틀에 있다', () => {
     if (Array.isArray(n)) n.forEach(walk);
     else if (n && typeof n === 'object') { if (n.who) lines.push(n); else Object.values(n).forEach(walk); }
   };
-  walk(ACT1);
+  walk(ACTS);
   assert.ok(lines.length > 20);
   for (const l of lines) {
     if (l.who === 'npc' && l.npc) assert.ok(ASSETS.busts[l.npc], `인물 ${l.npc}`); // 표정 그림이 없으면 base로 대신한다

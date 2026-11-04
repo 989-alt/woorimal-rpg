@@ -3,7 +3,7 @@
 // 여기서는 params.words의 낱말마다 뜻풀이 카드를 이 대화에서 한 번씩 보여 주기만 한다.
 import { actOfChapter } from '../../data/acts/index.js';
 import { formatLine } from '../rules/josa.js';
-import { extractWords, markTip } from '../rules/game.js';
+import { extractWords, markTip, wordMark } from '../rules/game.js';
 import { TIP, dueHint } from '../rules/tutorial.js';
 import { createHintLayer } from '../ui/hint.js';
 import { isCoarsePointer } from '../explore/input.js';
@@ -26,13 +26,14 @@ export const TIP_GLOW_MS = 2600;
 let typeSpeed = MS_PER_CHAR;
 export function setTypeSpeed(ms) { typeSpeed = ms; }
 
-// 글을 [[낱말]] 기준으로 나눈다.
+// 글을 [[낱말]]·[[낱말|보이는 꼴]] 기준으로 나눈다. 띠에는 꼴을 보이고, 낱말 id를 단다.
 export function splitHighlights(text) {
   const out = [];
   let last = 0;
   for (const m of text.matchAll(/\[\[(.+?)\]\]/g)) {
     if (m.index > last) out.push({ text: text.slice(last, m.index) });
-    out.push({ text: m[1], word: m[1] });
+    const { id, form } = wordMark(m[1]);
+    out.push({ text: form, word: id });
     last = m.index + m[0].length;
   }
   if (last < text.length) out.push({ text: text.slice(last) });
