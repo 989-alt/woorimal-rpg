@@ -224,6 +224,9 @@ for (const blocked of [false, true]) {
     await walkToExit(page);
     await page.waitForSelector('[data-scene="clear"]');
     await check('클리어');
+    await page.getByRole('button', { name: '세계 지도로' }).click();
+    await page.waitForSelector('[data-scene="worldmap"][data-walked]');
+    await check('세계 지도');
 
     assert.deepEqual(problems, []);
     assert.deepEqual(errors, []);

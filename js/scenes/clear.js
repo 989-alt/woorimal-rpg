@@ -1,9 +1,10 @@
-// 클리어 화면. kind 'chapter': 장 클리어 → 다음 장 첫 이야기. kind 'act': 막 클리어 → 처음 화면.
+// 클리어 화면. kind 'chapter': 장 클리어 → 다음 장 첫 이야기. kind 'act': 막 클리어 → 세계 지도(마지막 막은 처음 화면).
 import { WORDS } from '../../data/words.js';
 import { actOfChapter } from '../../data/acts/index.js';
 import { ASSETS } from '../../data/assets.js';
 import { setArt } from '../ui/images.js';
 import { chapterOf, chapterWords, actWords, enterNextChapter } from '../rules/game.js';
+import { travelOf } from '../rules/world.js';
 
 const el = (tag, className, text) => {
   const e = document.createElement(tag);
@@ -45,12 +46,14 @@ export const clear = {
     let leaving = false;
 
     if (isAct) {
-      body.append(el('h2', 'end-title', `${act.id}막 클리어!`), wordCards(actWords(act)), el('p', 'end-text', '다음 막은 준비 중이에요'));
-      btn.textContent = '처음 화면으로';
+      body.append(el('h2', 'end-title', `${act.id}막 클리어!`), wordCards(actWords(act)));
+      // 다음 막이 있으면 세계 지도로, 마지막 막은 (엔딩이 생길 때까지) 처음 화면으로
+      const toMap = !!travelOf(state);
+      btn.textContent = toMap ? '세계 지도로' : '처음 화면으로';
       btn.addEventListener('click', () => {
         if (leaving) return;
         leaving = true;
-        ctx.router.show('title');
+        ctx.router.show(toMap ? 'worldmap' : 'title');
       });
     } else {
       const n = act.chapters.indexOf(chapter) + 1;

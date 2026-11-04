@@ -10,6 +10,7 @@ import { dialogue, setTypeSpeed } from './scenes/dialogue.js';
 import { battle, battleProbe } from './scenes/battle.js';
 import { gameover } from './scenes/gameover.js';
 import { clear } from './scenes/clear.js';
+import { worldmap } from './scenes/worldmap.js';
 import { ASSETS } from '../data/assets.js';
 import { loadImage, forgetFailed } from './ui/images.js';
 import { loadUiKit } from './ui/ui-kit.js';
@@ -79,6 +80,7 @@ router.register('dialogue', dialogue);
 router.register('battle', battle);
 router.register('gameover', gameover);
 router.register('clear', clear);
+router.register('worldmap', worldmap);
 
 // 검사용 도움 기능: 주소에 ?test=1이 있을 때만 만든다.
 if (new URLSearchParams(location.search).get('test') === '1') {

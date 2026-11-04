@@ -63,6 +63,7 @@ export const ASSETS = {
   battleHero: { f: 'assets/illust/battle_hero_f.webp', m: 'assets/illust/battle_hero_m.webp' }, // 1080×1440, 오른쪽(몬스터 쪽)을 봄
   monster: { 1: 'assets/illust/monster_act1.webp', 2: null, 3: null, 4: null, 5: null }, // 보스(막 번호), 1440×1440
   title: 'assets/illust/title.webp', // 2560×1440, 글자 없음(제목은 HTML)
+  worldmap: null, // 세계 지도 1536×864 (아래쪽 새벽골은 밝고 북쪽 탑으로 갈수록 잿빛). 표시 자리는 data/world.js
   // UI 키트(8비트 색표 PNG + 투명, 2배로 만들어 절반 크기로 보임). 크기·조각 값은 아래 UI_KIT.
   ui: {
     logo: 'assets/ui/logo_title.v1.png',

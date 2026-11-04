@@ -93,10 +93,10 @@ test('보스전: 첫 안내 말풍선, 정답만 6번 → 이겨도 그 자리�
   await page.waitForSelector('[data-scene="clear"]');
   const text = await page.locator('[data-scene="clear"]').innerText();
   assert.match(text, /1막 클리어!/);
-  assert.match(text, /다음 막은 준비 중이에요/);
+  assert.doesNotMatch(text, /준비 중/);
   assert.equal(await page.locator('.clear-card').count(), 10);
-  await page.getByRole('button', { name: '처음 화면으로' }).click();
-  await page.waitForSelector('[data-scene="title"]');
+  await page.getByRole('button', { name: '세계 지도로' }).click();
+  await page.waitForSelector('[data-scene="worldmap"]');
   assert.deepEqual(errors, []);
   await page.close();
 });
@@ -455,7 +455,9 @@ test('막 보스: 이긴 뒤 출구로 걸어가 클리어 → 처음 화면 →
   await page.waitForSelector('[data-scene="explore"] canvas');
   await walkToExit(page);
   await page.waitForSelector('[data-scene="clear"]');
-  await page.getByRole('button', { name: '처음 화면으로' }).click();
+  await page.getByRole('button', { name: '세계 지도로' }).click();
+  await page.waitForSelector('[data-scene="worldmap"]');
+  await page.reload(); // 세계 지도에서 닫았다가 다시 연다
   await page.waitForSelector('[data-scene="title"]');
   await startFromTitle(page, { name: '하늘', mode: 'continue' });
   await page.waitForSelector('[data-scene="explore"]');

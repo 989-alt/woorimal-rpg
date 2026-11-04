@@ -87,6 +87,7 @@ const SPEC = {
   battleHero: { w: 1080, h: 1440, max: 300 * KB, alpha: true },
   monster: { w: 1440, h: 1440, max: 400 * KB, alpha: true },
   title: { w: 2560, h: 1440, max: 700 * KB },
+  worldmap: { w: 1536, h: 864, max: 700 * KB }, // 아트 바이블 8절: 맵·세계 지도 8비트 색표 PNG, 700KB
   // UI 키트: 키마다 UI_KIT의 그림 크기. 상한은 틀·버튼·메달·리본 40KB, 로고 200KB, 아이콘 12KB(아트 바이블 8절).
   ui: Object.fromEntries(Object.entries(UI_KIT).map(([key, { w, h }]) => [key, { w, h, max: uiMax(key), alpha: true }])),
 };

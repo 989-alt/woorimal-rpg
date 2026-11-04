@@ -1287,6 +1287,143 @@ canvas, img {
   .gameover-scene::before, .gameover-scene::after, .clear-scene::before { animation: none; }
 }
 
+/* ── 세계 지도 ─────────────────────────
+   나무 상 위에 펼친 지도 한 장 + 아래 한지 카드. 지도 상자는 (화면 높이 - 카드 높이)에 맞춰 줄어서
+   1024×768에서도 카드와 겹치지 않는다. 지도 그림(ASSETS.worldmap)이 오면 .has-art가 임시 그림을 덮는다. */
+.worldmap-scene {
+  --card-h: 132px; /* 카드 높이(테두리 포함) */
+  --gap: 14px;
+  background: radial-gradient(ellipse at 50% 30%, #A15A24 0%, #7A3E14 50%, #3F1C08 100%);
+  grid-auto-flow: row;
+  align-content: center;
+  justify-items: center;
+  gap: var(--gap);
+  padding: 16px;
+}
+.world-frame {
+  z-index: 1;
+  width: min(100%, calc((100dvh - var(--card-h) - var(--gap) - 64px) * 16 / 9 + 32px)); /* 64 = 장면 위아래 여백 32 + 틀 위아래 32 */
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, .45));
+  animation: panel-in 180ms ease-out;
+}
+.world-map {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 6px;
+  /* 아래(새벽골)는 한지·금빛, 위(잿빛 탑)로 갈수록 잿빛 */
+  background:
+    linear-gradient(to top, #FBEFCB 0%, #F2DDA3 22%, #DCCDA9 48%, #B4B2AA 76%, #878A8F 100%);
+  box-shadow: inset 0 0 0 2px var(--brass-dark), inset 0 0 60px rgba(90, 50, 12, .45);
+}
+.world-map.has-art { background: none; }
+.world-map.has-art .world-deco { display: none; }
+.world-map-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.world-deco, .world-roads { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.world-deco svg { display: block; width: 100%; height: 100%; }
+.world-roads { overflow: visible; }
+
+/* 점선 길: 마친 길은 놋쇠빛, 이번 길은 짙은 나무색, 먼 길은 희미한 잿빛 */
+.world-road { fill: none; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.road-done { stroke: var(--brass-dark); stroke-width: 6px; stroke-dasharray: 1 13; }
+.road-next { stroke: var(--wood-dark); stroke-width: 7px; stroke-dasharray: 1 14; }
+.road-far { stroke: #5E6266; stroke-width: 5px; stroke-dasharray: 1 14; opacity: .5; }
+
+/* 곳 표시: 고리(색)와 안의 모양(체크·빈 고리)을 함께 쓴다 */
+.world-place {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  translate: -50% -24px; /* 고리 한가운데가 좌표 */
+}
+.world-ring {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  filter: drop-shadow(0 2px 2px rgba(40, 20, 0, .45));
+}
+.mark-done .world-ring { border: 6px solid var(--brass); background: var(--parchment); box-shadow: inset 0 0 0 2px var(--brass-dark); }
+.mark-next .world-ring { border: 6px solid #fff; background: rgba(255, 255, 255, .4); box-shadow: 0 0 0 3px rgba(110, 50, 17, .55), 0 0 16px 4px rgba(255, 255, 255, .85); animation: world-blink 2s ease-in-out infinite; }
+.mark-far .world-ring { border: 6px solid #8A8D91; background: rgba(94, 98, 102, .7); }
+@keyframes world-blink { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+/* 이름표: 단추 글자처럼 흰 글자 + 먹갈 윤곽 주아 */
+.world-name {
+  margin-top: 4px;
+  font-family: var(--font-title);
+  font-size: 24px;
+  line-height: 28px;
+  white-space: nowrap;
+  color: #fff;
+  -webkit-text-stroke: 6px var(--ink);
+  paint-order: stroke fill;
+  letter-spacing: .02em;
+}
+.mark-far .world-name { color: #D3D5D8; }
+
+/* 주인공 표시(임시): 쪽빛 핀에 닉네임 첫 글자. 핀 끝이 고리 위에 닿는다 */
+.world-hero { position: absolute; z-index: 3; width: 0; height: 0; pointer-events: none; }
+.world-hero-pin {
+  position: absolute;
+  left: -22px;
+  top: -80px;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--hero);
+  box-shadow: 0 3px 0 rgba(30, 15, 0, .4);
+}
+.world-hero-pin::after {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 33px;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  background: var(--hero);
+  border: solid #fff;
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+  z-index: -1;
+}
+.world-hero-initial { font-family: var(--font-title); font-size: 22px; line-height: 1; color: #fff; }
+.worldmap-scene[data-walking] .world-hero-pin { animation: world-hop 400ms ease-in-out infinite; }
+@keyframes world-hop { 0%, 100% { translate: 0 0; } 50% { translate: 0 -5px; } }
+
+.world-card {
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: min(920px, 100%);
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .4));
+  animation: panel-in 180ms ease-out;
+}
+.world-card-text { display: grid; gap: 4px; min-width: 0; }
+.world-title { margin: 0; font-family: var(--font-title); font-size: 32px; line-height: 40px; font-weight: normal; }
+.world-title .quote { font-family: var(--font-body); }
+.world-card .world-travel { margin: 0; font-size: 22px; line-height: 30px; }
+.world-card .btn { flex: none; }
+@media (max-width: 760px) {
+  .worldmap-scene { --card-h: 270px; }
+  .world-card { flex-direction: column; align-items: stretch; text-align: center; }
+  .world-card .btn { align-self: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .world-frame, .world-card { animation: none; }
+  .mark-next .world-ring { animation: none; }
+  .worldmap-scene[data-walking] .world-hero-pin { animation: none; }
+}
+
 /* ── 그림(일러스트)이 있을 때: 임시 그림 위에 <img>를 얹고 임시 색 블록은 감춘다 ── */
 img.art { image-rendering: auto; } /* 도트가 아닌 그림은 부드럽게 줄인다 */
 

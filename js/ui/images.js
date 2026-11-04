@@ -81,9 +81,14 @@ export function preloadChapter(chapterId, avatar = 'f') {
   try { act = actOfChapter(chapterId); } catch { return Promise.resolve(); }
   const i = act.chapters.findIndex((c) => c.id === chapterId);
   const now = Promise.all(chapterPaths(act, act.chapters[i], avatar).map(loadImage)).then(() => undefined);
-  // 막의 마지막 장이면 다음 막 첫 장을 미리 받는다.
+  // 막의 마지막 장이면 세계 지도와 다음 막 첫 장을 미리 받는다.
   const next = nextChapterOf(chapterId);
-  if (next) now.then(() => { chapterPaths(actOfChapter(next.id), next, avatar).forEach(loadImage); });
+  if (next) {
+    now.then(() => {
+      if (i === act.chapters.length - 1) loadImage(ASSETS.worldmap);
+      chapterPaths(actOfChapter(next.id), next, avatar).forEach(loadImage);
+    });
+  }
   return now;
 }
 

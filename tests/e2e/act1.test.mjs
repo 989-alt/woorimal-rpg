@@ -3,7 +3,8 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
-import { launchBrowser, collectErrors, finishDialogue, startFromTitle } from './browser.mjs';
+import { launchBrowser, collectErrors, startFromTitle } from './browser.mjs';
+import { state, hudTask, boot, playDialogue, interact, talkThrough, toast, enterBattle, answerRight, continueAs } from './play.mjs';
 import { pathTo, KEYS, walkToExit } from './helpers.mjs';
 import { parseMap } from '../../js/explore/grid.js';
 import ACT1 from '../../data/acts/act1.js';
@@ -18,9 +19,7 @@ after(async () => {
   await server?.close();
 });
 
-const state = (page) => page.evaluate(() => window.__test.state());
 const hudCount = (page) => page.locator('.hud-count').innerText();
-const hudTask = (page) => page.locator('.hud-task').innerText();
 
 // 화면이 그리는 것과 같은 규칙 함수로 인물 표시를 읽는다.
 const marker = (page, npcId) => page.evaluate(async (id) => {
@@ -30,61 +29,6 @@ const marker = (page, npcId) => page.evaluate(async (id) => {
   const chapter = actOfChapter(s.chapter).chapters.find((c) => c.id === s.chapter);
   return npcMarker(s, chapter, id);
 }, npcId);
-
-// 처음 화면이 뜨면 타자 효과를 끈다(새로 고침 뒤에도 다시 부른다).
-async function boot(page) {
-  await page.waitForSelector('[data-scene="title"]');
-  await page.evaluate(() => window.__test.fastText(true));
-}
-
-// 대화를 끝까지 넘긴다(카드는 '확인', 줄은 스페이스·엔터를 번갈아). 확인한 뜻풀이 카드의 낱말 목록을 돌려준다.
-async function playDialogue(page, until = 'explore') {
-  await page.waitForSelector('[data-scene="dialogue"]');
-  return finishDialogue(page, until);
-}
-
-// 대상 옆으로 옮긴 뒤 스페이스로 말 걸기·조사하기
-async function interact(page, target) {
-  await page.evaluate((t) => window.__test.teleportTo(t), target);
-  await page.waitForSelector('[data-scene="explore"]');
-  await page.keyboard.press('Space');
-}
-
-async function talkThrough(page, target, until = 'explore') {
-  await interact(page, target);
-  return playDialogue(page, until);
-}
-
-async function toast(page) {
-  await page.waitForSelector('.toast:not([hidden])');
-  return page.locator('.toast').innerText();
-}
-
-const waitAsk = (page) => page.waitForSelector('[data-scene="battle"][data-phase="ask"] .battle-option');
-
-// 전투를 연다(첫 문제가 바로 나온다)
-async function enterBattle(page, target) {
-  await interact(page, target);
-  await page.waitForSelector('[data-scene="battle"]');
-  await waitAsk(page);
-}
-
-async function answerRight(page) {
-  const idx = await page.evaluate(() => window.__test.answerIndex());
-  assert.ok(idx >= 0);
-  const qn = await page.locator('[data-scene="battle"]').getAttribute('data-qn');
-  await page.keyboard.press(`Digit${idx + 1}`);
-  await page.waitForFunction((n) => {
-    const s = document.querySelector('[data-scene="battle"]');
-    return !s || (s.dataset.phase === 'ask' && s.dataset.qn !== n);
-  }, qn);
-}
-
-async function continueAs(page, name) {
-  await boot(page);
-  await startFromTitle(page, { name, mode: 'continue' });
-  await page.waitForSelector('[data-scene="explore"]');
-}
 
 test('일반 주소에서는 검사용 도움 기능이 없다', async () => {
   const page = await browser.newPage();
@@ -276,8 +220,10 @@ test('1막 끝까지: 시작 화면 → 부탁 4개 → 숨은 낱말 2개(알�
   assert.equal(saved.askedWordIds.length, 10);
   assert.equal(Object.keys(saved.acquired).length, 10);
 
-  // ── 막을 마친 뒤: 처음 화면 → 이어하기 → 저절로 넘어가지 않고 출구가 열린 채 탐험, 보스 자리는 길이다 ──
-  await page.getByRole('button', { name: '처음 화면으로' }).click();
+  // ── 막을 마친 뒤: 세계 지도 → (닫았다 다시) 이어하기 → 저절로 넘어가지 않고 출구가 열린 채 탐험, 보스 자리는 길이다 ──
+  await page.getByRole('button', { name: '세계 지도로' }).click();
+  await page.waitForSelector('[data-scene="worldmap"]');
+  await page.reload(); // 세계 지도에서 닫았다가 다시 연다
   await page.waitForSelector('[data-scene="title"]');
   await startFromTitle(page, { name: '하늘', mode: 'continue' });
   await page.waitForSelector('[data-scene="explore"]');
