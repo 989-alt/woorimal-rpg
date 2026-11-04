@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { shouldSubmit, titleDecision } from '../js/scenes/title.js';
+import { shouldSubmit, titleDecision, stillSameName } from '../js/scenes/title.js';
 import { createStore } from '../js/save.js';
 import { newGame } from '../js/rules/game.js';
 
@@ -58,4 +58,12 @@ test('잘못된 닉네임 → invalid', () => {
     assert.ok(r.error);
   }
   assert.equal(titleDecision({ nickname: '일곱글자이름이다', avatar: 'f', choice: 'new', store }).action, 'invalid');
+});
+
+test('확인 창 단추: 창을 열 때 이름과 지금 이름 칸이 같을 때만 움직인다', () => {
+  assert.equal(stillSameName('하늘', '하늘'), true);
+  assert.equal(stillSameName('하늘', ' 하늘 '), true);
+  assert.equal(stillSameName('하늘', '하늘2'), false);
+  assert.equal(stillSameName('하늘', '바다'), false);
+  assert.equal(stillSameName('하늘', ''), false);
 });

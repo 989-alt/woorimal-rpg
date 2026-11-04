@@ -23,6 +23,12 @@ export function titleDecision({ nickname, avatar, choice, store }) {
   return { action: 'start', state: newGame({ nickname: name, avatar }) };
 }
 
+// 확인 창을 연 뒤 이름 칸이 바뀌었으면, 창의 단추는 열 때 잡아 둔 이름으로 아무것도 하지 않는다.
+export function stillSameName(captured, current) {
+  const v = validateNickname(current);
+  return v.ok && v.value === captured;
+}
+
 const AVATARS = [
   { id: 'f', label: '여' },
   { id: 'm', label: '남' },
@@ -137,16 +143,18 @@ export const title = {
       clearError();
       confirmBox.hidden = true;
       const d = titleDecision({ nickname: input.value, avatar, choice, store });
-      const name = input.value.trim();
+      const name = validateNickname(input.value).value;
       if (d.action === 'invalid') { showError(d.error); input.focus(); return; }
+      // 창을 연 뒤 이름이 바뀌었으면 단추는 아무것도 하지 않는다(다른 이름의 저장을 덮어쓰지 않도록).
+      const guard = (fn) => () => { if (stillSameName(name, input.value)) fn(); else input.focus(); };
       if (d.action === 'ask-overwrite') {
         ask('이미 있는 이름이에요. 이어할까요, 처음부터 할까요?',
-          '이어하기', () => submit('continue'), '처음부터', () => startFresh(name));
+          '이어하기', guard(() => submit('continue')), '처음부터', guard(() => startFresh(name)));
         return;
       }
       if (d.action === 'load-error') {
         ask('저장을 불러오지 못했어요. 처음부터 할까요?',
-          '처음부터', () => startFresh(name), '아니요', () => input.focus());
+          '처음부터', guard(() => startFresh(name)), '아니요', () => input.focus());
         return;
       }
       // 이어하기로 저장이 없어 새로 시작하는 경우도 새 게임이다.
@@ -156,7 +164,8 @@ export const title = {
 
     newBtn.addEventListener('click', () => submit('new'));
     contBtn.addEventListener('click', () => submit('continue'));
-    input.addEventListener('input', clearError);
+    // 이름을 고치면 앞 이름으로 연 확인 창은 닫는다.
+    input.addEventListener('input', () => { clearError(); confirmBox.hidden = true; });
     input.addEventListener('keydown', (e) => {
       if (shouldSubmit({ key: e.key, isComposing: e.isComposing || e.keyCode === 229 })) {
         e.preventDefault();
