@@ -87,8 +87,9 @@ test('탐험: 주인공 걷기 시트가 있으면 시트 그림으로 그린다
 
 test('탐험: 맵 그림이 있으면 길·벽 타일 색 대신 맵 그림을 깐다, 없는 주소면 타일 색으로 돌아온다', async () => {
   const { page, errors } = await openNewGame();
-  const PATH_RGB = [0xD9, 0xA5, 0x5B], WALL_RGB = [0x2F, 0x6B, 0x3A];
-  await expectColor(page, 'left', PATH_RGB);
+  const PATH_RGB = [0xD9, 0xA5, 0x5B], WALL_RGB = [0x2F, 0x6B, 0x3A], ART_SAND_RGB = [0xF6, 0xD8, 0x96];
+  // 1-1에는 실제 맵 그림이 있다: 시작 칸 왼쪽은 그림의 모래길 색
+  await expectColor(page, 'left', ART_SAND_RGB);
   // 16×32짜리 시험 그림은 월드 왼쪽 위만 덮으므로, 보이는 길 칸은 타일 색 없이 바탕색만 남는다
   assert.equal(await page.evaluate((u) => window.__test.setAsset('maps.1-1', u), FIXTURE), true);
   await expectColor(page, 'left', WALL_RGB);

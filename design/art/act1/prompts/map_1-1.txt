@@ -1,0 +1,20 @@
+16px pixel art map for a top-down 3/4 view RPG: a cozy fantasy village in the early morning, soft pale-gold light from the upper left, low contrast, dewy and calm. Crisp hard-edged pixels on a 16-pixel tile grid, limited palette of about 30 colours, 1px darker-hue outlines on objects and buildings (never black), flat ground shading with 2-3 shades and no outline on the ground, soft cel shading, child-friendly.
+
+The reference image is an exact layout guide drawn on a 32 x 24 tile grid. Follow the reference layout exactly: keep every area in the same place, same size and same shape, filling the whole frame edge to edge with no border and no perspective change.
+- Light sand areas are paths and open ground where people walk: draw them as bright sandy dirt paths and small open yards, the brightest and least detailed part of the picture. Do not put buildings, trees, fences, rocks or props on light sand areas.
+- Dark green areas are not walkable: fill them with buildings, round dark-green tree canopies, hedges, low rounded stone walls and grass ledges. Nothing in a dark green area should look like an open path.
+- White squares are where villagers will stand later: leave plain open sandy ground there, nothing drawn on them.
+- The grey square at the top of the narrow alley is where a fog creature will be placed later: draw plain sandy path there, no fog.
+- Brown squares are the named objects. Draw each one exactly on its square, about one tile big, clearly readable:
+  - the brown square at the top-left, at the right end of the cottage, is a cluster of large clay storage jars on a low stone platform;
+  - the brown square in the middle of the central square is a round stone well with a little wooden roof and a bucket;
+  - the brown square in the right-hand clearing is a small vegetable bed with rows of green lettuce inside a low wooden frame;
+  - the brown square at the right end of the bottom path is a wooden village signpost with a blank board.
+
+Buildings (placed only inside dark green areas, with their arched doors opening onto the sand paths):
+- top-left, directly above the left open yard: the landmark, a round cozy cottage with a rounded terracotta tile roof, a stone chimney with a curl of morning smoke, arched wooden door and round-topped windows, a clothesline with laundry beside it;
+- top-middle, left and right of the narrow alley that leads up to the small open lot at the top: two smaller cottages with rounded slate-blue tile roofs;
+- bottom-left, directly above the bottom-left path near the start: a small cottage with a rounded slate-blue tile roof, its arched door facing down onto the path;
+- around the edges: round dark-green tree canopies, a few flowers in the grass, a small teal stream with a darker teal outline along the lower right corner inside the dark green area.
+
+Roofs are smooth rounded clay or slate tiles in neat rows, NOT thatched, no straw, no hay. No characters, no people, no animals, no text, no letters, no UI, no fog.
