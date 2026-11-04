@@ -114,22 +114,48 @@ test('복습전: 막 몬스터 그림을 보스의 70%로, 이름표는 꼬마 �
   await page.close();
 });
 
-test('타이틀: 글자는 한지 패널 위, 모습 카드는 그림이 떠도 이름이 있다', async () => {
+test('타이틀: 로고 상자 폭 600, 이름은 h1 글자, 메뉴 단추 340×76·첫 단추 위끝 약 470', async () => {
   const page = await browser.newPage({ viewport: { width: 1366, height: 768 } });
   const errors = collectErrors(page);
   await page.goto(server.url + '/?test=1');
   await page.waitForSelector('.title-scene .title-bg');
-  for (const sel of ['.title-logo', '.title-label', '.title-help', '.title-error', '.title-notice', '.title-confirm', '.avatar-cards', '.title-actions']) {
-    assert.equal(await page.locator(`.title-panel ${sel}`).count(), 1, `${sel}는 패널 안`);
+  await page.waitForSelector('.title-logo.has-art img.logo-img');
+  const logo = await box(page, '.title-logo');
+  near(logo.width, 600, 20, '로고 폭');
+  near(logo.y, 40, 4, '로고 위');
+  assert.equal(await page.locator('.title-logo .logo-img').getAttribute('alt'), '');
+  const first = await box(page, '.title-menu .btn-green');
+  near(first.width, 340, 2, '단추 폭');
+  near(first.height, 76, 2, '단추 높이');
+  near(first.y, 470, 8, '첫 단추 위끝');
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('모습 고르기: 글자는 패널·명판 위, 카드 220×280, 카드 아래 명판 글자, 이름 칸은 위 절반', async () => {
+  const page = await browser.newPage({ viewport: { width: 1366, height: 768 } });
+  const errors = collectErrors(page);
+  await page.goto(server.url + '/?test=1');
+  await page.waitForSelector('[data-scene="title"]');
+  await page.getByRole('button', { name: '처음부터' }).click();
+  await page.waitForSelector('.select-scene .title-bg');
+  for (const sel of ['.select-name .title-label', '.select-name .title-help', '.select-name .title-error']) {
+    assert.equal(await page.locator(sel).count(), 1, `${sel}는 이름 패널 안`);
   }
-  const bg = await page.evaluate(() => getComputedStyle(document.querySelector('.title-panel')).backgroundColor);
-  assert.match(bg, /rgba?\(251, 245, 230/);
+  assert.equal(await page.locator('.select-title.frame-plate').count(), 1, '제목은 명판');
+  assert.equal(await page.locator('.avatar-col > .avatar-plate.frame-plate').count(), 2, '카드 아래 명판');
+  const card = await box(page, '.avatar-card');
+  near(card.width, 220, 2, '카드 폭');
+  near(card.height, 280, 2, '카드 높이');
+  const bg = await page.evaluate(() => { const c = getComputedStyle(document.querySelector('.select-name')); return c.backgroundColor + c.backgroundImage; });
+  assert.ok(bg !== 'rgba(0, 0, 0, 0)none', '이름 패널은 한지 바탕');
   await page.waitForSelector('.avatar-card.has-art img');
   assert.ok(await page.getByRole('radio', { name: '여자 주인공' }).isVisible());
   assert.ok(await page.getByRole('radio', { name: '남자 주인공' }).isVisible());
-  // 닉네임 칸은 화면 위쪽 절반
   const input = await box(page, '#nickname');
   assert.ok(input.y + input.height < 384);
+  const go = await box(page, '.select-go');
+  assert.ok(go.y + go.height <= 768, '시작하기가 화면 안');
   assert.deepEqual(errors, []);
   await page.close();
 });

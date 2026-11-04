@@ -37,57 +37,66 @@ canvas, img {
   outline-offset: 2px;
 }
 
-/* ── 시작 화면 ────────────────────────── */
-.title-scene {
-  position: fixed;
-  inset: 0;
-  overflow-y: auto;
-  display: grid;
-  justify-items: center;
-  align-content: start;
-  gap: 16px;
-  padding: 24px 16px;
+/* ── 타이틀 ────────────────────────────
+   그림(title.webp)이 화면을 꽉 채우고, 로고와 메뉴만 올린다(1366×768 기준 로고 위 40·폭 600, 첫 단추 위끝 약 470). */
+.title-scene { position: fixed; inset: 0; overflow: hidden; isolation: isolate; background: var(--wood-dark); }
+.title-bg { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+.title-logo {
+  position: absolute; top: 40px; left: 50%; transform: translateX(-50%);
+  margin: 0; width: 600px; max-width: 94%; z-index: 0;
+  font-family: var(--font-title); font-size: 72px; font-weight: normal; line-height: 1.1; text-align: center;
 }
-.select-scene { position: fixed; inset: 0; overflow-y: auto; } /* 모습 고르기 장면(Task 4)의 뿌리 */
-.title-panel {
-  display: grid;
-  justify-items: center;
-  gap: 14px;
-  width: min(560px, 100%);
-  padding: 20px 28px 22px;
-  border: 2px solid var(--meok-gal);
-  border-radius: 12px;
-  background: rgba(251, 245, 230, .95);
-  box-shadow: 0 6px 24px rgba(43, 38, 34, .25);
-  animation: panel-in 180ms ease-out;
+.logo-img { display: block; width: 100%; height: auto; image-rendering: auto; }
+/* 그림이 붙으면 글자는 눈에만 안 보이게(읽어 주는 프로그램에는 남는다) */
+.title-logo.has-art .logo-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* 그림이 없을 때: 금빛 채움 + 먹갈 6px + 나무색 12px 윤곽(층 셋) */
+.logo-text { position: relative; display: inline-block; color: transparent; background: linear-gradient(#FFF3B8 0%, #F2C14E 55%, #D99A2B 100%); -webkit-background-clip: text; background-clip: text; }
+.logo-text::before, .logo-text::after { content: attr(data-text); position: absolute; inset: 0; z-index: -1; }
+.logo-text::before { color: var(--wood); -webkit-text-stroke: 12px var(--wood); paint-order: stroke fill; }
+.logo-text::after { color: var(--line); -webkit-text-stroke: 6px var(--line); paint-order: stroke fill; }
+.title-menu {
+  position: absolute; top: 61%; left: 50%; transform: translateX(-50%);
+  display: grid; gap: 16px; width: 340px; max-width: 94%;
 }
-.title-logo { margin: 0; font-family: var(--font-title); font-size: 72px; font-weight: normal; line-height: 1.1; }
-.title-form { display: grid; gap: 6px; justify-items: center; width: 100%; }
-.title-label { font-size: 20px; }
+.title-menu .btn { width: 100%; }
+.title-notice { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); margin: 0; width: max-content; max-width: 94%; font-size: 18px; text-align: center; }
+
+/* ── 이름·모습 고르기 ───────────────────── */
+.select-scene {
+  position: fixed; inset: 0; overflow-y: auto; isolation: isolate; background: var(--wood-dark);
+  display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 24px 16px;
+}
+.select-scene > * { flex: none; }
+.select-title { width: 360px; max-width: 100%; height: 64px; margin: 0; display: grid; place-items: center; font-family: var(--font-title); font-size: 32px; font-weight: normal; line-height: 32px; text-align: center; }
+.select-name { width: 680px; max-width: 100%; min-height: 130px; display: grid; align-content: center; justify-items: center; gap: 4px; }
+.select-name-row { display: flex; align-items: center; gap: 24px; width: 100%; justify-content: center; }
+.title-label { font-family: var(--font-title); font-size: 28px; white-space: nowrap; }
 .title-input {
-  width: min(320px, 100%); min-height: 48px; padding: 0 12px;
-  border: 2px solid var(--meok-gal); border-radius: 12px;
-  background: #fff; color: var(--meok); font: inherit; font-size: 24px; text-align: center;
+  flex: 1; min-width: 0; max-width: 400px; min-height: 48px; padding: 0 16px;
+  border: 3px solid var(--wood); border-radius: 12px;
+  background: #fff; color: var(--ink); font: inherit; font-size: 26px; text-align: left;
 }
-.title-help { margin: 0; font-size: 18px; color: var(--gray-3); }
-.title-error { margin: 0; font-size: 20px; color: var(--meok); }
-.title-error .err-icon { display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center; border-radius: 50%; background: var(--red); color: var(--hanji); font-weight: bold; }
-.avatar-cards { display: flex; gap: 16px; }
-.avatar-card {
-  width: 96px; height: 96px; padding: 4px; border: 3px solid var(--meok-gal);
-  border-radius: 12px; background: var(--hanji); cursor: pointer; font: inherit;
-}
-.avatar-card.selected { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-light); }
-.avatar-block { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 8px; font-size: 40px; }
-.saved-names { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-.saved-name {
-  min-height: 48px; padding: 0 20px; border: 2px solid var(--meok-gal); border-radius: 12px;
-  background: var(--hanji); color: var(--meok); font: inherit; font-size: 20px; cursor: pointer;
-}
+.title-help { margin: 0; font-size: 18px; color: var(--hp); }
+.title-error { margin: 0; font-size: 20px; color: var(--ink); }
+.title-error .err-icon { display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center; border-radius: 50%; background: var(--heart); color: var(--parchment); font-weight: bold; }
+.avatar-cards { display: flex; gap: 40px; justify-content: center; }
+.avatar-col { position: relative; display: grid; justify-items: center; gap: 8px; width: 220px; }
+.avatar-card { width: 220px; height: 280px; padding: 0; cursor: pointer; font: inherit; overflow: hidden; transition: filter 120ms ease-out; filter: brightness(.75); }
+.avatar-card.selected { filter: none; box-shadow: 0 0 0 4px var(--brass-light); } /* 밝은 놋쇠 테, 빛 번짐 없음 */
+.avatar-block { display: grid; place-items: center; width: 100%; height: 100%; font-size: 64px; }
+.avatar-img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.avatar-card.has-art .avatar-block { display: none; }
+.avatar-card:focus-visible { outline: 3px solid var(--hero); outline-offset: 6px; }
+.avatar-badge { position: absolute; top: -14px; right: -14px; display: none; place-items: center; width: 48px; height: 48px; border: 3px solid var(--brass); border-radius: 50%; background: var(--parchment); }
+.avatar-col.picked .avatar-badge { display: grid; }
+.avatar-plate { width: 160px; height: 56px; margin: 0; display: grid; place-items: center; font-family: var(--font-title); font-size: 24px; line-height: 24px; }
+.saved-names { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; max-width: 680px; }
+.select-notfound, .title-confirm { width: 560px; max-width: 100%; display: grid; justify-items: center; gap: 8px; text-align: center; font-size: 22px; }
+.select-notfound p, .title-confirm p { margin: 0; }
 .title-actions { display: flex; gap: 12px; justify-content: center; }
-.title-confirm { padding: 16px; border: 2px solid var(--meok-gal); border-radius: 12px; background: #fff; text-align: center; font-size: 22px; }
-.title-confirm p { margin: 0 0 12px; }
-.title-notice { margin: 0; font-size: 18px; color: var(--gray-3); }
+.select-actions { display: flex; justify-content: center; align-items: center; gap: 72px; margin-top: auto; padding-top: 8px; }
+.select-back { width: 200px; }
+.select-go { width: 260px; min-height: 72px; }
 [hidden] { display: none !important; }
 
 
@@ -875,11 +884,6 @@ canvas, img {
 
 /* ── 그림(일러스트)이 있을 때: 임시 그림 위에 <img>를 얹고 임시 색 블록은 감춘다 ── */
 img.art { image-rendering: auto; } /* 도트가 아닌 그림은 부드럽게 줄인다 */
-.title-scene { isolation: isolate; }
-.title-bg { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
-.avatar-card { position: relative; overflow: hidden; }
-.avatar-img { display: block; width: 100%; height: 100%; border-radius: 8px; object-fit: cover; object-position: top; }
-.avatar-card.has-art .avatar-block { display: none; }
 
 .dialogue-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .bust-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: bottom; }

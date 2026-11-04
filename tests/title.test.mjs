@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { shouldSubmit, titleDecision, stillSameName } from '../js/scenes/title.js';
+import { shouldSubmit, titleDecision, stillSameName } from '../js/scenes/select.js';
 import { createStore } from '../js/save.js';
 import { newGame } from '../js/rules/game.js';
 
@@ -33,7 +33,7 @@ test('없는 닉네임으로 처음부터 → start', () => {
   assert.equal(r.state.avatar, 'm');
 });
 
-test('이어하기: 저장 있음 → start, 깨짐 → load-error, 없음 → 새로 시작', () => {
+test('이어하기: 저장 있음 → start, 깨짐 → load-error', () => {
   const storage = memStorage();
   const store = createStore(storage);
   const saved = { ...newGame({ nickname: '하늘', avatar: 'f' }), chapter: '1-2' };
@@ -44,10 +44,11 @@ test('이어하기: 저장 있음 → start, 깨짐 → load-error, 없음 → �
   assert.equal(r.state.avatar, 'f');
   storage.setItem('malbit:save:바다', '{깨짐');
   assert.deepEqual(titleDecision({ nickname: '바다', avatar: 'f', choice: 'continue', store }), { action: 'load-error' });
-  const n = titleDecision({ nickname: '구름', avatar: 'm', choice: 'continue', store });
-  assert.equal(n.action, 'start');
-  assert.equal(n.state.nickname, '구름');
-  assert.equal(n.state.avatar, 'm');
+});
+
+test('이어하기: 저장이 없으면 not-found', () => {
+  const store = createStore(memStorage());
+  assert.deepEqual(titleDecision({ nickname: '구름', avatar: 'm', choice: 'continue', store }), { action: 'not-found' });
 });
 
 test('잘못된 닉네임 → invalid', () => {

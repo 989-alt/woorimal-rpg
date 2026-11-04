@@ -2,7 +2,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
-import { launchBrowser, collectErrors, finishDialogue } from './browser.mjs';
+import { launchBrowser, collectErrors, finishDialogue, startFromTitle } from './browser.mjs';
 
 let server, browser;
 before(async () => {
@@ -34,9 +34,7 @@ async function interact(page, target) {
 }
 
 async function continueAs(page, name) {
-  await page.waitForSelector('[data-scene="title"]');
-  await page.locator('.saved-name', { hasText: name }).click();
-  await page.getByRole('button', { name: '이어하기' }).click();
+  await startFromTitle(page, { name, mode: 'continue' });
   await page.waitForSelector('[data-scene="explore"]');
 }
 

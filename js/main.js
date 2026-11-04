@@ -6,6 +6,7 @@ import { parseMap, isWalkable, reachable } from './explore/grid.js';
 import ACT1 from '../data/acts/act1.js';
 import { explore } from './scenes/explore.js';
 import { title } from './scenes/title.js';
+import { select } from './scenes/select.js';
 import { dialogue, setTypeSpeed } from './scenes/dialogue.js';
 import { battle, battleProbe } from './scenes/battle.js';
 import { gameover } from './scenes/gameover.js';
@@ -73,6 +74,7 @@ function teleportTo(target) {
 }
 
 router.register('title', title);
+router.register('select', select);
 router.register('explore', explore);
 router.register('dialogue', dialogue);
 router.register('battle', battle);

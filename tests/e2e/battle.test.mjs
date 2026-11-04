@@ -1,7 +1,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
-import { launchBrowser, collectErrors, finishDialogue } from './browser.mjs';
+import { launchBrowser, collectErrors, finishDialogue, startFromTitle } from './browser.mjs';
 import { parseMap } from '../../js/explore/grid.js';
 import { pathTo, KEYS } from './helpers.mjs';
 import ACT1 from '../../data/acts/act1.js';
@@ -310,8 +310,7 @@ test('막 보스: 이긴 뒤 처음 화면 → 이어하기 → 보스 앞에서
   await page.waitForSelector('[data-scene="clear"]');
   await page.getByRole('button', { name: '처음 화면으로' }).click();
   await page.waitForSelector('[data-scene="title"]');
-  await page.fill('#nickname', '하늘');
-  await page.getByRole('button', { name: '이어하기' }).first().click();
+  await startFromTitle(page, { name: '하늘', mode: 'continue' });
   await page.waitForSelector('[data-scene="explore"]');
   const s = await page.evaluate(() => window.__test.state());
   assert.equal(s.chapter, '1-2');

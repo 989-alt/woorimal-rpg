@@ -54,8 +54,11 @@ try {
   for (const size of SIZES) {
     const ctx = await browser.newContext({ viewport: size.viewport, deviceScaleFactor: size.deviceScaleFactor });
     let page = await fresh(ctx, server.url);
-    await page.locator('#nickname').fill(NICK);
     await shoot(page, size, '01-title');
+    await page.locator('.title-menu').getByRole('button', { name: '처음부터' }).click();
+    await page.waitForSelector('[data-scene="select"]');
+    await page.locator('#nickname').fill(NICK);
+    await shoot(page, size, '01b-select');
 
     await page.evaluate(([n, a]) => window.__test.newGame(n, a), [NICK, AVATAR]);
     await page.waitForSelector('[data-scene="explore"]');

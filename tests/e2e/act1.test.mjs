@@ -3,7 +3,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
-import { launchBrowser, collectErrors, finishDialogue } from './browser.mjs';
+import { launchBrowser, collectErrors, finishDialogue, startFromTitle } from './browser.mjs';
 import { pathTo, KEYS } from './helpers.mjs';
 import { parseMap } from '../../js/explore/grid.js';
 import ACT1 from '../../data/acts/act1.js';
@@ -84,9 +84,7 @@ async function answerRight(page) {
 
 async function continueAs(page, name) {
   await boot(page);
-  await page.locator('.saved-name', { hasText: name }).click();
-  assert.equal(await page.locator('#nickname').inputValue(), name);
-  await page.getByRole('button', { name: '이어하기' }).click();
+  await startFromTitle(page, { name, mode: 'continue' });
   await page.waitForSelector('[data-scene="explore"]');
 }
 
@@ -125,10 +123,7 @@ test('1막 끝까지: 시작 화면 → 부탁 4개 → 숨은 낱말 2개 → �
   await boot(page);
 
   // ── 시작 화면: 키보드로 이름 적기 → 여 → 처음부터 ──
-  await page.locator('#nickname').click();
-  await page.keyboard.type('하늘');
-  await page.locator('.avatar-card[data-avatar="f"]').click();
-  await page.getByRole('button', { name: '처음부터' }).click();
+  await startFromTitle(page, { name: '하늘', avatar: 'f' });
   await playDialogue(page); // 인트로
   let s = await state(page);
   assert.equal(s.nickname, '하늘');
@@ -259,8 +254,7 @@ test('1막 끝까지: 시작 화면 → 부탁 4개 → 숨은 낱말 2개 → �
   // ── 막을 마친 뒤: 처음 화면 → 이어하기 → 할 일 "1막을 마쳤어요", 보스는 막는다 ──
   await page.getByRole('button', { name: '처음 화면으로' }).click();
   await page.waitForSelector('[data-scene="title"]');
-  await page.locator('.saved-name', { hasText: '하늘' }).click();
-  await page.getByRole('button', { name: '이어하기' }).click();
+  await startFromTitle(page, { name: '하늘', mode: 'continue' });
   await page.waitForSelector('[data-scene="explore"]');
   assert.equal(await hudTask(page), '1막을 마쳤어요');
   await interact(page, 'boss');

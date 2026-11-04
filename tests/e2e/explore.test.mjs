@@ -1,7 +1,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
-import { launchBrowser, collectErrors, finishDialogue } from './browser.mjs';
+import { launchBrowser, collectErrors, finishDialogue, startFromTitle } from './browser.mjs';
 import { parseMap, isWalkable } from '../../js/explore/grid.js';
 import ACT1 from '../../data/acts/act1.js';
 
@@ -141,8 +141,7 @@ test('?test=1이 없으면 __test가 없다', async () => {
   const { page, errors } = await openGame('');
   await page.waitForSelector('[data-scene="title"]');
   assert.equal(await page.evaluate(() => typeof window.__test), 'undefined');
-  await page.fill('#nickname', '하늘');
-  await page.getByRole('button', { name: '처음부터' }).click();
+  await startFromTitle(page, { name: '하늘' });
   await page.waitForSelector('[data-scene="dialogue"]');
   await finishDialogue(page);
   await page.waitForSelector('[data-scene="explore"] canvas');

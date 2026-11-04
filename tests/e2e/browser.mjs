@@ -54,3 +54,14 @@ export async function finishDialogue(page, until = 'explore') {
   }
   throw new Error('대화가 끝나지 않았다');
 }
+
+// 타이틀 단추 → 이름 입력 → (처음부터면 모습 카드) → 시작하기/이어하기.
+// mode 'new'는 '처음부터', 'continue'는 '이어하기'. 타이틀 화면에서 불러야 한다.
+export async function startFromTitle(page, { name, avatar = 'f', mode = 'new' }) {
+  await page.waitForSelector('[data-scene="title"]');
+  await page.locator('.title-menu').getByRole('button', { name: mode === 'new' ? '처음부터' : '이어하기' }).click();
+  await page.waitForSelector(`[data-scene="select"][data-mode="${mode}"]`);
+  await page.fill('#nickname', name);
+  if (mode === 'new') await page.locator(`.avatar-card[data-avatar="${avatar}"]`).click();
+  await page.locator('.select-go').click();
+}
