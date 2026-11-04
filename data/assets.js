@@ -29,8 +29,8 @@ export const ASSETS = {
   // 물건 아이콘 48×48 (물건 id)
   items: { water: 'assets/pixel/icon_water.png', firewood: 'assets/pixel/icon_firewood.png', letter: 'assets/pixel/icon_letter.png', 'price-board': null, weight: null, bundle: null, 'trail-ribbon': null, lunchbox: null, 'rain-bowl': null, 'warm-tea': null, 'pine-twigs': null, 'bundle-strap': null, bell: null, 'light-shard': null, lullaby: null },
   // 꼬마 몬스터 도트 48×96(발이 맨 아래 줄)·보스 도트 96×96(2×2칸, 발이 보스 칸 아래 줄 가운데) (막 번호)
-  small: { 1: 'assets/pixel/monster_small_act1.png', 2: null, 3: null, 4: null, 5: null },
-  bossPixel: { 1: 'assets/pixel/monster_boss_act1.png', 2: null, 3: null, 4: null, 5: null },
+  small: { 1: 'assets/pixel/monster_small_act1.png', 2: 'assets/pixel/monster_small_act2.png', 3: null, 4: null, 5: null },
+  bossPixel: { 1: 'assets/pixel/monster_boss_act1.png', 2: 'assets/pixel/monster_boss_act2.png', 3: null, 4: null, 5: null },
   // 대화 상반신: 인물 × 표정. 표정 그림이 없으면 base로 대신한다.
   busts: {
     hero_f: { base: 'assets/illust/bust_hero_f_base.webp', surprise: 'assets/illust/bust_hero_f_surprise.webp', joy: 'assets/illust/bust_hero_f_joy.webp' },
