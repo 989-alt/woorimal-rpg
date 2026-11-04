@@ -54,10 +54,9 @@ def save_palette_png(im, path, white=False):
     """RGBA를 256색 이하 색표 PNG로 쓴다. 알파 8 이하는 0."""
     arr = np.array(im.convert("RGBA"))
     arr[arr[:, :, 3] <= ALPHA_CUT] = 0
-    q = Image.fromarray(arr, "RGBA").quantize(256, Image.Quantize.FASTOCTREE)
     if white:
-        pal = q.getpalette()
-        q.putpalette([255] * len(pal))
+        arr[:, :, :3] = 255  # RGB는 모두 흰색, 알파만 모양
+    q = Image.fromarray(arr, "RGBA").quantize(256, Image.Quantize.FASTOCTREE)
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     q.save(path, optimize=True)
 

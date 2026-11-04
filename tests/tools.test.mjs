@@ -202,16 +202,26 @@ print(im.size, im.mode, c.most_common(1)[0][0])
   }
 });
 
-test('ui-slice mask: 흰색 + 알파, 좌우 대칭', (t) => {
+test('ui-slice mask: 흰색 + 알파, 좌우 대칭, 구멍은 투명', (t) => {
   const s = uiSliceSetup(t); if (!s) return;
+  // 원본 가운데에 투명 구멍을 뚫는다(모양이 알파로 남아야 한다)
+  const holed = join(s.dir, 'holed.png');
+  pyRun(`
+from PIL import Image
+im = Image.open(${JSON.stringify(s.src)})
+for y in range(100, 120):
+    for x in range(0, 220):
+        im.putpixel((x, y), (0, 0, 0, 0))
+im.save(${JSON.stringify(holed)})
+`);
   const out = join(s.dir, 'mask.png');
-  execFileSync(VENV_PY, ['-I', 'tools/ui-slice.py', 'mask', s.src, out, '--size', '160x80', '--slice', '20,40,20,40', '--src-corner', '60']);
+  execFileSync(VENV_PY, ['-I', 'tools/ui-slice.py', 'mask', holed, out, '--size', '160x80', '--slice', '20,40,20,40', '--src-corner', '60']);
   const r = inspectFrame(out, `
 px = im.convert('RGBA').load(); w, h = im.size
 white = all(px[x, y][:3] == (255, 255, 255) for y in range(h) for x in range(w) if px[x, y][3])
 sym = all(px[x, y] == px[w - 1 - x, y] for y in range(h) for x in range(w))
-opaque = sum(1 for y in range(h) for x in range(w) if px[x, y][3])
-print(im.size, im.mode, white, sym, opaque > 0)
+alphas = {px[x, y][3] for y in range(h) for x in range(w)}
+print(im.size, im.mode, white, sym, 'transparency' in im.info, len(alphas) > 1, px[80, 40][3], px[2, 2][3] > 200)
 `);
-  assert.equal(r, '(160, 80) P True True True');
+  assert.match(r, /^\(160, 80\) P True True True True 0 True$/, r);
 });
