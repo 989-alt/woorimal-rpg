@@ -37,7 +37,7 @@ export function openTasks(root, state, chapter, { onClose, focusAfter } = {}) {
   title.textContent = `할 일 · ${chapter.title}`;
   const closeBtn = document.createElement('button');
   closeBtn.type = 'button';
-  closeBtn.className = 'big-button tasks-close';
+  closeBtn.className = 'btn btn-wood btn-sm tasks-close';
   closeBtn.textContent = '닫기';
   head.append(title, closeBtn);
 

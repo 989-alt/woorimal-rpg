@@ -18,9 +18,9 @@ export const gameover = {
     const title = el('h2', 'end-title', '안개에 휩싸였다…');
     const help = el('p', 'end-text', '낱말을 다시 살펴보고 한 번 더 겨뤄 보자.');
     const actions = el('div', 'end-actions');
-    const codexBtn = el('button', 'big-button', '도감 다시 보기');
+    const codexBtn = el('button', 'btn btn-wood', '도감 다시 보기');
     codexBtn.type = 'button';
-    const retryBtn = el('button', 'big-button primary', '다시 도전');
+    const retryBtn = el('button', 'btn btn-green', '다시 도전');
     retryBtn.type = 'button';
     actions.append(codexBtn, retryBtn);
     panel.append(title, help, actions);

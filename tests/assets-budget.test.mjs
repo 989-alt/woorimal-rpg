@@ -110,8 +110,21 @@ test('그림 경로가 모두 실제 파일이고, assets/의 그림은 모두 �
   assert.ok(all.length > 30);
   for (const { where, path } of all) assert.ok(existsSync(abs(path)), `${where}: ${path} 없음`);
   const used = new Set(all.map((a) => a.path));
-  const unused = filesUnder('assets').filter((f) => !used.has(f));
-  assert.deepEqual(unused, [], '쓰지 않는 그림 파일');
+  // assets/fonts/는 CSS가 가리키는지로, OFL-*.txt(라이선스)는 짝이 되는 글꼴 파일이 있는지로 본다.
+  const css = filesUnder('css').map((f) => readFileSync(abs(f), 'utf8')).join('\n');
+  const fonts = filesUnder('assets/fonts');
+  const norm = (n) => n.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const fontKeys = fonts.filter((f) => f.endsWith('.woff2')).map((f) => norm(f.split('/').pop().replace(/\.v\d+\.woff2$/, '')));
+  const isUsed = (f) => {
+    if (used.has(f)) return true;
+    if (!f.startsWith('assets/fonts/')) return false;
+    const name = f.split('/').pop();
+    const license = name.match(/^OFL-(.+)\.txt$/);
+    return license ? fontKeys.includes(norm(license[1])) : css.includes(f);
+  };
+  const unused = filesUnder('assets').filter((f) => !isUsed(f));
+  assert.deepEqual(unused, [], '쓰지 않는 그림·글꼴 파일');
+  assert.ok(fonts.some((f) => f.endsWith('.woff2')), 'assets/fonts에 글꼴이 있어야 한다');
 });
 
 test('갈래마다 크기·파일 상한이 아트 바이블 8절과 맞는다', () => {

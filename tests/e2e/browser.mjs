@@ -7,16 +7,14 @@ export function launchBrowser() {
   );
 }
 
-// 글꼴 서버(Google Fonts)가 막혀서 생기는 읽기 실패만 무시한다.
-// 그 밖의 자바스크립트 오류·콘솔 오류(우리 파일의 404 포함)는 모두 모은다.
-const FONT_HOST = /^https?:\/\/fonts\.(googleapis|gstatic)\.com\//;
-
-export function collectErrors(page) {
+// 자바스크립트 오류·콘솔 오류(우리 파일의 404 포함)를 모두 모은다.
+// allow: 일부러 막은 파일처럼 오류가 나도 되는 주소의 정규식(그 주소를 가리키는 콘솔 오류만 건너뛴다).
+export function collectErrors(page, { allow = null } = {}) {
   const errors = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('console', (m) => {
     if (m.type() !== 'error') return;
-    if (FONT_HOST.test(m.location().url || '')) return;
+    if (allow?.test(m.location().url || '')) return;
     errors.push(`console: ${m.text()} (${m.location().url})`);
   });
   return errors;

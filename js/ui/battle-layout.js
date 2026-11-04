@@ -165,7 +165,7 @@ export function feedbackPanel({ answer, word, meaning }) {
   head.append(el('span', 'x-mark', '×'), ` 정답: ${answer}`);
   const m = el('p', 'battle-meaning');
   m.append(el('b', 'battle-meaning-word', word), `: ${meaning}`);
-  const nextBtn = el('button', 'big-button battle-next', '다음');
+  const nextBtn = el('button', 'btn btn-wood battle-next', '다음');
   nextBtn.type = 'button';
   panel.append(head, m, nextBtn);
   return { el: panel, nextBtn };
@@ -178,7 +178,7 @@ export function tipCard(title, text) {
   card.setAttribute('aria-modal', 'true');
   card.setAttribute('aria-label', '전투 규칙');
   const inner = el('div', 'battle-tip-card panel');
-  const start = el('button', 'big-button', '시작');
+  const start = el('button', 'btn btn-green', '시작');
   start.type = 'button';
   inner.append(el('p', 'battle-tip-title', title), el('p', 'battle-tip-text', text), start);
   card.appendChild(inner);

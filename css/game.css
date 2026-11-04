@@ -17,20 +17,15 @@
 
 * { box-sizing: border-box; }
 
+/* 장면 뿌리는 모두 화면을 꽉 채우는 position: fixed; inset: 0 이다. 한지색 여백은 두지 않는다(body는 나무 어둠색). */
 html, body {
   margin: 0;
   height: 100%;
-  background: var(--hanji);
+  background: var(--wood-dark);
   color: var(--meok);
   font-family: var(--font-body);
   font-size: 18px;
   word-break: keep-all;
-}
-
-#app {
-  min-height: 100%;
-  display: grid;
-  place-items: center;
 }
 
 canvas, img {
@@ -42,29 +37,18 @@ canvas, img {
   outline-offset: 2px;
 }
 
-.big-button {
-  min-height: 48px;
-  padding: 0 24px;
-  border: 2px solid var(--meok-gal);
-  border-radius: 12px;
-  background: var(--hanji);
-  color: var(--meok);
-  font: inherit;
-  font-size: 22px;
-  cursor: pointer;
-}
-
 /* ── 시작 화면 ────────────────────────── */
 .title-scene {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
   display: grid;
   justify-items: center;
   align-content: start;
   gap: 16px;
-  width: min(640px, 100%);
-  min-height: 100vh;
-  min-height: 100dvh; /* 휴대 기기 주소창을 뺀 높이(지원하는 브라우저) */
   padding: 24px 16px;
 }
+.select-scene { position: fixed; inset: 0; overflow-y: auto; } /* 모습 고르기 장면(Task 4)의 뿌리 */
 .title-panel {
   display: grid;
   justify-items: center;
@@ -109,9 +93,12 @@ canvas, img {
 
 /* ── 탐험 ─────────────────────────────── */
 [data-scene='explore'] {
-  position: relative;
+  position: fixed;
+  inset: 0;
+  margin-inline: auto; /* 폭은 explore.js가 정하고(캔버스 폭), 화면 가운데에 둔다 */
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 8px;
 }
 
@@ -275,11 +262,8 @@ canvas, img {
 
 /* ── 대화 ─────────────────────────────── */
 .dialogue-scene {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  height: 100dvh; /* 휴대 기기 주소창을 뺀 높이(지원하는 브라우저) */
-  min-height: 480px;
+  position: fixed;
+  inset: 0;
   overflow: hidden;
   background: linear-gradient(#DCE6F0 0%, #EFE6C8 55%, #C9B48A 100%);
 }
@@ -380,7 +364,7 @@ canvas, img {
 }
 .word-card-meaning { font-size: 22px; line-height: 1.5; }
 .word-card-example { font-size: 20px; color: var(--gray-3); }
-.word-card .big-button { margin-top: 8px; min-width: 160px; }
+.word-card .btn { margin-top: 8px; min-width: 160px; }
 
 @media (prefers-reduced-motion: reduce) {
   .dialogue-text .hl.sparkle::after { animation: none; display: none; }
@@ -402,7 +386,7 @@ canvas, img {
 }
 .overlay-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .overlay-head h2 { margin: 0; font-family: var(--font-title); font-size: 28px; }
-.overlay-head .big-button { min-width: 96px; min-height: 48px; }
+.overlay-head .btn { min-width: 96px; }
 .codex-tabs { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
 .codex-tab {
   min-width: 72px; min-height: 48px; padding: 4px 16px;
@@ -450,11 +434,8 @@ canvas, img {
   border-radius: 12px;
 }
 .battle-scene {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  height: 100dvh; /* 휴대 기기 주소창을 뺀 높이(지원하는 브라우저) */
-  min-height: 560px;
+  position: fixed;
+  inset: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -810,7 +791,7 @@ canvas, img {
 .battle-tip-card p { margin: 0; }
 .battle-tip-title { font-family: var(--font-title); font-size: 28px; }
 .battle-tip-text { font-size: 24px; line-height: 1.5; }
-.battle-tip-card .big-button { min-width: 160px; }
+.battle-tip-card .btn { min-width: 160px; }
 .battle-win {
   position: absolute;
   left: 50%;
@@ -840,10 +821,9 @@ canvas, img {
 
 /* ── 게임 오버·클리어 ─────────────────── */
 .end-scene {
-  position: relative;
-  width: 100vw;
-  min-height: 100vh;
-  min-height: 100dvh; /* 휴대 기기 주소창을 뺀 높이(지원하는 브라우저) */
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
   display: grid;
   place-items: center;
   padding: 24px 16px;
@@ -864,7 +844,6 @@ canvas, img {
 .end-title { margin: 0; font-family: var(--font-title); font-size: 36px; font-weight: normal; }
 .end-text { font-size: 22px; }
 .end-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
-.big-button.primary { background: var(--gold-light); border-color: var(--meok-gal); }
 .clear-cards {
   list-style: none;
   margin: 0;
@@ -896,7 +875,7 @@ canvas, img {
 
 /* ── 그림(일러스트)이 있을 때: 임시 그림 위에 <img>를 얹고 임시 색 블록은 감춘다 ── */
 img.art { image-rendering: auto; } /* 도트가 아닌 그림은 부드럽게 줄인다 */
-.title-scene { position: relative; isolation: isolate; }
+.title-scene { isolation: isolate; }
 .title-bg { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
 .avatar-card { position: relative; overflow: hidden; }
 .avatar-img { display: block; width: 100%; height: 100%; border-radius: 8px; object-fit: cover; object-position: top; }

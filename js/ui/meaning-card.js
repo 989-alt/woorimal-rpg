@@ -24,7 +24,7 @@ export function openMeaningCard(parent, wordId, onConfirm, now = () => performan
   const card = el('div', 'word-card');
   card.setAttribute('role', 'dialog');
   card.setAttribute('aria-modal', 'true');
-  const ok = el('button', 'big-button', '확인');
+  const ok = el('button', 'btn btn-green', '확인');
   ok.type = 'button';
   card.append(el('p', 'word-card-title', '새 낱말을 찾았다!'), el('p', 'word-card-word', info?.word ?? wordId),
     el('p', 'word-card-meaning', info?.meaning ?? ''));

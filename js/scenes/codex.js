@@ -15,7 +15,7 @@ export function openCodex(root, state, { actTab = state.act, onClose, focusAfter
   title.textContent = '도감';
   const closeBtn = document.createElement('button');
   closeBtn.type = 'button';
-  closeBtn.className = 'big-button codex-close';
+  closeBtn.className = 'btn btn-wood btn-sm codex-close';
   closeBtn.textContent = '닫기';
   head.append(title, closeBtn);
 

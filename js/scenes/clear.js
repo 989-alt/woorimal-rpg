@@ -33,7 +33,7 @@ export const clear = {
     scene.dataset.scene = 'clear';
     const panel = el('div', 'end-panel panel');
     const actions = el('div', 'end-actions');
-    const btn = el('button', 'big-button primary');
+    const btn = el('button', 'btn btn-green');
     btn.type = 'button';
     let leaving = false;
 

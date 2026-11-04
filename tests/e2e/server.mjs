@@ -13,6 +13,7 @@ const TYPES = {
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
   '.webp': 'image/webp',
+  '.woff2': 'font/woff2',
 };
 
 export function startServer(port = 0) {

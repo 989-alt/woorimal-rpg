@@ -99,8 +99,8 @@ export const title = {
       savedWrap.append(b);
     }
 
-    const newBtn = el('button', { type: 'button', className: 'big-button', textContent: '처음부터' });
-    const contBtn = el('button', { type: 'button', className: 'big-button', textContent: '이어하기' });
+    const newBtn = el('button', { type: 'button', className: 'btn btn-wood', textContent: '처음부터' });
+    const contBtn = el('button', { type: 'button', className: 'btn btn-wood', textContent: '이어하기' });
     const actions = el('div', { className: 'title-actions' }, newBtn, contBtn);
 
     const notice = el('p', { className: 'title-notice', textContent: '이 창에서는 저장되지 않아요' });
@@ -123,8 +123,8 @@ export const title = {
     }
     function ask(text, yesLabel, onYes, noLabel, onNo) {
       confirmBox.textContent = '';
-      const yes = el('button', { type: 'button', className: 'big-button', textContent: yesLabel });
-      const no = el('button', { type: 'button', className: 'big-button', textContent: noLabel });
+      const yes = el('button', { type: 'button', className: 'btn btn-wood', textContent: yesLabel });
+      const no = el('button', { type: 'button', className: 'btn btn-wood', textContent: noLabel });
       yes.addEventListener('click', () => { confirmBox.hidden = true; onYes(); });
       no.addEventListener('click', () => { confirmBox.hidden = true; onNo(); });
       confirmBox.append(el('p', { textContent: text }), el('div', { className: 'title-actions' }, yes, no));
