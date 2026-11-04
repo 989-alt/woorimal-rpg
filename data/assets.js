@@ -15,11 +15,11 @@ export const ASSETS = {
     laundry: 'assets/pixel/npc_laundry.png',
     gate: 'assets/pixel/npc_gate.png',
   },
-  // 물건 아이콘 (물건 id)
-  items: { water: null, firewood: null, letter: null },
-  // 꼬마 몬스터·보스 도트 (막 번호)
-  small: { 1: null },
-  bossPixel: { 1: null },
+  // 물건 아이콘 48×48 (물건 id)
+  items: { water: 'assets/pixel/icon_water.png', firewood: 'assets/pixel/icon_firewood.png', letter: 'assets/pixel/icon_letter.png' },
+  // 꼬마 몬스터 도트 48×96(발이 맨 아래 줄)·보스 도트 96×96(2×2칸, 발이 보스 칸 아래 줄 가운데) (막 번호)
+  small: { 1: 'assets/pixel/monster_small_act1.png' },
+  bossPixel: { 1: 'assets/pixel/monster_boss_act1.png' },
   // 대화 상반신: 인물 × 표정. 표정 그림이 없으면 base로 대신한다.
   busts: {
     hero_f: { base: null, surprise: null, joy: null },

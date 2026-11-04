@@ -1,0 +1,6 @@
+Pixel art item icons for an RPG inventory, detailed pixel art, each icon about 48 by 48 pixels, three icons in a row with wide even gaps, each centred in its own third of the image, the same size:
+Left: a wooden water bucket with metal bands and a rope handle, full of clear blue water.
+Middle: a small bundle of three or four split firewood logs tied with a rope.
+Right: a folded paper letter, cream paper, with a small round red wax seal in the middle.
+Style: crisp hard-edged pixels, no blur, no anti-aliasing, limited palette, 1px darker-hue outlines (never black), soft cel shading, light from the upper left, cozy fantasy village, child-friendly.
+Solid flat magenta (#FF00FF) background everywhere, no ground shadows, no text, no labels.
