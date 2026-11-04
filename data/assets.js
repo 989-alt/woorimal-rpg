@@ -47,7 +47,7 @@ export const ASSETS = {
     guard: { base: 'assets/illust/bust_guard_base.webp', joy: 'assets/illust/bust_guard_joy.webp' },
     shopper: { base: 'assets/illust/bust_shopper_base.webp' },
     chestnut: { base: 'assets/illust/bust_chestnut_base.webp', joy: 'assets/illust/bust_chestnut_joy.webp' },
-    flower: { base: null, joy: null },
+    flower: { base: 'assets/illust/bust_flower_base.webp', joy: 'assets/illust/bust_flower_joy.webp' },
     northgate: { base: null },
     // 3막
     narae: { base: null, sad: null, surprise: null, light: null },

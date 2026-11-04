@@ -11,6 +11,18 @@
   "dx": 0,
   "dy": 0
  },
+ "flower_base": {
+  "src": "bust_flower_base_a1",
+  "quality": 85
+ },
+ "flower_joy": {
+  "src": "bust_flower_joy_a1",
+  "quality": 85,
+  "iou_head": 0.9944,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ },
  "fruit_base": {
   "src": "bust_fruit_base_a1",
   "quality": 85
