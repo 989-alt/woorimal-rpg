@@ -45,6 +45,7 @@ const overlap = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.
 
 test('2-1: HUD에 해솔 초상 하나, 이름표는 "동료 해솔"', async () => {
   const { page, errors } = await openGame(browser, server);
+  await page.evaluate(() => window.__test.setAsset('busts.haesol.base', null)); // 그림이 없을 때의 모습
   await enterChapter(page, '2-1');
   assert.deepEqual(await companions(page), ['haesol']);
   const badge = page.locator('.hud-companion[data-npc="haesol"]');
@@ -72,7 +73,7 @@ test('그림이 있으면 얼굴 쪽을 둥글게 잘라 쓰고 글자는 숨는
     return { fit: cs.objectFit, pos: cs.objectPosition };
   });
   assert.equal(style.fit, 'cover');
-  assert.equal(style.pos, '50% 15%');
+  assert.equal(style.pos, '50% 40%'); // 기본은 50% 15%, 해솔 상반신은 얼굴이 낮아 40%(css/game.css)
   assert.equal(await page.locator('.hud-companion-initial').evaluate((e) => getComputedStyle(e).display), 'none');
   assert.deepEqual(errors, []);
   await page.close();

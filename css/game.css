@@ -238,6 +238,8 @@ canvas, img {
   transform: scale(1.8); transform-origin: 50% 20%;
   image-rendering: auto; border-radius: 0;
 }
+/* 해솔 상반신은 얼굴이 조금 아래에 있어(눈 40%, 턱 53%) 얼굴이 가운데 오게 내린다 */
+.hud-companion[data-npc="haesol"] .hud-companion-face { object-position: 50% 40%; }
 .hud-companion-initial {
   position: absolute;
   inset: 0;
