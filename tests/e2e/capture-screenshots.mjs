@@ -4,7 +4,7 @@
 import { mkdir, readdir, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { startServer } from './server.mjs';
-import { launchBrowser } from './browser.mjs';
+import { launchBrowser, finishDialogue } from './browser.mjs';
 import ACT1 from '../../data/acts/act1.js';
 
 const OUT = fileURLToPath(new URL('../../docs/screenshots/act1/', import.meta.url));
@@ -56,17 +56,20 @@ try {
     await page.locator('.title-menu').getByRole('button', { name: '처음부터' }).click();
     await page.waitForSelector('[data-scene="select"]');
     await page.locator('#nickname').fill(NICK);
-    await shoot(page, size, '01b-select');
+    await page.locator(`.avatar-card[data-avatar="${AVATAR}"]`).click();
+    await shoot(page, size, '02-select');
 
-    await page.evaluate(([n, a]) => window.__test.newGame(n, a), [NICK, AVATAR]);
-    await page.waitForSelector('[data-scene="explore"]');
+    // 진짜 시작 흐름: 처음 이야기를 넘기면 탐험 첫 화면에 '걷는 법' 안내가 뜬다
+    await page.locator('.select-go').click();
+    await finishDialogue(page);
+    await page.locator('.hint[data-tip="move"]').waitFor();
+    await shoot(page, size, '03-explore-1-1');
+
+    // 1-1 대화: 도담 할머니가 첫 부탁을 끝내며 낱말을 알려 준다 → 뜻풀이 카드(도감 안내 포함)
     await page.evaluate(() => window.__test.teleportTo('dodam'));
-    await shoot(page, size, '02-explore-1-1');
-
-    // 1-1 대화: 도담 할머니가 첫 부탁을 끝내며 낱말을 알려 준다 → 뜻풀이 카드
     const q1 = ACT1.chapters[0].quests[0];
     await openDialogue(page, q1.done, q1.words, '도담 할머니');
-    await shoot(page, size, '04-dialogue-1-1-dodam');
+    await shoot(page, size, '05-dialogue-1-1-dodam');
     const READY = '[data-scene="dialogue"][data-ready]';
     for (let i = 0; i < 40; i++) {
       await page.waitForSelector(`.word-card, ${READY}`);
@@ -74,7 +77,8 @@ try {
       await page.keyboard.press('Space');
       await page.waitForFunction((r) => !document.querySelector(r), READY);
     }
-    await shoot(page, size, '06-meaning-card');
+    await page.locator('.hint[data-tip="codex"]').waitFor().catch(() => console.warn('codex 안내가 안 떴다'));
+    await shoot(page, size, '07-meaning-card');
     await page.close();
 
     // 1-2: 장을 넘긴 뒤 탐험과 빵집 아저씨 대화
@@ -84,16 +88,16 @@ try {
     await page.evaluate(() => window.__test.nextChapter());
     await page.evaluate(() => window.__test.teleportTo('baker'));
     await page.waitForSelector('[data-scene="explore"]');
-    await shoot(page, size, '03-explore-1-2');
+    await shoot(page, size, '04-explore-1-2');
     const q3 = ACT1.chapters[1].quests[0];
     await openDialogue(page, q3.offer, [], '빵집 아저씨');
-    await shoot(page, size, '05-dialogue-1-2-baker');
+    await shoot(page, size, '06-dialogue-1-2-baker');
     await page.close();
 
     page = await fresh(ctx, server.url);
     await page.evaluate(([n, a]) => window.__test.newGame(n, a), [NICK, AVATAR]);
     await startBattle(page, 'review');
-    await shoot(page, size, '07-review-battle');
+    await shoot(page, size, '08-review-battle');
     await page.close();
 
     // 보스전: 정답을 골라 가며 세 문제 유형(빈칸·뜻·문장)을 하나씩 찍고, 이겨서 막 클리어까지
@@ -105,7 +109,7 @@ try {
       const type = await page.locator('.battle-options').getAttribute('data-type');
       if (!seen.has(type)) {
         seen.add(type);
-        await shoot(page, size, `08-boss-battle-${type}`);
+        await shoot(page, size, `09-boss-battle-${type}`);
       }
       const idx = await page.evaluate(() => window.__test.answerIndex());
       const qn = await page.locator('[data-scene="battle"]').getAttribute('data-qn');
@@ -117,7 +121,30 @@ try {
     }
     if (seen.size < 3) console.warn(`보스전 문제 유형 ${[...seen]}만 나왔다(씨앗을 바꿔 보세요)`);
     await page.waitForSelector('[data-scene="clear"]');
-    await shoot(page, size, '09-act-clear');
+    await shoot(page, size, '11-act-clear');
+    await page.close();
+
+    // 게임 오버: 보스전에서 하트 다섯을 모두 잃는다
+    page = await fresh(ctx, server.url);
+    await page.evaluate(([n, a]) => window.__test.newGame(n, a), [NICK, AVATAR]);
+    await startBattle(page, 'boss');
+    for (let i = 0; i < 5; i++) {
+      const idx = await page.evaluate(() => window.__test.answerIndex());
+      await page.keyboard.press(`Digit${((idx + 1) % 4) + 1}`);
+      await page.waitForSelector('.battle-feedback .battle-next');
+      await page.locator('.battle-next').click();
+    }
+    await page.waitForSelector('[data-scene="gameover"]');
+    await shoot(page, size, '10-gameover');
+    await page.close();
+
+    // 도감: 1막 낱말 열 장이 모인 모습
+    page = await fresh(ctx, server.url);
+    await page.evaluate(([n, a]) => window.__test.newGame(n, a), [NICK, AVATAR]);
+    await page.waitForSelector('[data-scene="explore"]');
+    await page.keyboard.press('KeyE');
+    await page.waitForSelector('.codex');
+    await shoot(page, size, '12-codex');
     await ctx.close();
   }
 } finally {
