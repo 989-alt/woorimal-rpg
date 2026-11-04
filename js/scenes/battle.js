@@ -1,0 +1,227 @@
+// 전투 장면: 막 보스전(mode 'boss')과 작은 몬스터 복습전(mode 'review').
+// 전투 도중 진행은 저장하지 않는다. 결과(이김·짐)만 상태를 바꾼다.
+import { WORDS } from '../../data/words.js';
+import { actOfChapter } from '../../data/acts/index.js';
+import { createBattle, currentWord, answer, retry, optionOrder } from '../rules/battle.js';
+import { createReview, answerReview } from '../rules/review.js';
+import { actWords, chapterOf, finishAct, markTip } from '../rules/game.js';
+import { winSmall } from '../rules/quests.js';
+import { makeRng } from '../rules/rng.js';
+import { attachJosa } from '../rules/josa.js';
+import {
+  TYPE_LABEL, COLUMNS, buildFrame, drawFrame, renderPrompt, buildOptions, markOptions, moveFocus, feedbackPanel, tipCard,
+} from '../ui/battle-layout.js';
+import { HIT_MS, playHit, playMiss } from '../ui/battle-fx.js';
+
+export const TIP_BOSS = 'tip-boss';
+export const TIP_REVIEW = 'tip-review';
+const TIPS = {
+  boss: { id: TIP_BOSS, text: '하트 5개, 몬스터 6칸. 6번 맞히면 이겨요.' },
+  review: { id: TIP_REVIEW, text: '얻은 낱말을 복습해요. 3번 맞히면 이겨요.' },
+};
+const HEARTS = 5;
+const HP = 6;
+const KEY_GUARD_MS = 300; // '다음'이 뜬 직후 키 연타로 넘어가지 않게
+const WIN_MSG_MS = 1500;
+
+// 검사용(?test=1): 지금 전투의 정답 자리와 요약
+let probe = null;
+export const battleProbe = () => probe;
+
+const el = (tag, className, text) => {
+  const e = document.createElement(tag);
+  if (className) e.className = className;
+  if (text !== undefined) e.textContent = text;
+  return e;
+};
+const DIGIT = { Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3, Numpad1: 0, Numpad2: 1, Numpad3: 2, Numpad4: 3 };
+const ARROWS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+
+export const battle = {
+  mount(root, params, ctx) {
+    let state = ctx.getState();
+    if (!state) return () => {};
+    const mode = params.mode === 'boss' ? 'boss' : 'review';
+    const act = actOfChapter(state.chapter);
+    const chapter = chapterOf(act, state.chapter);
+    const seed = params.seed ?? Date.now();
+    const rng = makeRng(seed ^ 0x5bd1e995);
+    const timers = new Set();
+    const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); fn(); }, ms); timers.add(t); };
+    let leaving = false;
+    const go = (name, p) => { if (!leaving) { leaving = true; ctx.router.show(name, p); } };
+
+    const scene = el('section', `battle-scene mode-${mode}`);
+    scene.dataset.scene = 'battle';
+    scene.dataset.mode = mode;
+    scene.dataset.phase = 'intro';
+    scene.dataset.qn = '0';
+    root.appendChild(scene);
+
+    // 복습전은 얻은 낱말(어느 막이든)로 문제를 낸다. 얻은 낱말이 없으면 돌아간다.
+    const pool = Object.keys(state.acquired);
+    if (mode === 'review' && pool.length === 0) {
+      const msg = el('div', 'battle-win panel', '아직 복습할 낱말이 없어요.');
+      scene.appendChild(msg);
+      later(() => go('explore'), WIN_MSG_MS);
+      return () => { leaving = true; timers.forEach(clearTimeout); scene.remove(); };
+    }
+
+    // ── 전투 규칙 상태 ──
+    let b = null; // 보스전
+    let r = null; // 복습전
+    let streak = 0;
+    let wrongCount = 0; // 복습전 틀린 수(검사용 요약)
+    if (mode === 'boss') {
+      b = params.retryOf ? retry(params.retryOf, seed) : createBattle({ wordIds: actWords(act), seed, finalWordId: act.finalWordId ?? null });
+    } else {
+      r = createReview({ pool, act: act.id, seed });
+    }
+    const monsterName = mode === 'boss' ? act.boss.name : act.small.name;
+
+    const f = buildFrame({ mode, nickname: state.nickname, monsterName, hearts: HEARTS, hp: HP });
+    scene.append(f.stage, f.bottom);
+    let options = null; // { el, buttons }
+    const drawHud = (fx = {}) => drawFrame(f, {
+      ...fx,
+      streak,
+      ...(b ? { hearts: b.hearts, hp: b.hp, maxHp: HP } : { light: r.need - r.correct, need: r.need }),
+    });
+
+    // ── 문제 ──
+    let q = null; // { wordId, type, prompt, options, answer }
+    let blank = null;
+    let phase = 'intro';
+    let qn = 0;
+    const setPhase = (p) => { phase = p; scene.dataset.phase = p; };
+
+    function makeQuestion() {
+      if (b) {
+        const wordId = currentWord(b);
+        const raw = act.bossQuizzes[wordId];
+        return { wordId, type: raw.type, prompt: raw.prompt, ...optionOrder(raw, rng) };
+      }
+      return { wordId: r.word, type: 'meaning', ...r.question };
+    }
+
+    function ask() {
+      q = makeQuestion();
+      qn += 1;
+      f.typeTag.textContent = TYPE_LABEL[q.type];
+      blank = renderPrompt(f.prompt, q);
+      const next = buildOptions(q.type, q.options, pick);
+      if (options) options.el.replaceWith(next.el);
+      else f.bottom.appendChild(next.el);
+      options = next;
+      scene.dataset.qn = String(qn);
+      setPhase('ask');
+      options.el.focus({ preventScroll: true });
+    }
+
+    function pick(i) {
+      if (phase !== 'ask' || leaving) return; // 한 문제에 한 번만
+      const ok = i === q.answer;
+      setPhase(ok ? 'hit' : 'miss');
+      markOptions(options.buttons, i, q.answer);
+      if (b) b = answer(b, ok);
+      else {
+        r = answerReview(r, ok, rng);
+        if (!ok) wrongCount += 1;
+      }
+      streak = ok ? streak + 1 : 0;
+      if (ok) onHit(i);
+      else onMiss();
+    }
+
+    function onHit() {
+      blank.fill(q.options[q.answer]);
+      const won = b ? b.result === 'win' : r.result === 'win';
+      drawHud({ crackCell: true });
+      playHit(f.stage, { hero: f.hand, monster: f.monster, streak, lastHit: won });
+      later(() => (won ? win() : ask()), HIT_MS);
+    }
+
+    function onMiss() {
+      blank.fill(q.options[q.answer]);
+      drawHud({ crackHeart: true });
+      playMiss(f.fog);
+      const info = WORDS.find((w) => w.id === q.wordId);
+      const { el: panel, nextBtn } = feedbackPanel({ answer: q.options[q.answer], word: info.word, meaning: info.meaning });
+      const shownAt = performance.now();
+      nextBtn.addEventListener('click', (e) => {
+        if (e.detail === 0 && performance.now() - shownAt < KEY_GUARD_MS) return;
+        if (phase !== 'miss') return;
+        panel.remove();
+        f.fog.classList.remove('tight', 'dim');
+        if (b && b.result === 'lose') go('gameover', { retryOf: { order: b.order, finalWordId: b.finalWordId } });
+        else ask();
+      });
+      f.stage.appendChild(panel);
+      nextBtn.focus({ preventScroll: true });
+    }
+
+    function win() {
+      if (b) {
+        state = finishAct(ctx.getState(), act, b.order);
+        ctx.setState(state);
+        go('clear', { kind: 'act' });
+        return;
+      }
+      state = winSmall(ctx.getState(), chapter);
+      ctx.setState(state);
+      ctx.store?.save?.(state);
+      setPhase('won');
+      const msg = el('div', 'battle-win panel', `${attachJosa(act.small.name, '을')} 쫓아냈다!`);
+      msg.setAttribute('role', 'status');
+      scene.appendChild(msg);
+      later(() => go('explore'), WIN_MSG_MS);
+    }
+
+    function onKey(e) {
+      if (e.repeat || leaving || phase !== 'ask' || !options) return;
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      const i = DIGIT[e.code] ?? (['1', '2', '3', '4'].includes(e.key) ? Number(e.key) - 1 : undefined);
+      if (i !== undefined) {
+        e.preventDefault();
+        pick(i);
+      } else if (ARROWS.includes(e.key)) {
+        e.preventDefault();
+        moveFocus(options.buttons, e.key, COLUMNS[q.type]);
+      }
+    }
+    document.addEventListener('keydown', onKey);
+
+    probe = {
+      answerIndex: () => q?.answer ?? -1,
+      snapshot: () => (b
+        ? { mode, order: [...b.order], hearts: b.hearts, hp: b.hp, correct: b.correct, wrong: b.wrong, streak: b.streak }
+        : { mode, pool: [...r.pool], correct: r.correct, wrong: wrongCount, need: r.need, streak }),
+    };
+
+    drawHud();
+    // 처음 하는 전투: 규칙 한 장을 보여 주고 '시작'으로 첫 문제
+    const tip = TIPS[mode];
+    if (!state.seenTips.includes(tip.id)) {
+      const { el: card, start } = tipCard(mode === 'boss' ? '보스 전투' : '복습 전투', tip.text);
+      scene.appendChild(card);
+      start.addEventListener('click', () => {
+        if (phase !== 'intro') return;
+        state = markTip(ctx.getState(), tip.id);
+        ctx.setState(state);
+        card.remove();
+        ask();
+      });
+      start.focus({ preventScroll: true });
+    } else {
+      ask();
+    }
+
+    return () => {
+      leaving = true;
+      probe = null;
+      timers.forEach(clearTimeout);
+      document.removeEventListener('keydown', onKey);
+      scene.remove();
+    };
+  },
+};

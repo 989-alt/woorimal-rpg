@@ -1,9 +1,13 @@
 import { createRouter } from './router.js';
 import { createStore } from './save.js';
-import { newGame, acquireWords } from './rules/game.js';
+import { newGame, acquireWords, actWords, enterNextChapter } from './rules/game.js';
+import ACT1 from '../data/acts/act1.js';
 import { explore } from './scenes/explore.js';
 import { title } from './scenes/title.js';
 import { dialogue } from './scenes/dialogue.js';
+import { battle, battleProbe } from './scenes/battle.js';
+import { gameover } from './scenes/gameover.js';
+import { clear } from './scenes/clear.js';
 
 function safeLocalStorage() {
   try { return window.localStorage; } catch { return null; }
@@ -32,33 +36,12 @@ function startNew(nickname, avatar) {
   router.show('explore');
 }
 
-// 임시 장면: 받은 값을 글로 보여 주고 탐험으로 돌아간다. 뒤 Task가 진짜 장면으로 바꾼다.
-function stub(name) {
-  return {
-    mount(root, params) {
-      const el = document.createElement('main');
-      el.dataset.scene = name;
-      el.className = 'stub-scene';
-      const h = document.createElement('h2');
-      h.textContent = name;
-      const pre = document.createElement('pre');
-      pre.textContent = JSON.stringify(params, null, 2);
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'big-button';
-      b.textContent = '탐험으로 돌아가기';
-      b.addEventListener('click', () => router.show('explore'));
-      el.append(h, pre, b);
-      root.appendChild(el);
-      return () => el.remove();
-    },
-  };
-}
-
 router.register('title', title);
 router.register('explore', explore);
 router.register('dialogue', dialogue);
-for (const name of ['battle', 'clear']) router.register(name, stub(name));
+router.register('battle', battle);
+router.register('gameover', gameover);
+router.register('clear', clear);
 
 // 검사용 도움 기능: 주소에 ?test=1이 있을 때만 만든다.
 if (new URLSearchParams(location.search).get('test') === '1') {
@@ -70,6 +53,20 @@ if (new URLSearchParams(location.search).get('test') === '1') {
       router.show('explore');
     },
     dialogue: (script, words = [], from = '', next) => router.show('dialogue', { script, words, from, next }),
+    // 필요한 낱말을 얻은 상태로 전투를 연다.
+    // review: 1-1 첫 부탁 낱말 2개 + 꼬마 안개 부탁 진행 중 / boss: 1막 낱말 10개 + 1-2 장
+    startBattle(mode, seed) {
+      const [first, chase] = ACT1.chapters[0].quests;
+      if (mode === 'boss') {
+        state = enterNextChapter(acquireWords(state, actWords(ACT1), '검사'), ACT1);
+      } else {
+        state = acquireWords(state, first.words, '도담 할머니');
+        state = { ...state, quests: { ...state.quests, [first.id]: { stage: 'done', gathered: [] }, [chase.id]: { stage: 'active', gathered: [] } } };
+      }
+      router.show('battle', seed === undefined ? { mode } : { mode, seed });
+    },
+    answerIndex: () => battleProbe()?.answerIndex() ?? -1,
+    battle: () => battleProbe()?.snapshot() ?? null,
   };
 }
 
