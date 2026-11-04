@@ -1133,7 +1133,7 @@ canvas, img {
 .opt-say {
   position: absolute;
   z-index: 2;
-  right: 28px;
+  right: 64px; /* ○ 왼쪽, 카드 위 테에 걸친다 */
   top: -15px;
   padding: 3px 12px 4px;
   border: 2px solid var(--ink);
