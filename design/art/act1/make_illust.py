@@ -187,15 +187,44 @@ def _base_src(who):
     return rec[f'{who}_base']['src']
 
 
-def battle(who, src, fit=0.92):
+# 남자아이 그림은 더 가까이서 그려져(머리가 약 1.13배) 여자아이와 머리 크기를 맞춘다.
+BATTLE_FIT = {"f": 0.92, "m": 0.82}
+
+
+def battle(who, src, fit=None):
+    fit = fit or BATTLE_FIT[who]
     im = despill(Image.open(raw(f'{src}_cut.png')).convert('RGBA'))
     im = frame(im, fit)
     save_webp(im.resize(BUST, Image.LANCZOS), os.path.join(OUT, f'battle_hero_{who}.webp'), LIMITS['bust'])
 
 
+def unmix_grey(path):
+    """회색 몬스터용 마젠타 풀기: 원본 픽셀 P = a·F + (1−a)·K(K는 모서리에서 잰 마젠타, F는 무채색)이므로
+    a = 1 − ((R+B)/2 − G) / ((K_R+K_B)/2 − K_G), F = (P − (1−a)·K)/a 를 무채색으로.
+    cutout(가장자리 팔레트 보정)은 안개 결을 얼룩지게 만들어서 몬스터에는 이것을 쓴다(마젠타 기운도 함께 빠진다)."""
+    r = np.asarray(Image.open(path).convert('RGB')).astype(np.float32)
+    h, w, _ = r.shape
+    corners = np.concatenate([r[:40, :40].reshape(-1, 3), r[:40, -40:].reshape(-1, 3), r[-40:, :40].reshape(-1, 3), r[-40:, -40:].reshape(-1, 3)])
+    K = np.median(corners, 0)
+    k = (K[0] + K[2]) / 2 - K[1]
+    a = 1 - (((r[..., 0] + r[..., 2]) / 2 - r[..., 1]) / k)
+    a = np.clip(a, 0, 1)
+    a = np.clip((a - 0.08) / 0.9, 0, 1)  # 배경 잡티(알파 8% 아래)는 버리고 몸통은 불투명하게
+    safe = np.maximum(a, 1e-3)[..., None]
+    F = (r - (1 - a[..., None]) * K) / safe
+    f = np.clip(F @ np.array([0.299, 0.587, 0.114], np.float32), 0, 255)
+    out = np.dstack([f, f, f, a * 255]).astype(np.uint8)
+    return Image.fromarray(out, 'RGBA'), K
+
+
 def monster(src, pad=0.06):
-    im = despill(Image.open(raw(f'{src}_cut.png')).convert('RGBA'), grey=True)
-    bb = im.getbbox()
+    im, K = unmix_grey(raw(f'{src}.png'))
+    print('  key', K.round().tolist())
+    bb = im.getchannel('A').point(lambda v: 255 if v > 40 else 0).getbbox()  # 옅은 잡티는 틀 계산에서 뺀다
+    a = np.asarray(im).copy()
+    keep = np.zeros(a.shape[:2], bool); keep[bb[1]:bb[3], bb[0]:bb[2]] = True
+    a[~keep, 3] = 0
+    im = Image.fromarray(a, 'RGBA')
     im = im.crop(bb)
     side = round(max(im.size) * (1 + 2 * pad))
     c = Image.new('RGBA', (side, side), (0, 0, 0, 0))

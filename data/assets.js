@@ -33,9 +33,9 @@ export const ASSETS = {
   },
   dialogueBg: { '1-1': 'assets/illust/bg_ch1-1.webp', '1-2': 'assets/illust/bg_ch1-2.webp' }, // 장 id (2560×1440)
   battleBg: { 1: 'assets/illust/battle_bg_act1.webp' }, // 막 번호 (2560×1440, 잿빛)
-  battleHero: { f: null, m: null },
-  monster: { 1: null }, // 보스(막 번호)
-  title: null,
+  battleHero: { f: 'assets/illust/battle_hero_f.webp', m: 'assets/illust/battle_hero_m.webp' }, // 1080×1440, 오른쪽(몬스터 쪽)을 봄
+  monster: { 1: 'assets/illust/monster_act1.webp' }, // 보스(막 번호), 1440×1440
+  title: 'assets/illust/title.webp', // 2560×1440, 글자 없음(제목은 HTML)
 };
 
 // 인물(who: 'hero_f', 'hero_m' 또는 인물 id)의 표정 그림 경로. 없으면 그 인물의 base, 그것도 없으면 null.
