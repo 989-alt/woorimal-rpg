@@ -1,6 +1,6 @@
 // 그림 경로 목록. 값은 사이트 뿌리 기준 경로이고, 아직 없는 그림은 null이다.
 // null이거나 불러오지 못하면 각 화면이 임시 그림(색 블록·그라데이션)으로 대신한다.
-// 이름 규칙: assets/pixel|illust/종류_장_이름_변형.확장자 (art-bible 8절)
+// 이름 규칙: assets/pixel|illust/종류_장_이름_변형.확장자, UI 키트는 assets/ui/이름.v1.png (art-bible 8절)
 export const ASSETS = {
   // 탐험 맵(1536×1152, 칸당 48, 장 id)
   maps: { '1-1': 'assets/pixel/map_ch1-1_saebyeokgol.png', '1-2': 'assets/pixel/map_ch1-2_maeul-eogwi.png' },
@@ -36,6 +36,49 @@ export const ASSETS = {
   battleHero: { f: 'assets/illust/battle_hero_f.webp', m: 'assets/illust/battle_hero_m.webp' }, // 1080×1440, 오른쪽(몬스터 쪽)을 봄
   monster: { 1: 'assets/illust/monster_act1.webp' }, // 보스(막 번호), 1440×1440
   title: 'assets/illust/title.webp', // 2560×1440, 글자 없음(제목은 HTML)
+  // UI 키트(8비트 색표 PNG + 투명, 2배로 만들어 절반 크기로 보임). 크기·조각 값은 아래 UI_KIT.
+  ui: {
+    logo: 'assets/ui/logo_title.v1.png',
+    panel: 'assets/ui/frame_panel.v1.png',
+    dialogue: 'assets/ui/frame_dialogue.v1.png',
+    scroll: 'assets/ui/frame_scroll.v1.png',
+    card: 'assets/ui/frame_card.v1.png',
+    medallion: 'assets/ui/medallion.v1.png',
+    btnGreen: 'assets/ui/btn_green.v1.png',
+    btnWood: 'assets/ui/btn_wood.v1.png',
+    btnIcon: 'assets/ui/btn_icon.v1.png',
+    ribbon: 'assets/ui/ribbon_mask.v1.png',
+    iconBook: 'assets/ui/icon_book.v1.png',
+    iconScroll: 'assets/ui/icon_scroll.v1.png',
+    heartFull: 'assets/ui/heart_full.v1.png',
+    heartEmpty: 'assets/ui/heart_empty.v1.png',
+    hpCell: 'assets/ui/hp_cell.v1.png',
+    coin: 'assets/ui/coin.v1.png',
+    check: 'assets/ui/check.v1.png',
+  },
+};
+
+// UI 키트 부품마다 그림 크기(w×h, 그림 px)와 9조각 값. slice는 그림 px [위, 오른쪽, 아래, 왼쪽],
+// border는 화면 px(같은 순서). fill: 가운데 조각도 그린다(버튼). mask: 모양만 쓰는 가면(색은 CSS가 칠함).
+// 명판은 panel 그림을 border 16으로 쓴다. 두루마리는 오른쪽 끝이 나무 축이라 좌우가 다르다.
+export const UI_KIT = {
+  panel: { w: 144, h: 144, slice: [48, 48, 48, 48], border: [24, 24, 24, 24] },
+  dialogue: { w: 192, h: 192, slice: [64, 64, 64, 64], border: [32, 32, 32, 32] },
+  scroll: { w: 336, h: 120, slice: [36, 96, 36, 36], border: [18, 48, 18, 18] },
+  card: { w: 144, h: 144, slice: [48, 48, 48, 48], border: [24, 24, 24, 24] },
+  btnGreen: { w: 192, h: 144, slice: [48, 64, 32, 64], border: [24, 32, 16, 32], fill: true },
+  btnWood: { w: 192, h: 144, slice: [48, 64, 32, 64], border: [24, 32, 16, 32], fill: true },
+  btnIcon: { w: 144, h: 160, slice: [40, 40, 40, 40], border: [20, 20, 20, 20], fill: true }, // 72×80으로 보임
+  ribbon: { w: 400, h: 104, slice: [0, 80, 0, 80], border: [0, 40, 0, 40], mask: true },
+  medallion: { w: 192, h: 192 }, // 96px로 보임, 가운데 투명
+  logo: { w: 1200, h: 480 }, // 600×240으로 보임
+  iconBook: { w: 96, h: 96 },
+  iconScroll: { w: 96, h: 96 },
+  heartFull: { w: 64, h: 64 },
+  heartEmpty: { w: 64, h: 64 },
+  check: { w: 64, h: 64 },
+  hpCell: { w: 64, h: 40 },
+  coin: { w: 80, h: 80 },
 };
 
 // 인물(who: 'hero_f', 'hero_m' 또는 인물 id)의 표정 그림 경로. 없으면 그 인물의 base, 그것도 없으면 null.

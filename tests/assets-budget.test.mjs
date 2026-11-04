@@ -66,6 +66,13 @@ export function webpInfo(buf) {
 const head = (p) => readFileSync(abs(p)).subarray(0, 4096);
 const imageInfo = (p) => (p.endsWith('.png') ? pngInfo(head(p)) : webpInfo(head(p)));
 
+const UI_ICONS = ['iconBook', 'iconScroll', 'heartFull', 'heartEmpty', 'hpCell', 'coin', 'check'];
+function uiMax(key) {
+  if (key === 'logo') return 200 * KB;
+  return UI_ICONS.includes(key) ? 12 * KB : 40 * KB;
+}
+const UI_TOTAL_MAX = 500 * KB;
+
 // ASSETS의 갈래마다 규격: 크기, 파일 상한(바이트), 투명이 있어야 하는지(WebP)
 const SPEC = {
   maps: { w: 1536, h: 1152, max: 700 * KB },
@@ -83,12 +90,6 @@ const SPEC = {
   // UI 키트: 키마다 UI_KIT의 그림 크기. 상한은 틀·버튼·메달·리본 40KB, 로고 200KB, 아이콘 12KB(아트 바이블 8절).
   ui: Object.fromEntries(Object.entries(UI_KIT).map(([key, { w, h }]) => [key, { w, h, max: uiMax(key), alpha: true }])),
 };
-const UI_ICONS = ['iconBook', 'iconScroll', 'heartFull', 'heartEmpty', 'hpCell', 'coin', 'check'];
-function uiMax(key) {
-  if (key === 'logo') return 200 * KB;
-  return UI_ICONS.includes(key) ? 12 * KB : 40 * KB;
-}
-const UI_TOTAL_MAX = 500 * KB;
 const specFor = (group, where) => (group === 'ui' ? SPEC.ui[where.split('.')[1]] : SPEC[group]);
 
 function* entries(node, trail) {
