@@ -3,7 +3,7 @@
 // 이름 규칙: assets/pixel|illust/종류_장_이름_변형.확장자 (art-bible 8절)
 export const ASSETS = {
   // 탐험 맵(512×384, 장 id)
-  maps: { '1-1': 'assets/pixel/map_ch1-1_saebyeokgol.png', '1-2': null },
+  maps: { '1-1': 'assets/pixel/map_ch1-1_saebyeokgol.png', '1-2': 'assets/pixel/map_ch1-2_maeul-eogwi.png' },
   // 주인공 걷기 시트 48×128 (f 여 · m 남)
   walk: { f: null, m: null },
   // 인물 도트 16×32 (인물 id)
@@ -24,7 +24,7 @@ export const ASSETS = {
     laundry: { base: null, joy: null },
     gate: { base: null, joy: null },
   },
-  dialogueBg: { '1-1': null, '1-2': null }, // 장 id
+  dialogueBg: { '1-1': null, '1-2': 'assets/pixel/map_ch1-2_maeul-eogwi.png' }, // 장 id
   battleBg: { 1: null }, // 막 번호
   battleHero: { f: null, m: null },
   monster: { 1: null }, // 보스(막 번호)
