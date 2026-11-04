@@ -1,6 +1,6 @@
 import { createRouter } from './router.js';
 import { createStore } from './save.js';
-import { newGame, acquireWords, takeWords, actWords, enterNextChapter, chapterOf, setPos, fogOpen } from './rules/game.js';
+import { newGame, acquireWords, takeWords, actWords, chapterWords, enterNextChapter, chapterOf, setPos, fogOpen } from './rules/game.js';
 import { actOfChapter } from '../data/acts/index.js';
 import { parseMap, isWalkable, reachable } from './explore/grid.js';
 import ACT1 from '../data/acts/act1.js';
@@ -103,6 +103,12 @@ if (new URLSearchParams(location.search).get('test') === '1') {
         state = { ...state, quests: { ...state.quests, [first.id]: { stage: 'done', gathered: [] }, [chase.id]: { stage: 'active', gathered: [] } } };
       }
       router.show('battle', seed === undefined ? { mode } : { mode, seed });
+    },
+    // 지금 장의 낱말을 모두 얻은 것으로 하고 다음 장 첫 자리에서 탐험을 연다(화면 사진용).
+    nextChapter() {
+      const act = actOfChapter(state.chapter);
+      state = enterNextChapter(acquireWords(state, chapterWords(chapterOf(act, state.chapter)), '검사'), act);
+      router.show('explore');
     },
     answerIndex: () => battleProbe()?.answerIndex() ?? -1,
     battle: () => battleProbe()?.snapshot() ?? null,

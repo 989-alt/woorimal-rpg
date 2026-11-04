@@ -69,8 +69,8 @@ export function chapterPaths(act, chapter, avatar) {
   const itemIds = new Set(chapter.quests.map((q) => q.item?.id).filter(Boolean));
   for (const obj of chapter.objects) if (obj.item?.id) itemIds.add(obj.item.id);
   for (const id of itemIds) out.push(ASSETS.items[id]);
-  out.push(ASSETS.small[act.id], ASSETS.bossPixel[act.id], ASSETS.battleBg[act.id], ASSETS.battleHero[hero]);
-  if (chapter === act.chapters[act.chapters.length - 1]) out.push(ASSETS.monster[act.id]);
+  // 막 몬스터 그림은 보스전과 (작게) 복습전이 함께 쓰므로 장마다 받는다.
+  out.push(ASSETS.small[act.id], ASSETS.bossPixel[act.id], ASSETS.battleBg[act.id], ASSETS.battleHero[hero], ASSETS.monster[act.id]);
   return out.filter(Boolean);
 }
 

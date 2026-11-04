@@ -65,6 +65,18 @@ canvas, img {
   min-height: 100dvh; /* 휴대 기기 주소창을 뺀 높이(지원하는 브라우저) */
   padding: 24px 16px;
 }
+.title-panel {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  width: min(560px, 100%);
+  padding: 20px 28px 22px;
+  border: 2px solid var(--meok-gal);
+  border-radius: 12px;
+  background: rgba(251, 245, 230, .95);
+  box-shadow: 0 6px 24px rgba(43, 38, 34, .25);
+  animation: panel-in 180ms ease-out;
+}
 .title-logo { margin: 0; font-family: var(--font-title); font-size: 72px; font-weight: normal; line-height: 1.1; }
 .title-form { display: grid; gap: 6px; justify-items: center; width: 100%; }
 .title-label { font-size: 20px; }
@@ -272,21 +284,23 @@ canvas, img {
   background: linear-gradient(#DCE6F0 0%, #EFE6C8 55%, #C9B48A 100%);
 }
 .bust {
+  /* 두 인물은 같은 높이(1366×768에서 약 620px)로 서고, 허리 아래는 대사 상자 뒤로 가려진다(시안 dialogue2). */
+  --bust-h: min(81vh, 60vw);
   position: absolute;
-  bottom: 190px;
-  width: min(26vw, 340px);
-  height: min(58vh, 460px);
+  bottom: 64px;
+  width: calc(var(--bust-h) * .75); /* 그림 1080×1440 */
+  height: var(--bust-h);
   transition: filter 150ms;
 }
 .bust[hidden] { display: none; }
-.bust-hero { left: 6vw; }
-.bust-npc { right: 6vw; }
+.bust-hero { left: 4vw; }  /* 주인공은 왼쪽에서 오른쪽을 본다 */
+.bust-npc { right: 4vw; }  /* 마을 사람은 오른쪽에서 왼쪽을 본다 */
+.bust-npc .bust-block { width: 100%; height: 100%; }
 .bust-hero, .bust-npc .bust-block {
-  display: grid; place-items: center; width: 100%; height: 100%;
+  display: grid; place-items: center;
   border: 2px solid var(--meok); border-radius: 24px 24px 0 0;
   font-family: var(--font-title); font-size: 96px;
 }
-.bust-hero { width: min(26vw, 340px); height: min(58vh, 460px); }
 .bust.listener { filter: brightness(.62) saturate(.7); }
 
 .dialogue-box {
@@ -483,13 +497,15 @@ canvas, img {
 .battle-fog.tight::after { opacity: 1; transform: scale(1); }
 .battle-fog.dim::after { opacity: 1; transform: none; transition: opacity 450ms ease-out; }
 
-/* 주인공 전투 자세 임시 블록: 몬스터 쪽으로 손을 내뻗고, 하체는 묶음 뒤로 가려진다 */
+/* 주인공 전투 자세(그림 1080×1440, 머리부터 발끝): 1366×768에서 그림 상자 약 614px, 보이는 몸(머리~허벅지) 약 410px, 몬스터 쪽으로 손을 내뻗고,
+   허벅지 아래는 무대 아래 끝(문제 묶음) 뒤로 가려진다(시안 b3a). 무대 높이와 상관없이 무대 아래에 붙는다. */
 .battle-hero {
+  --hero-h: min(80vh, 58vw);
   position: absolute;
-  left: 8%;
-  bottom: -14%;
-  width: clamp(160px, 20vw, 280px);
-  height: 92%;
+  left: 4%;
+  bottom: calc(var(--hero-h) * -0.24);
+  width: calc(var(--hero-h) * .75);
+  height: var(--hero-h);
   border: 2px solid var(--meok);
   border-radius: 48% 48% 12px 12px / 30% 30% 12px 12px;
   background: var(--blue);
@@ -518,14 +534,17 @@ canvas, img {
   transform-origin: left center;
 }
 
-/* 몬스터 임시 원: HP가 줄수록 엷어진다 */
+/* 몬스터(그림 1440×1440): 보스는 1366×768에서 약 380px, HP 막대 아래 오른쪽.
+   복습전의 꼬마 안개는 같은 그림을 보스의 70% 크기로(같은 가운데). HP가 줄수록 엷어진다. */
 .battle-monster {
   --life: 1;
+  --mon-h: min(49.5vh, 36vw);
+  --mon-cy: calc(56px + min(49.5vh, 36vw) / 2);
   position: absolute;
-  left: 64%;
-  top: 22%;
-  width: min(30vh, 230px);
-  aspect-ratio: 1;
+  left: calc(70% - var(--mon-h) / 2);
+  top: calc(var(--mon-cy) - var(--mon-h) / 2);
+  width: var(--mon-h);
+  height: var(--mon-h);
   border-radius: 50%;
   background: radial-gradient(circle at 38% 34%, #D5D7DA 0%, #8A8D91 55%, #5E6266 100%);
   box-shadow: 0 0 36px 12px rgba(185, 187, 190, .55);
@@ -888,10 +907,14 @@ img.art { image-rendering: auto; } /* 도트가 아닌 그림은 부드럽게 �
 .bust.has-art, .bust.has-art .bust-block { background: none !important; border-color: transparent; color: transparent; }
 .bust-npc.has-art .bust-block { display: none; }
 
-.battle-bg.has-art { inset: 0; background: none; filter: none; }
+.battle-bg.has-art { inset: 0; background: none; filter: grayscale(.9) brightness(.9); } /* 지붕이 짚빛으로 읽히지 않게 무채색 잿빛 */
 .battle-bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .battle-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
 .battle-hero.has-art { background: none; border-color: transparent; }
 .battle-hero.has-art::after, .battle-hero.has-art .battle-hero-face { display: none; }
+/* 빛줄기는 그림의 손바닥에서 나간다 */
+.battle-hero.has-art .battle-hero-hand { left: 90%; top: 38%; }
+.battle-hero.has-art[data-avatar='m'] .battle-hero-hand { left: 86%; top: 48%; }
 .battle-monster-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.mode-review .battle-monster { --mon-h: calc(min(49.5vh, 36vw) * .7); }
 .battle-monster.has-art { background: none; box-shadow: none; }

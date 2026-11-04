@@ -90,10 +90,13 @@ export const battle = {
 
     const f = buildFrame({ mode, nickname: state.nickname, monsterName, hearts: HEARTS, hp: HP });
     scene.append(f.stage, f.bottom);
-    // 그림이 있으면 무대·주인공·몬스터를 그림으로, 없거나 못 불러오면 임시 그림 그대로(몬스터 그림은 보스만)
+    // 그림이 있으면 무대·주인공·몬스터를 그림으로, 없거나 못 불러오면 임시 그림 그대로
     setArt(f.bg, ASSETS.battleBg[act.id], 'battle-bg-img art');
-    setArt(f.hero, ASSETS.battleHero[state.avatar === 'm' ? 'm' : 'f'], 'battle-hero-img art');
-    if (mode === 'boss') setArt(f.monster, ASSETS.monster[act.id], 'battle-monster-img art');
+    const avatar = state.avatar === 'm' ? 'm' : 'f';
+    f.hero.dataset.avatar = avatar;
+    setArt(f.hero, ASSETS.battleHero[avatar], 'battle-hero-img art');
+    // 복습전의 꼬마 안개도 막 몬스터 그림을 쓴다(작게, 이름표는 꼬마 안개 그대로)
+    setArt(f.monster, ASSETS.monster[act.id], 'battle-monster-img art');
     let options = null; // { el, buttons }
     const drawHud = (fx = {}) => drawFrame(f, {
       ...fx,

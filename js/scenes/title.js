@@ -32,8 +32,8 @@ export function stillSameName(captured, current) {
 }
 
 const AVATARS = [
-  { id: 'f', label: '여' },
-  { id: 'm', label: '남' },
+  { id: 'f', label: '여', name: '여자 주인공' },
+  { id: 'm', label: '남', name: '남자 주인공' },
 ];
 
 function el(tag, props = {}, ...kids) {
@@ -70,6 +70,7 @@ export const title = {
       const b = el('button', { type: 'button', className: 'avatar-card' });
       b.dataset.avatar = a.id;
       b.setAttribute('role', 'radio');
+      b.setAttribute('aria-label', a.name); // 그림이 글자 블록을 가려도 이름이 남게
       b.append(labelBlockEl(a.label, blockColor(a.id === 'f' ? '여' : '남'), 'avatar-block'));
       b.addEventListener('click', () => select(a.id));
       setArt(b, bustFor(`hero_${a.id}`, 'base'), 'avatar-img art');
@@ -177,7 +178,9 @@ export const title = {
     });
 
     const form = el('div', { className: 'title-form' }, label, input, help, error);
-    main.append(h1, form, cards, savedWrap, actions, confirmBox, notice);
+    // 글자는 그림 위에 바로 두지 않고 한지 패널 위에 둔다(art-bible 7절). 패널 밖으로는 타이틀 그림이 보인다.
+    const panel = el('div', { className: 'title-panel' }, h1, form, cards, savedWrap, actions, confirmBox, notice);
+    main.append(panel);
     root.appendChild(main);
     setArt(main, ASSETS.title, 'title-bg art');
     input.focus();
