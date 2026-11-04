@@ -1,10 +1,10 @@
-// 엔딩 화면 검사: 5-2 출구 → 막 클리어 "엔딩 보기" → 장면 대화 8개(되찾은 마을들 포함) → 마지막 말 → 말빛 주머니 50장 → 만든 이 → 처음 화면.
+// 엔딩 화면 검사: 5-2 출구 → 막 클리어 "엔딩 보기" → 장면 대화 8개(되찾은 마을들 포함) → 마지막 말 → 말빛 주머니 50장 → 마무리 퀴즈 → 만든 이 → 처음 화면.
 // 엔딩 뒤 이어하기(Review Focus 4)와 여섯 글자 닉네임 1024×768(Review Focus 5)도 본다.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
 import { launchBrowser, dialogueStep } from './browser.mjs';
-import { openGame, state, continueAs, atEndingExit } from './play.mjs';
+import { openGame, state, continueAs, atEndingExit, answerQuiz } from './play.mjs';
 import { walkToExit } from './helpers.mjs';
 import { ACTS } from '../../data/acts/index.js';
 import ENDING from '../../data/ending.js';
@@ -53,7 +53,7 @@ const exitIsOpen = (page) => page.evaluate(async () => {
   return exitOpen(st, actOfChapter(st.chapter).chapters.find((c) => c.id === st.chapter));
 });
 
-test('5-2 출구 → 엔딩 보기 → 장면 8개 → 마지막 말 → 말빛 주머니 50장 → 만든 이 → 처음 화면, 그 뒤 이어하기', async () => {
+test('5-2 출구 → 엔딩 보기 → 장면 8개 → 마지막 말 → 말빛 주머니 50장 → 마무리 퀴즈 → 만든 이 → 처음 화면, 그 뒤 이어하기', async () => {
   const { page, errors } = await openGame(browser, server);
   // 엔딩 그림은 5-2에서 미리 받는다(그림 칸에 경로를 넣어 두고 요청이 가는지 본다)
   const requested = [];
@@ -137,7 +137,9 @@ test('5-2 출구 → 엔딩 보기 → 장면 8개 → 마지막 말 → 말빛 
   // 다른 막 카드를 누르면 그 낱말
   await page.locator('.pouch .codex-card', { hasText: '도담도담' }).click();
   assert.match(await page.locator('.pouch .codex-detail').innerText(), /아이가 탈 없이 잘 자라는 모양/);
-  await page.getByRole('button', { name: '만든 이 보기' }).click();
+  await page.getByRole('button', { name: '마무리 퀴즈' }).click();
+  await answerQuiz(page); // 퀴즈 화면은 tests/e2e/review-quiz.test.mjs에서 자세히 본다
+  await page.getByRole('button', { name: '계속' }).click();
 
   // 만든 이
   await page.waitForSelector('[data-scene="ending"][data-part="credits"]');
@@ -188,7 +190,12 @@ test('여섯 글자 이름(가나다라마바) 1024×768: 주머니 제목과 �
   assert.deepEqual(overflow, []);
   // 쪽 안에 다 보인다(세로로도 넘치지 않음)
   assert.equal(await page.locator('[data-part="pouch"]').evaluate((e) => e.scrollHeight <= e.clientHeight), true, '주머니 화면이 768 안에 들어간다');
-  await page.getByRole('button', { name: '만든 이 보기' }).click();
+  await page.getByRole('button', { name: '마무리 퀴즈' }).click();
+  await answerQuiz(page);
+  const result = await page.locator('[data-phase="result"] .quiz').evaluate((e) => ({ sw: e.scrollWidth, cw: e.clientWidth }));
+  assert.ok(result.sw <= result.cw, '퀴즈 결과가 가로로 넘치지 않는다');
+  assert.equal(await noPageScroll(), true);
+  await page.getByRole('button', { name: '계속' }).click();
   await page.waitForSelector('[data-scene="ending"][data-part="credits"]');
   const thanks = await fits('p.ending-thanks');
   assert.equal(thanks.text, '가나다라마바야, 끝까지 함께해 줘서 고마워!');

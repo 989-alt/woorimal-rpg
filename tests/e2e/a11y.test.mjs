@@ -242,7 +242,28 @@ for (const blocked of [false, true]) {
     await page.locator('.ending-next').click();
     await page.waitForSelector('[data-part="pouch"][data-lit]');
     await check('말빛 주머니', { tabs: 56 });
-    await page.getByRole('button', { name: '만든 이 보기' }).click();
+    await page.getByRole('button', { name: '마무리 퀴즈' }).click();
+
+    // 마무리 퀴즈: 유형마다 처음 나올 때 문제 화면과 (첫 문제는) 틀린 뒤 알림을 훑고, 결과도 훑는다
+    const quizSeen = new Set();
+    for (let i = 0; i < 10; i++) {
+      await page.waitForSelector(`[data-scene="review-quiz"][data-phase="ask"][data-qn="${i}"]`);
+      const q = await page.evaluate(() => window.__test.quiz());
+      if (!quizSeen.has(q.type)) { quizSeen.add(q.type); await check(`마무리 퀴즈 ${q.type}`, { tabs: 8 }); }
+      const miss = i === 0;
+      if (q.type === 'chosung') {
+        await page.locator('.quiz-input').fill(miss ? '모르겠다' : q.answerText);
+        await page.locator('.quiz-input').press('Enter');
+      } else {
+        await page.keyboard.press(`Digit${(miss ? (q.answerIndex + 1) % 4 : q.answerIndex) + 1}`);
+      }
+      await page.waitForSelector('[data-phase="feedback"] .quiz-next');
+      if (miss) await check('마무리 퀴즈 틀린 뒤 알림', { tabs: 8 });
+      await page.locator('.quiz-next').click();
+    }
+    await page.waitForSelector('[data-scene="review-quiz"][data-phase="result"]');
+    await check('마무리 퀴즈 결과');
+    await page.getByRole('button', { name: '계속' }).click();
     await page.waitForSelector('[data-part="credits"]');
     await check('만든 이');
 

@@ -105,3 +105,25 @@ export async function atEndingExit(page) {
   })), ids);
   await page.waitForSelector('[data-scene="explore"] canvas');
 }
+
+// 마무리 퀴즈를 끝까지 푼다(결과 화면에서 멈춘다). wrong: 일부러 틀릴 문제 번호(0부터).
+// 돌려주는 값: 문제마다 { type, word, ok }
+export async function answerQuiz(page, { wrong = [] } = {}) {
+  const asked = [];
+  for (let i = 0; i < 10; i++) {
+    await page.waitForSelector(`[data-scene="review-quiz"][data-phase="ask"][data-qn="${i}"]`);
+    const q = await page.evaluate(() => window.__test.quiz());
+    const miss = wrong.includes(i);
+    if (q.type === 'chosung') {
+      await page.locator('.quiz-input').fill(miss ? '모르겠다' : q.answerText);
+      await page.keyboard.press('Enter');
+    } else {
+      await page.keyboard.press(`Digit${(miss ? (q.answerIndex + 1) % 4 : q.answerIndex) + 1}`);
+    }
+    await page.waitForSelector('[data-scene="review-quiz"][data-phase="feedback"] .quiz-next');
+    asked.push({ type: q.type, word: q.word, ok: !miss });
+    await page.keyboard.press('Enter'); // 초점은 "다음"(마지막은 "결과 보기")
+  }
+  await page.waitForSelector('[data-scene="review-quiz"][data-phase="result"]');
+  return asked;
+}

@@ -1,7 +1,7 @@
 // 엔딩(설계 6절). params = { step }, n = 장면 수.
 //  step < n   : 그 장면의 대화(엔딩 인물·배경 그림, 마지막 장면은 상반신 없는 한 장 그림)를 열고, 끝나면 step + 1
 //  step = n   : 마지막 말 — 한지 패널 가운데 큰 글 한 줄, 2초 뒤 "다음"(저절로 넘어가지 않는다)
-//  step = n+1 : 말빛 주머니 — 막마다 한 줄에 낱말 카드 10장, 누르면 옆 칸에 뜻·예문·만난 곳
+//  step = n+1 : 말빛 주머니 — 막마다 한 줄에 낱말 카드 10장, 누르면 옆 칸에 뜻·예문·만난 곳 → 마무리 퀴즈(review-quiz) → 만든 이
 //  step = n+2 : 만든 이 — 한지 패널에 제목과 줄, 끝에 인사 한 줄과 "처음 화면으로"
 // 엔딩은 상태를 바꾸지 않는다(엔딩을 본 저장은 clearedActs에 5가 있고, 5-2 출구로 가면 다시 본다).
 import ENDING from '../../data/ending.js';
@@ -50,7 +50,7 @@ function messagePart(scene, done) {
   return () => clearTimeout(timer);
 }
 
-// 말빛 주머니 50장: 막마다 한 줄(줄머리 + 카드 10장), 옆에 상세 칸과 "만든 이 보기"
+// 말빛 주머니 50장: 막마다 한 줄(줄머리 + 카드 10장), 옆에 상세 칸과 "마무리 퀴즈"
 function pouchPart(scene, state, done) {
   const acquired = state?.acquired ?? {};
   const got = WORDS.filter((w) => acquired[w.id]).length;
@@ -86,7 +86,7 @@ function pouchPart(scene, state, done) {
     return row;
   });
   const side = el('div', 'pouch-side');
-  const next = button('btn btn-green pouch-next', '만든 이 보기');
+  const next = button('btn btn-green pouch-next', '마무리 퀴즈');
   next.addEventListener('click', done);
   side.append(detail, next);
   const body = el('div', 'pouch-body');
@@ -174,7 +174,7 @@ export const ending = {
       ctx.router.show(name, p);
     };
     const dispose = part === 'message' ? messagePart(scene, go('ending', { step: n + 1 }))
-      : part === 'pouch' ? pouchPart(scene, state, go('ending', { step: n + 2 }))
+      : part === 'pouch' ? pouchPart(scene, state, go('review-quiz', { next: 'ending', nextParams: { step: n + 2 } }))
       : creditsPart(scene, state, go('title'));
 
     return () => {

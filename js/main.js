@@ -13,6 +13,7 @@ import { gameover } from './scenes/gameover.js';
 import { clear } from './scenes/clear.js';
 import { worldmap } from './scenes/worldmap.js';
 import { ending, setEndingDelay, MESSAGE_DELAY_MS } from './scenes/ending.js';
+import { reviewQuiz, reviewQuizProbe } from './scenes/review-quiz.js';
 import { ASSETS } from '../data/assets.js';
 import { loadImage, forgetFailed } from './ui/images.js';
 import { loadUiKit } from './ui/ui-kit.js';
@@ -84,6 +85,7 @@ router.register('gameover', gameover);
 router.register('clear', clear);
 router.register('worldmap', worldmap);
 router.register('ending', ending);
+router.register('review-quiz', reviewQuiz);
 
 // 검사용 도움 기능: 주소에 ?test=1이 있을 때만 만든다.
 if (new URLSearchParams(location.search).get('test') === '1') {
@@ -146,6 +148,8 @@ if (new URLSearchParams(location.search).get('test') === '1') {
       router.show('explore');
     },
     answerIndex: () => battleProbe()?.answerIndex() ?? -1,
+    // 마무리 퀴즈의 지금 문제: { phase, qn, type, word, answerIndex, answerText }
+    quiz: () => reviewQuizProbe()?.snapshot() ?? null,
     battle: () => battleProbe()?.snapshot() ?? null,
     teleportTo,
     // 타자 효과와 엔딩 마지막 말의 '다음' 기다림을 끈다(false면 되돌린다)

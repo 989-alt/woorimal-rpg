@@ -1721,3 +1721,189 @@ p.ending-thanks {
   .ending-card, .ending-next, .pouch, .credits { animation: none; }
   .pouch-act.lit .codex-card, .pouch-act.lit .codex-card::after { animation: none; }
 }
+
+/* ── 마무리 퀴즈 ─────────────────────────
+   엔딩 새벽 바탕 위 한지 패널: 머리(제목 명판 · 10칸 진행 · n/10) → 문제 말풍선(유형 표) → 보기 카드(전투와 같은 모습)
+   또는 초성 칸과 쓰기 칸 → 알림 명판(맞음/틀림, 뜻, "다음"). 결과는 맞힌 수와 낱말별 ○/× 카드. */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.quiz-scene { padding: 16px; }
+.quiz-scene .ending-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(20, 14, 30, .3) 30%, rgba(20, 14, 30, .66) 100%);
+}
+.quiz {
+  --bt: 28px; --br: 28px; --bb: 28px; --bl: 28px; --ring: 8px;
+  z-index: 1;
+  display: grid;
+  gap: 16px;
+  width: min(1100px, 100%);
+  background: var(--paper);
+  filter: drop-shadow(0 16px 28px rgba(20, 10, 30, .5));
+  animation: panel-in 180ms ease-out;
+}
+:root.ui-panel .quiz { border-image-width: 40px; background: var(--paper) center / calc(100% - 2 * var(--ring)) calc(100% - 2 * var(--ring)) no-repeat border-box; }
+.quiz > * { margin-inline: 6px; }
+.quiz-head { display: flex; align-items: center; gap: 18px; }
+.quiz-title {
+  --bt: 14px; --br: 14px; --bb: 14px; --bl: 14px; --ring: 3px;
+  flex: none;
+  margin: 0;
+  padding-inline: 30px;
+  font-family: var(--font-title);
+  font-size: 28px;
+  font-weight: normal;
+  line-height: 38px;
+  white-space: nowrap;
+  color: #FFF4DC;
+  -webkit-text-stroke: 5px #3A1B08;
+  paint-order: stroke fill;
+}
+:root .quiz-title.frame-plate { background: linear-gradient(#A15A24, #7A3E14 55%, #6E3211); }
+:root.ui-panel .quiz-title.frame-plate { padding-inline: 30px; background: linear-gradient(#A15A24, #7A3E14 55%, #6E3211) center / calc(100% - 6px) calc(100% - 6px) no-repeat border-box; }
+/* 진행 10칸: 지금 칸은 나무색 고리, 맞힌 칸은 금빛, 틀린 칸은 잿빛 */
+.quiz-steps { flex: 1; display: flex; justify-content: center; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.quiz-step { width: 18px; height: 18px; border: 2px solid var(--brass-dark); border-radius: 50%; background: var(--parchment-deep); }
+.quiz-step.now { box-shadow: 0 0 0 3px var(--parchment), 0 0 0 6px var(--wood-dark); }
+.quiz-step.right { border-color: var(--ink); background: var(--gold); }
+.quiz-step.wrong { border-color: var(--hp); background: var(--hp-empty); }
+.quiz-count { flex: none; margin: 0; font-family: var(--font-title); font-size: 26px; color: var(--wood-dark); }
+
+/* 문제 말풍선: 유형 표가 위 테에 걸친다 */
+.quiz-question {
+  --bt: 24px; --br: 24px; --bb: 24px; --bl: 24px; --ring: 6px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 6px;
+  min-height: 116px;
+  padding-top: 30px;
+  text-align: center;
+}
+:root.ui-panel .quiz-question { padding-top: 8px; }
+.quiz-type {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  translate: -50% -50%;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 22px;
+  border: 3px solid #2F5A22;
+  border-radius: 10px;
+  background: linear-gradient(#6FAE3B, var(--tag-green) 55%, #3E7A2C);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, .25), inset 0 0 0 1px rgba(255, 255, 255, .28);
+  color: #fff;
+  -webkit-text-stroke: 4px var(--ink);
+  paint-order: stroke fill;
+  font-family: var(--font-title);
+  font-size: 22px;
+  line-height: 1;
+  white-space: nowrap;
+}
+:root.ui-panel .quiz-type { top: -24px; }
+.quiz-prompt { margin: 0; padding: 0 16px; font-size: 28px; line-height: 1.5; }
+.quiz-clue { margin: 0; padding: 0 16px; font-size: 24px; line-height: 1.45; color: var(--wood-dark); }
+
+/* 초성 칸과 쓰기 칸 */
+.quiz-area { display: grid; gap: 16px; }
+.quiz-jamo { display: flex; justify-content: center; gap: 14px; }
+.quiz-tile {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border: 3px solid var(--brass);
+  border-radius: 14px;
+  background: linear-gradient(#FFFDF4, var(--parchment-deep));
+  box-shadow: inset 0 0 0 2px rgba(138, 94, 42, .35), 0 4px 0 var(--brass-dark);
+  font-family: var(--font-body); /* 주아에는 홑자모가 없어 고운돋움으로 */
+  font-size: 44px;
+  line-height: 1;
+  color: var(--wood-dark);
+}
+.quiz-write { display: flex; justify-content: center; align-items: center; gap: 14px; }
+.quiz-input {
+  width: min(380px, 60vw);
+  height: 64px;
+  padding: 0 18px;
+  border: 3px solid var(--line);
+  border-radius: 12px;
+  background: #FFFDF6;
+  color: var(--ink);
+  font-family: var(--font-body); /* 아무 글자나 칠 수 있어 한글 2,350자를 다 가진 고운돋움으로 */
+  font-size: 32px;
+  text-align: center;
+}
+.quiz-input::placeholder { font-family: var(--font-body); font-size: 22px; color: var(--gray-2); }
+.quiz-input:focus-visible { outline: 3px solid var(--hero); outline-offset: 2px; }
+.quiz-write.right .quiz-input { border-color: var(--gold); box-shadow: 0 0 0 3px var(--ink), 0 0 18px 4px rgba(242, 193, 78, .6); }
+.quiz-write.wrong .quiz-input { border-color: var(--hp); background: #E6E4DE; color: var(--hp); }
+.quiz-submit { min-width: 120px; }
+
+/* 알림 명판: 답하기 전에는 도움말, 답한 뒤에는 맞음/틀림과 뜻, "다음" */
+.quiz-feedback {
+  --bt: 16px; --br: 16px; --bb: 16px; --bl: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 108px;
+  padding-inline: 20px;
+}
+:root.ui-panel .quiz-feedback { padding-inline: 12px; }
+.quiz-hint { margin: 0 auto; font-size: 20px; color: var(--gray-3); }
+.quiz-feedback-body { display: grid; gap: 4px; min-width: 0; }
+.quiz-feedback p { margin: 0; }
+.quiz-verdict { display: flex; align-items: center; gap: 10px; font-family: var(--font-title); font-size: 26px; color: var(--wood-dark); }
+.quiz-answer, .quiz-meaning-word { font-family: var(--font-title); font-weight: normal; padding: 0 3px; background: linear-gradient(transparent 58%, rgba(242, 193, 78, .8) 58%); }
+.quiz-meaning { font-size: 22px; line-height: 1.45; }
+.quiz-typed { font-size: 18px; color: var(--gray-3); }
+.quiz-next { flex: none; min-width: 160px; }
+
+/* 낱말 보기 넷은 퀴즈 패널 안에서 2×2로(긴 낱말과 ○ × 표가 겹치지 않게) */
+.quiz .opts-blank { grid-template-columns: 1fr 1fr; gap: 12px; }
+.quiz .opts-blank .battle-option { height: 76px; font-size: 30px; }
+.quiz .opts-blank .opt-text { margin: 0 56px 0 60px; }
+.quiz .opts-blank .opt-mark { top: 50%; right: 14px; translate: 0 -50%; }
+/* ○ ×: 금빛 고리(맞음) · 잿빛 가위표(틀림), 전투 보기의 표와 같은 모양 */
+.quiz-mark { position: relative; flex: none; display: inline-block; width: 32px; height: 32px; }
+.quiz-mark::before, .quiz-mark::after { content: ''; position: absolute; }
+.quiz-mark.right::before { inset: 3px; border: 6px solid var(--gold); border-radius: 50%; box-shadow: 0 0 0 2px var(--ink), inset 0 0 0 2px var(--ink); }
+.quiz-mark.wrong::before, .quiz-mark.wrong::after { left: 3px; top: 13px; width: 26px; height: 6px; border-radius: 3px; background: var(--hp); rotate: 45deg; }
+.quiz-mark.wrong::after { rotate: -45deg; }
+
+/* 결과 */
+.quiz-result-head { display: grid; justify-items: center; gap: 4px; }
+.quiz-score { margin: 6px 0 0; font-family: var(--font-title); font-size: 40px; line-height: 1.2; color: var(--wood-dark); }
+.quiz-cheer { margin: 0; font-size: 22px; color: var(--ink); }
+.quiz-results { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin: 0; padding: 0; list-style: none; }
+.quiz-result {
+  --bt: 12px; --br: 12px; --bb: 12px; --bl: 12px; --ring: 3px;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  min-height: 52px;
+  padding-inline: 14px;
+}
+:root.ui-card .quiz-result { padding: 2px 8px; }
+.quiz-result.wrong { --parchment: #ECE9E1; }
+.quiz-result p { margin: 0; }
+.quiz-result-line { display: flex; align-items: center; gap: 10px; }
+.quiz-result-word { font-family: var(--font-title); font-weight: normal; font-size: 24px; color: var(--wood-dark); }
+.quiz-result-meaning { padding-left: 42px; font-size: 18px; line-height: 1.35; color: var(--gray-3); }
+.quiz-actions { margin-top: 2px; }
+.quiz-actions .btn { min-width: 180px; }
+
+@media (max-width: 760px) {
+  .quiz-head { flex-wrap: wrap; justify-content: center; }
+  .quiz-steps { order: 3; flex-basis: 100%; }
+  .quiz-feedback { flex-direction: column; align-items: stretch; }
+  .quiz-results { grid-template-columns: 1fr; }
+  .quiz-tile { width: 60px; height: 60px; font-size: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quiz { animation: none; }
+}
