@@ -53,9 +53,13 @@ try {
     await page.evaluate(([script, words]) => window.__test.dialogue(script, words, '도담 할머니'), [q1.done, q1.words]);
     await page.waitForSelector('[data-scene="dialogue"]');
     await shoot(page, size, '3-dialogue');
-    for (let i = 0; i < 40 && !(await page.locator('.word-card').count()); i++) {
+    // 카드가 뜰 때까지 줄을 넘긴다: 넘어갈 준비(data-ready)를 기다려 스페이스, 줄이 바뀔 때까지 기다린다.
+    const READY = '[data-scene="dialogue"][data-ready]';
+    for (let i = 0; i < 40; i++) {
+      await page.waitForSelector(`.word-card, ${READY}`);
+      if (await page.locator('.word-card').count()) break;
       await page.keyboard.press('Space');
-      await page.waitForTimeout(220);
+      await page.waitForFunction((r) => !document.querySelector(r), READY);
     }
     await shoot(page, size, '4-meaning-card');
     await page.close();

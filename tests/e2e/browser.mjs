@@ -22,14 +22,37 @@ export function collectErrors(page) {
   return errors;
 }
 
-// 대화를 끝까지 넘긴다: 카드가 뜨면 '확인'을 누르고, 아니면 스페이스. 끝나면 `until` 장면에서 멈춘다.
+// 대화 한 걸음: 카드가 있으면 '확인'을 마우스로 누르고(사라질 때까지 기다림), 줄이 넘어갈 준비가 됐으면
+// 스페이스(또는 key)를 누르고 그 줄이 바뀔 때까지 기다린다. 글이 나오는 중이면 스페이스로 다 보이게 하고
+// 준비될 때까지 기다린다. 정해진 시간만큼 쉬지 않고, 화면에 드러난 상태(data-ready, 카드)를 기다린다.
+// 돌려주는 값: 'done'(until 장면에 닿음) | { card: 낱말 } | 'next' | 'reveal'
+export async function dialogueStep(page, until = 'explore', key = 'Space') {
+  const any = `[data-scene="${until}"], .word-card button, [data-scene="dialogue"][data-ready]`;
+  if (!(await page.locator(any).count())) {
+    if (await page.locator('[data-scene="dialogue"] .dialogue-arrow[hidden]').count()) await page.keyboard.press(key);
+    await page.waitForSelector(any);
+  }
+  if (await page.locator(`[data-scene="${until}"]`).count()) return 'done';
+  const card = await page.$('.word-card');
+  if (card) {
+    const word = await page.locator('.word-card-word').innerText();
+    await page.locator('.word-card button').click();
+    await card.waitForElementState('hidden');
+    return { card: word };
+  }
+  await page.keyboard.press(key);
+  // 다음 줄로 넘어갔거나(준비 표시가 지워짐) 장면이 바뀔 때까지
+  await page.waitForFunction(() => !document.querySelector('[data-scene="dialogue"][data-ready]'));
+  return 'next';
+}
+
+// 대화를 끝까지 넘긴다. 끝나면 `until` 장면에서 멈춘다. 확인한 뜻풀이 카드의 낱말 목록을 돌려준다.
 export async function finishDialogue(page, until = 'explore') {
-  for (let i = 0; i < 120; i++) {
-    if (await page.locator(`[data-scene="${until}"]`).count()) return;
-    const ok = page.locator('.word-card button');
-    if (await ok.count()) await ok.click();
-    else await page.keyboard.press('Space');
-    await page.waitForTimeout(220);
+  const cards = [];
+  for (let i = 0; i < 200; i++) {
+    const r = await dialogueStep(page, until, i % 2 ? 'Enter' : 'Space');
+    if (r === 'done') return cards;
+    if (r.card) cards.push(r.card);
   }
   throw new Error('대화가 끝나지 않았다');
 }

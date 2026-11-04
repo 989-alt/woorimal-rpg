@@ -146,6 +146,7 @@ export const dialogue = {
       const plain = splitHighlights(raw).map((seg) => seg.text).join('');
       tw = createTypewriter({ full: plain, msPerChar: typeSpeed });
       busy = false;
+      scene.removeAttribute('data-ready');
       tipEl?.remove();
       tipEl = null;
       arrow.hidden = true;
@@ -212,7 +213,7 @@ export const dialogue = {
       const cards = [...pending];
       const next = () => {
         const w = cards.shift();
-        if (!w) { busy = false; arrow.hidden = false; return; }
+        if (!w) { busy = false; arrow.hidden = false; syncReady(); return; }
         card = openMeaningCard(scene, w, () => {
           card = null;
           kick(); // 카드가 열린 동안 멈췄던 시간(다음 줄로 넘어가기 전 기다림)을 다시 흘린다
@@ -229,13 +230,14 @@ export const dialogue = {
     function press() {
       if (card || leaving || !tw) return;
       const r = tw.press();
-      if (r === 'reveal') { render(); sentenceShown(); kick(); }
+      if (r === 'reveal') { render(); sentenceShown(); syncReady(); kick(); }
       else if (r === 'next') advance();
     }
 
     function advance() {
       if (index + 1 < script.length) { showLine(index + 1); return; }
       leaving = true;
+      scene.removeAttribute('data-ready');
       ctx.router.show(params.next || 'explore');
     }
 
@@ -258,6 +260,12 @@ export const dialogue = {
       kick();
     });
 
+    // 지금 누르면 다음 줄로 넘어가는지(줄이 다 보였고, 카드가 없고, 200ms 기다림이 끝남)를 data-ready로 드러낸다.
+    // 화면에는 보이지 않는다. 화면 검사가 정해진 시간을 기다리는 대신 이것을 기다린다.
+    function syncReady() {
+      scene.toggleAttribute('data-ready', !!tw && !card && !busy && !leaving && tw.settled());
+    }
+
     // 타자 효과 고리: 글자 수가 바뀔 때만 글을 고치고, 줄이 다 보이고 기다림이 끝나면(또는 카드가 열리면) 멈춘다.
     // 다음 줄·카드 닫힘·누름이 kick()으로 다시 돌린다.
     function kick() {
@@ -269,11 +277,12 @@ export const dialogue = {
     const frame = (now) => {
       const dt = Math.min(100, now - last);
       last = now;
-      if (!tw || card || leaving) { running = false; return; }
+      if (!tw || card || leaving) { running = false; syncReady(); return; }
       const was = tw.done();
       tw.tick(dt);
       if (tw.count() !== renderedCount) render();
       if (!was && tw.done()) sentenceShown();
+      syncReady();
       if (card || tw.settled()) { running = false; return; }
       raf = requestAnimationFrame(frame);
     };

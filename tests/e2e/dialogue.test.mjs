@@ -25,7 +25,26 @@ async function openNewGame() {
 }
 
 const doneScript = ACT1.chapters[0].quests[0].done;
-const press = async (page) => { await page.keyboard.press('Space'); await page.waitForTimeout(260); };
+// 정해진 시간 대신 화면 상태를 기다린다: 글이 다 보임(화살표·카드), 넘어갈 준비(data-ready), 줄이 바뀜.
+const READY = '[data-scene="dialogue"][data-ready]';
+const reveal = async (page) => {
+  await page.keyboard.press('Space');
+  await page.waitForSelector('.dialogue-arrow:not([hidden]), .word-card');
+};
+const advance = async (page) => {
+  await page.waitForSelector(READY);
+  await page.keyboard.press('Space');
+  await page.waitForFunction((r) => !document.querySelector(r), READY);
+};
+// 카드가 뜰 때까지 줄을 넘긴다(카드는 누르지 않는다)
+const untilCard = async (page) => {
+  for (let i = 0; i < 40; i++) {
+    await page.waitForSelector(`.word-card, ${READY}`);
+    if (await page.locator('.word-card').count()) return;
+    await advance(page);
+  }
+  throw new Error('카드가 뜨지 않았다');
+};
 
 test('끝난 부탁 대사: 대화를 열 때 이미 낱말을 얻어 저장했고, 낱말 카드가 한 번씩 뜬다', async () => {
   const { page, errors } = await openNewGame();
@@ -37,14 +56,14 @@ test('끝난 부탁 대사: 대화를 열 때 이미 낱말을 얻어 저장했�
   assert.deepEqual(saved.acquired['아침나절'], { from: '도담 할머니' });
   // 줄 1(주인공), 줄 2(할머니): 이름표와 말하는 쪽
   assert.equal(await page.locator('.name-tag').innerText(), '하늘');
-  await press(page); // 문장 다 보이기
-  await press(page); // 다음 줄
+  await reveal(page); // 문장 다 보이기
+  await advance(page); // 다음 줄
   assert.equal(await page.locator('.name-tag').innerText(), '도담 할머니');
-  await press(page);
-  await press(page); // 카드가 있는 줄로
+  await reveal(page);
+  await advance(page); // 카드가 있는 줄로
   assert.equal(await page.locator('.name-tag').innerText(), '도담 할머니');
   // '새벽 [[어스름]]' 줄이 다 보이면 카드
-  await page.keyboard.press('Space');
+  await reveal(page);
   await page.waitForSelector('.word-card');
   const card = await page.locator('.word-card').innerText();
   assert.match(card, /새 낱말을 찾았다!/);
@@ -60,7 +79,7 @@ test('끝난 부탁 대사: 대화를 열 때 이미 낱말을 얻어 저장했�
   await page.keyboard.press('Space');
   await page.keyboard.press('Enter');
   assert.equal(await page.locator('.word-card').count(), 1, '연타로 카드가 닫히면 안 된다');
-  await page.waitForTimeout(350);
+  await page.waitForTimeout(350); // 카드의 키보드 확인 기다림(300ms) 자체를 검사한다
   await page.keyboard.press('Enter'); // 확인
   await page.waitForSelector('.word-card', { state: 'detached' });
   // 얻은 뒤에는 '새 낱말' 표시가 사라져, 그 낱말을 눌러도 상자 누름(넘어가기)을 막지 않는다
@@ -68,11 +87,7 @@ test('끝난 부탁 대사: 대화를 열 때 이미 낱말을 얻어 저장했�
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem('malbit:save:하늘')));
   assert.ok(saved.seenTips.includes('tip-word'), '카드를 확인하면 안내 본 표시도 저장');
   // 다음 카드(아침나절)도 이 대화에서 한 번 뜬다
-  let next = 0;
-  for (let i = 0; i < 40 && !next; i++) {
-    if (await page.locator('.word-card').count()) next++;
-    else { await page.keyboard.press('Space'); await page.waitForTimeout(250); }
-  }
+  await untilCard(page);
   assert.match(await page.locator('.word-card-word').innerText(), /아침나절/);
   await finishDialogue(page);
   s = await page.evaluate(() => window.__test.state());
@@ -128,8 +143,7 @@ test('낱말 카드를 연 채 스크린샷', async () => {
   ];
   await page.evaluate((sc) => window.__test.dialogue(sc, ['어스름'], '도담 할머니'), script);
   await page.waitForSelector('[data-scene="dialogue"]');
-  await press(page); await press(page);
-  await page.waitForSelector('.word-card');
+  await untilCard(page);
   if (process.env.DIALOGUE_SHOT) await page.screenshot({ path: process.env.DIALOGUE_SHOT });
   await page.close();
 });
@@ -146,8 +160,7 @@ test('대화: 줄이 다 보이고 기다림이 끝나면 화면 고리(requestA
   await page.waitForFunction(() => window.__test);
   await page.evaluate(() => window.__test.dialogue([
     { who: 'narration', text: '첫 줄이다.' }, { who: 'narration', text: '둘째 줄이다.' }]));
-  await page.waitForSelector('[data-scene="dialogue"] .dialogue-arrow:not([hidden])');
-  await page.waitForTimeout(300); // 200ms 기다림이 끝난다
+  await page.waitForSelector(READY); // 200ms 기다림까지 끝났다
   const n = await page.evaluate(() => window.__rafs);
   await page.waitForTimeout(400);
   assert.equal(await page.evaluate(() => window.__rafs), n, '다 보인 줄에서 고리가 돌고 있다');

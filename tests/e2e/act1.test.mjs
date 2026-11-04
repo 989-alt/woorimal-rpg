@@ -3,7 +3,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
-import { launchBrowser, collectErrors } from './browser.mjs';
+import { launchBrowser, collectErrors, finishDialogue } from './browser.mjs';
 import { pathTo, KEYS } from './helpers.mjs';
 import { parseMap } from '../../js/explore/grid.js';
 import ACT1 from '../../data/acts/act1.js';
@@ -37,24 +37,10 @@ async function boot(page) {
   await page.evaluate(() => window.__test.fastText(true));
 }
 
-// 대화를 끝까지 넘긴다. 카드가 뜨면 '확인'을 누르고, 아니면 스페이스·엔터를 번갈아 누른다.
-// 확인한 뜻풀이 카드의 낱말 목록을 돌려준다.
+// 대화를 끝까지 넘긴다(카드는 '확인', 줄은 스페이스·엔터를 번갈아). 확인한 뜻풀이 카드의 낱말 목록을 돌려준다.
 async function playDialogue(page, until = 'explore') {
   await page.waitForSelector('[data-scene="dialogue"]');
-  const cards = [];
-  for (let i = 0; i < 200; i++) {
-    if (await page.locator(`[data-scene="${until}"]`).count()) return cards;
-    const card = page.locator('.word-card');
-    if (await card.count()) {
-      cards.push(await page.locator('.word-card-word').innerText());
-      await page.locator('.word-card button', { hasText: '확인' }).click();
-      await page.waitForTimeout(50);
-      continue;
-    }
-    await page.keyboard.press(i % 2 ? 'Enter' : 'Space');
-    await page.waitForTimeout(220); // 다 나온 뒤 200ms 동안은 넘어가지 않는다
-  }
-  throw new Error('대화가 끝나지 않았다');
+  return finishDialogue(page, until);
 }
 
 // 대상 옆으로 옮긴 뒤 스페이스로 말 걸기·조사하기

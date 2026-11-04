@@ -92,18 +92,7 @@ test('대화에서는 이번에 얻은 낱말마다 카드가 한 번씩 뜬다(
   // 대화가 열린 순간 이미 상태에 들어 있다
   const s = await state(page);
   assert.ok('어스름' in s.acquired && '아침나절' in s.acquired);
-  const cards = [];
-  for (let i = 0; i < 200 && !(await page.locator('[data-scene="explore"]').count()); i++) {
-    if (await page.locator('.word-card').count()) {
-      cards.push(await page.locator('.word-card-word').innerText());
-      await page.locator('.word-card button').click();
-      await page.waitForSelector('.word-card', { state: 'detached' }).catch(() => {});
-      continue;
-    }
-    await page.keyboard.press('Space');
-    await page.waitForTimeout(220);
-  }
-  assert.deepEqual(cards, ['어스름', '아침나절']);
+  assert.deepEqual(await finishDialogue(page), ['어스름', '아침나절']);
   assert.deepEqual(errors, []);
   await page.close();
 });
