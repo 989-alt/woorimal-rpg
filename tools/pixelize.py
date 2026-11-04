@@ -67,6 +67,9 @@ def main():
         out.info["transparency"] = 0
         out.save(a.dst, transparency=0, optimize=True)
     else:
+        # 투명이 없으면 0번(임시 투명) 칸을 빼서 PLTE가 쓰는 색 수와 같게 한다(64색 그림이 65칸이 되지 않게)
+        out = out.point(lambda v: max(v - 1, 0))
+        out.putpalette(flat[3:])
         out.save(a.dst, optimize=True)
     print(f"saved {a.dst} {w}x{h} colors={n}{' +alpha' if transparent else ''}")
 

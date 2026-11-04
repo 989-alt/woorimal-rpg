@@ -102,6 +102,21 @@ im.save(${JSON.stringify(src)})`]);
   assert.notEqual(r.status, 0);
 });
 
+test('pixelize: 투명이 없으면 색표 칸 수 = 쓴 색 수(빈 0번 칸 없음)', (t) => {
+  if (!existsSync(VENV_PY)) return t.skip(`sprite-gen venv python missing (${VENV_PY})`);
+  const dir = mkdtempSync(join(tmpdir(), 'px-'));
+  const src = join(dir, 'in.png'), dst = join(dir, 'out.png');
+  execFileSync(VENV_PY, ['-I', '-c', `
+from PIL import Image
+im = Image.new('RGB', (4, 1))
+for x, c in enumerate([(232, 200, 138), (62, 122, 58), (232, 200, 138), (139, 90, 43)]): im.putpixel((x, 0), c)
+im.save(${JSON.stringify(src)})`]);
+  execFileSync(VENV_PY, ['-I', 'tools/pixelize.py', src, dst, '--size', '4x1', '--palette', 'tools/palette.json']);
+  const png = decodePng(readFileSync(dst));
+  assert.equal(png.trns, null);
+  assert.equal(png.plte.length / 3, 3);
+});
+
 // --- ui-slice ---------------------------------------------------------------
 
 function pyRun(code) {
