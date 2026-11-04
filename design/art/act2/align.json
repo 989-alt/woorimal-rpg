@@ -11,6 +11,18 @@
   "dx": 0,
   "dy": 0
  },
+ "guard_base": {
+  "src": "bust_guard_base_a1",
+  "quality": 85
+ },
+ "guard_joy": {
+  "src": "bust_guard_joy_a1",
+  "quality": 85,
+  "iou_head": 0.9954,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ },
  "haesol_base": {
   "src": "bust_haesol_base_a1",
   "quality": 85
