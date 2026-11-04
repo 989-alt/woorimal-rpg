@@ -79,3 +79,16 @@ test('shuffle는 같은 시드면 같은 순서', () => {
   assert.ok(v >= 0 && v < 1);
   assert.notDeepEqual(shuffle(a, makeRng(1)), shuffle(a, makeRng(2)));
 });
+
+test('막 보스 칸 M은 보스가 사라진 뒤에만 지나가고, 그때는 바라봐도 싸움이 아니다', () => {
+  const m = parseMap(['#####', 'S..M.', '#####']);
+  assert.equal(isWalkable(m, 3, 1, {}), false);
+  assert.equal(isWalkable(m, 3, 1, { fogOpen: true, smallMonsterGone: true }), false);
+  assert.equal(isWalkable(m, 3, 1, { bossGone: true }), true);
+  assert.deepEqual(step(m, { x: 2, y: 1 }, 'right', {}).pos, { x: 2, y: 1 });
+  assert.deepEqual(step(m, { x: 2, y: 1 }, 'right', { bossGone: true }).pos, { x: 3, y: 1 });
+  assert.deepEqual(facingTarget(m, { x: 2, y: 1 }, 'right'), { kind: 'boss' });
+  assert.equal(facingTarget(m, { x: 2, y: 1 }, 'right', { bossGone: true }), null);
+  assert.equal(reachable(m, m.start, { bossGone: true }).size, 5);
+  assert.equal(reachable(m, m.start, {}).size, 3);
+});

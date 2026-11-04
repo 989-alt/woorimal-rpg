@@ -43,6 +43,7 @@ export function isWalkable(map, x, y, opts = {}) {
   if (c === 'S' || c === '.') return true;
   if (c === 'F') return !!opts.fogOpen;
   if (c === 'm') return !!opts.smallMonsterGone;
+  if (c === 'M') return !!opts.bossGone; // 막 보스를 이기면 그 자리는 길이 된다
   return false;
 }
 
@@ -59,7 +60,7 @@ export function facingTarget(map, pos, facing, opts = {}) {
   const c = map.tileAt(x, y);
   if (c >= 'a' && c <= 'e') return { kind: 'npc', slot: c };
   if (c >= '0' && c <= '9') return { kind: 'object', slot: c };
-  if (c === 'M') return { kind: 'boss' };
+  if (c === 'M') return opts.bossGone ? null : { kind: 'boss' };
   if (c === 'm') return opts.smallMonsterGone ? null : { kind: 'small' };
   if (c === 'F') return opts.fogOpen ? null : { kind: 'fog' };
   return null;

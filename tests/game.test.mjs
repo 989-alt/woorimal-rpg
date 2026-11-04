@@ -5,6 +5,7 @@ import { parseMap } from '../js/explore/grid.js';
 import {
   newGame, chapterOf, chapterWords, actWords, acquireWords, takeWords, acquiredCount,
   fogOpen, chapterComplete, enterNextChapter, finishAct, setPos, markTip, extractWords,
+  exitOpen, exitBlockedText, bossGone,
 } from '../js/rules/game.js';
 
 const deepFreeze = (o) => {
@@ -117,4 +118,48 @@ test('takeWords: 대화 전에 한꺼번에 얻고, 이번에 새로 얻은 낱�
   const none = takeWords(s0, [], 'x');
   assert.equal(none.state, s0);
   assert.deepEqual(none.fresh, []);
+});
+
+// ── 출구: 직접 걸어서 나가는 길 ──
+test('새 게임에는 알려 준 숨은 낱말 목록(revealed)이 빈 채로 있다', () => {
+  assert.deepEqual(fresh().revealed, {});
+});
+
+test('exitOpen: 앞 장은 낱말을 다 모았을 때, 뒷 장은 막 보스를 이긴 뒤에만 열린다', () => {
+  const ch1 = chapterOf(ACT, '1-1');
+  const ch2 = chapterOf(ACT, '1-2');
+  let s = acquireWords(fresh(), chapterWords(ch1).slice(0, 4), 'x');
+  assert.equal(exitOpen(s, ch1), false);
+  s = acquireWords(s, chapterWords(ch1), 'x');
+  assert.equal(exitOpen(s, ch1), true);
+  // 뒷 장: 낱말을 다 모아도 보스를 이기기 전에는 닫혀 있다
+  const t = { ...acquireWords(fresh(), chapterWords(ch2), 'x'), chapter: '1-2' };
+  assert.equal(exitOpen(t, ch2), false);
+  assert.equal(exitOpen({ ...t, clearedActs: [1] }, ch2), true);
+  // 옛 저장: 필드가 없어도 낱말·막 기록만으로 같은 답
+  const { revealed, ...old } = s;
+  assert.equal(exitOpen(old, ch1), true);
+  // 출구가 없는 장은 열 수 없다
+  const bare = { ...ch1 };
+  delete bare.exit;
+  assert.equal(exitOpen(s, bare), false);
+});
+
+test('exitBlockedText: 앞 장은 남은 낱말 수, 뒷 장은 그림자 글, 열렸으면 null', () => {
+  const ch1 = chapterOf(ACT, '1-1');
+  const ch2 = chapterOf(ACT, '1-2');
+  const s = acquireWords(fresh(), chapterWords(ch1).slice(0, 3), 'x');
+  assert.equal(exitBlockedText(s, ch1), '아직 찾지 못한 낱말이 2개 있어.');
+  assert.equal(exitBlockedText(acquireWords(fresh(), chapterWords(ch1), 'x'), ch1), null);
+  const t = { ...fresh(), chapter: '1-2' };
+  assert.equal(exitBlockedText(t, ch2), ch2.exit.closed);
+  assert.equal(exitBlockedText({ ...t, clearedActs: [1] }, ch2), null);
+});
+
+test('bossGone: 막을 마치면 보스는 사라진다', () => {
+  const ch2 = chapterOf(ACT, '1-2');
+  assert.equal(bossGone(fresh(), ch2), false);
+  assert.equal(bossGone({ ...fresh(), clearedActs: [1] }, ch2), true);
+  const { clearedActs, ...old } = fresh();
+  assert.equal(bossGone(old, ch2), false);
 });

@@ -120,6 +120,22 @@ test('지도 밖이나 걸을 수 없는 자리는 그 장의 시작 자리로 �
   assert.deepEqual(s.load('가').state.pos, { x: map2.start.x, y: map2.start.y });
   st.setItem('malbit:save:가', JSON.stringify(acquireWords(in2, chapterWords(ch2), 'x')));
   assert.deepEqual(s.load('가').state.pos, { x: fog.x, y: fog.y });
+  // 막 보스 칸: 막을 마치기 전에는 고치고, 마친 뒤(보스가 사라진 뒤)에는 그대로
+  const boss = map2.boss;
+  const atBoss = acquireWords({ ...in2, pos: boss }, chapterWords(ch2), 'x');
+  st.setItem('malbit:save:가', JSON.stringify(atBoss));
+  assert.deepEqual(s.load('가').state.pos, { x: map2.start.x, y: map2.start.y });
+  st.setItem('malbit:save:가', JSON.stringify({ ...atBoss, clearedActs: [1] }));
+  assert.deepEqual(s.load('가').state.pos, { x: boss.x, y: boss.y });
+});
+
+test('revealed가 없는 옛 version 1 저장도 그대로 불러온다(알려 주지 않은 것으로 본다)', () => {
+  const st = fakeStorage();
+  const { revealed, ...old } = newGame({ nickname: '옛', avatar: 0 });
+  st.setItem('malbit:save:옛', JSON.stringify(old));
+  const r = createStore(st).load('옛');
+  assert.equal(r.ok, true);
+  assert.equal(r.state.revealed, undefined);
 });
 
 test('옛 seenTips(옛 id만)인 version 1 저장도 그대로 불러온다', () => {

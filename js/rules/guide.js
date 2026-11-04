@@ -3,7 +3,7 @@
 import { actOfChapter } from '../../data/acts/index.js';
 import { reachable, isWalkable } from '../explore/grid.js';
 import { chapterComplete, fogOpen } from './game.js';
-import { actCleared, actDoneText, hiddenGlow } from './quests.js';
+import { actCleared, actDoneText, hiddenGlow, hiddenFound, hiddenRevealed } from './quests.js';
 import { attachJosa } from './josa.js';
 
 // 길잡이 말풍선 id(안내 말풍선과 같은 층을 쓰지만 seenTips에는 넣지 않는다: 언제든 다시 뜰 수 있는 도움말)
@@ -21,12 +21,13 @@ const stageOf = (state, quest) => state.quests[quest.id]?.stage ?? 'locked';
 const nameOf = (chapter, npcId) => chapter.npcs.find((n) => n.id === npcId)?.name ?? '마을 사람';
 
 // 지금 해야 할 한 가지. 돌려주는 모양:
-//  { kind: 'talk'|'find'|'fight'|'hidden'|'boss'|'none', npcId?, objectSlot?, objectSlots?, text }
+//  { kind: 'talk'|'find'|'fight'|'hidden'|'boss'|'exit'|'none', npcId?, objectSlot?, objectSlots?, text }
 // 우선순위: 1) 끝내러 돌아갈 부탁(물건을 들었거나 몬스터를 이김) → 2) 받은 부탁의 대상 → 3) 아직 받지 않은 부탁
-//          → 4) 숨은 낱말 → 5) 막 보스. text는 25자 이하.
+//          → 4) 숨은 낱말(알려 줄 인물 → 반짝이는 곳) → 5) 막 보스 또는 출구. text는 25자 이하.
 export function nextGoal(state, chapter) {
   const act = actOfChapter(chapter.id);
-  if (actCleared(state, act)) return { kind: 'none', text: actDoneText(act) };
+  // 막 보스를 이겼다: 출구가 열렸으니 걸어 나가자(출구 글이 없는 장이면 막을 마쳤다는 말)
+  if (actCleared(state, act)) return chapter.exit ? { kind: 'exit', text: chapter.exit.goal } : { kind: 'none', text: actDoneText(act) };
 
   const holds = (q) => q.item && state.bag.includes(q.item.id);
   // 1) 돌아가서 알리거나 물건을 전할 차례
@@ -58,7 +59,11 @@ export function nextGoal(state, chapter) {
       return { kind: 'talk', npcId: q.giver, text: `${nameOf(chapter, q.giver)}에게 말을 걸어 보자` };
     }
   }
-  // 4) 부탁을 다 끝냈고 숨은 낱말이 남았다
+  // 4) 부탁을 다 끝냈고 숨은 낱말이 남았다: 먼저 알려 주는 인물에게, 알려 준 뒤에는 반짝이는 곳으로
+  const by = chapter.hidden.revealedBy;
+  if (by && !hiddenFound(state, chapter) && !hiddenRevealed(state, chapter)) {
+    return { kind: 'talk', npcId: by, text: chapter.hidden.revealGoal ?? `${nameOf(chapter, by)}에게 말을 걸어 보자` };
+  }
   if (hiddenGlow(state, chapter) !== 'none') {
     return { kind: 'hidden', objectSlot: chapter.hidden.object, text: '반짝이는 곳을 찾아 조사해 보자' };
   }
@@ -66,7 +71,7 @@ export function nextGoal(state, chapter) {
   if (!chapterComplete(state, chapter)) return { kind: 'none', text: '아직 못 찾은 낱말을 찾아보자' };
   const last = act.chapters[act.chapters.length - 1].id === chapter.id;
   if (last) return { kind: 'boss', text: `${attachJosa(act.boss.name, '와')} 맞서자` };
-  return { kind: 'none', text: '다음 장으로 가자' };
+  return chapter.exit ? { kind: 'exit', text: chapter.exit.goal } : { kind: 'none', text: '다음 장으로 가자' };
 }
 
 // 걸어서 giver 옆 칸들에서 각 칸까지의 걸음 수(giver 칸 자체는 걸을 수 없으므로 옆 칸이 1)

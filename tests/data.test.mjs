@@ -32,7 +32,11 @@ const RESERVED_COLORS = ['#3B5BA5', '#8E4A7A', '#F08A3C', '#A9C9D6'];
 /** 장의 모든 대사 묶음: [이름표, Line[]] */
 function lineGroups(ch) {
   const groups = [[`${ch.id} intro`, ch.intro, 'before']];
-  for (const n of ch.npcs) groups.push([`${ch.id} ${n.id}.chat`, n.chat, 'before']);
+  for (const n of ch.npcs) {
+    groups.push([`${ch.id} ${n.id}.chat`, n.chat, 'before']);
+    if (n.reveal) groups.push([`${ch.id} ${n.id}.reveal`, n.reveal, 'before']);
+    if (n.after) groups.push([`${ch.id} ${n.id}.after`, n.after, 'before']);
+  }
   for (const q of ch.quests) {
     groups.push([`${q.id}.offer`, q.offer, 'before']);
     groups.push([`${q.id}.waiting`, q.waiting, 'before']);
@@ -171,7 +175,7 @@ test('인물·물건: 칸 글자 짝, 숨은 낱말 힌트, 색', () => {
       assert.ok(o.name && typeof o.text === 'string' && o.text.length > 0, `${ch.id} 물건 ${o.slot}`);
       assert.ok(!/[.?!]\s+\S/.test(o.text), `물건 글은 한 줄 한 문장: ${o.text}`);
     }
-    const hintCount = ch.npcs.filter((n) => n.chat.some((l) => l.text.includes('반짝'))).length;
+    const hintCount = ch.npcs.filter((n) => (n.reveal ?? n.chat).some((l) => l.text.includes('반짝'))).length;
     assert.ok(hintCount >= 1, `${ch.id}: 숨은 낱말 힌트를 말하는 인물이 없음`);
     assert.ok(ch.objects.some((o) => o.slot === ch.hidden.object), `${ch.id} hidden.object`);
     assert.ok(!ch.quests.some((q) => q.targets.includes(ch.hidden.object)), `${ch.id}: 숨은 낱말 물건은 부탁 대상이 아님`);
@@ -315,4 +319,49 @@ test('모든 대사 줄은 닉네임 "가나다라마바"를 넣어도 56자 이
     }
     for (const t of objectTexts(ch)) assert.ok(shown(t).length <= 56, `${ch.id} 물건 글: ${t}`);
   }
+});
+
+test('숨은 낱말 알려 주기: revealedBy 인물이 알려 주는 대사(reveal)를 갖고, 그 밖 대사에는 반짝임 힌트가 없다', () => {
+  for (const ch of ACT.chapters) {
+    const by = ch.hidden.revealedBy;
+    assert.ok(by, `${ch.id}: revealedBy`);
+    const who = ch.npcs.find((n) => n.id === by);
+    assert.ok(who, `${ch.id}: revealedBy '${by}' 인물이 없음`);
+    assert.ok(Array.isArray(who.reveal) && who.reveal.some((l) => l.text.includes('반짝')), `${ch.id}: ${by}의 reveal에 반짝임 힌트`);
+    assert.ok(who.chat.every((l) => !l.text.includes('반짝')), `${ch.id}: 알려 주기 전 chat에는 힌트가 없다`);
+    assert.ok(typeof ch.hidden.revealGoal === 'string' && ch.hidden.revealGoal.length > 0 && ch.hidden.revealGoal.length <= 25, `${ch.id} revealGoal`);
+    assert.ok(ch.hidden.revealGoal.includes(who.name), `${ch.id}: revealGoal에 인물 이름`);
+    // 말 거는 인물이 아닌 사람은 reveal·after를 갖지 않는다
+    for (const n of ch.npcs) if (n.id !== by) assert.ok(!n.reveal && !n.after, `${n.id}: reveal·after는 알려 주는 인물만`);
+  }
+  assert.equal(ACT.chapters[0].hidden.revealedBy, 'gardener');
+  const g = ACT.chapters[0].npcs.find((n) => n.id === 'gardener');
+  assert.ok(Array.isArray(g.after) && g.after.some((l) => l.text.includes('장독대')), '알려 준 뒤 아저씨는 장독대를 일러 준다');
+});
+
+test('출구: 맵 가장자리 길 칸에 있고, 낱말을 다 모으고 몬스터·보스가 사라지면 시작에서 걸어서 닿는다', () => {
+  const DIRS = ['up', 'down', 'left', 'right'];
+  ACT.chapters.forEach((ch, i) => {
+    const e = ch.exit;
+    assert.ok(e, `${ch.id}: exit`);
+    const map = parseMap(ch.map.rows);
+    assert.ok(Number.isInteger(e.x) && Number.isInteger(e.y), `${ch.id} exit 칸`);
+    assert.equal(map.tileAt(e.x, e.y), '.', `${ch.id}: 출구는 길 칸`);
+    assert.ok(DIRS.includes(e.dir), `${ch.id}: dir`);
+    // 가장자리: 가리키는 쪽으로 가다 보면 곧 맵 밖(막힌 벽 한 겹 뒤)
+    const [dx, dy] = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[e.dir];
+    assert.equal(map.tileAt(e.x + dx, e.y + dy), '#', `${ch.id}: 출구가 가리키는 쪽은 맵 가장자리 벽`);
+    assert.ok(e.y <= 2 || e.y >= map.h - 3 || e.x <= 2 || e.x >= map.w - 3, `${ch.id}: 출구는 가장자리 칸(맨 바깥 벽 한 겹 안쪽 두 칸 이내)`);
+    assert.ok(typeof e.goal === 'string' && e.goal.length > 0 && e.goal.length <= 25, `${ch.id} exit.goal`);
+    const opts = { fogOpen: true, smallMonsterGone: true, bossGone: true };
+    assert.ok(reachable(map, map.start, opts).has(`${e.x},${e.y}`), `${ch.id}: 출구에 닿지 못함`);
+    // 닫혀 있을 때 걸어서 닿을 수 있어야(닫힌 알림) 하는 장: 앞 장은 몬스터 때문에, 뒷 장은 안개 때문에 먼저 열려야 한다
+    assert.ok(!reachable(map, map.start, {}).has(`${e.x},${e.y}`), `${ch.id}: 몬스터·안개가 닫혀 있을 때는 출구에 닿지 못함`);
+    const last = i === ACT.chapters.length - 1;
+    if (last) {
+      assert.ok(e.won && e.won.length <= 25, `${ch.id} exit.won`);
+      assert.ok(e.closed && e.closed.length > 0, `${ch.id} exit.closed`);
+      assert.ok(reachable(map, map.start, { fogOpen: true }).has(`${e.x},${e.y}`), `${ch.id}: 안개가 열리면 보스 앞 출구 칸에 닿는다(닫힌 알림)`);
+    }
+  });
 });

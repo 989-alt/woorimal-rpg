@@ -76,10 +76,13 @@ test('animKey: 화면 안에 움직이는 그림이 없으면 시간이 흘러�
   assert.notEqual(at(near, 0), at(near, 400)); // sin(0)=0, sin(1.6)≈1
   // 움직임 줄이기: 흔들리지 않는다
   assert.equal(at(near, 0, { still: true }), at(near, 400, { still: true }));
-  // 숨은 낱말 반짝임: 첫 부탁을 받은 뒤, 장독대가 화면 안이면 켜짐/꺼짐이 바뀐다
+  // 숨은 낱말 반짝임: 첫 부탁을 받고 텃밭 아저씨가 알려 주기 전에는 장독대가 화면 안이어도 반짝이지 않는다
   const jar = map.objects[ch.hidden.object];
   const byJar = { ...s, pos: { x: jar.x, y: jar.y + 1 } };
-  assert.notEqual(at(byJar, 100, { still: true }), at(byJar, 500, { still: true }));
+  assert.equal(at(byJar, 100, { still: true }), at(byJar, 500, { still: true }));
+  // 알려 준 뒤에는 장독대가 화면 안이면 켜짐/꺼짐이 바뀐다
+  const told = { ...talkTo(s, ch, 'gardener').state, pos: byJar.pos };
+  assert.notEqual(at(told, 100, { still: true }), at(told, 500, { still: true }));
 });
 
 test('feetRect: 발이 칸 아래 줄 가운데에 닿는 세계 상자(인물 16×32, 보스 32×32 = 2×2칸)', async () => {
@@ -154,7 +157,7 @@ test('animKey: 빛무리는 보이는 때 단계마다 바뀌고, 쉬는 동안�
   const { animKey } = await import('../js/explore/render.js');
   const ch = chapterOf(ACT1, '1-1');
   const map = parseMap(ch.map.rows);
-  const s = talkTo(newGame({ nickname: '하늘', avatar: 'f' }), ch, 'dodam').state; // 주머니를 받아 빛무리가 켜지는 상태
+  const s = talkTo(talkTo(newGame({ nickname: '하늘', avatar: 'f' }), ch, 'dodam').state, ch, 'gardener').state; // 주머니를 받고 아저씨가 알려 줘서 빛무리가 켜지는 상태
   const jar = map.objects[ch.hidden.object];
   const near = { ...s, pos: { x: jar.x, y: jar.y + 1 } };
   const far = { ...s, pos: { x: 22, y: 19 } }; // 시작 자리 맞은편: 장독대가 화면 밖

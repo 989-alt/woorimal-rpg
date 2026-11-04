@@ -22,6 +22,7 @@ const inChapter2 = () => {
   s = talkTo(s, ch1, 'daon').state;
   s = winSmall(s, ch1);
   s = talkTo(s, ch1, 'daon').state;
+  s = talkTo(s, ch1, 'gardener').state;
   s = inspect(s, ch1, '1').state;
   s = acquireWords(s, chapterWords(ch1), 'x');
   return { ...s, chapter: '1-2', quests: { ...s.quests, q3: { stage: 'open', gathered: [] } } };
@@ -53,13 +54,21 @@ test('nextGoal: 다온의 부탁을 받으면 꼬마 안개, 이기면 다온에
   assert.deepEqual([g.kind, g.npcId, g.text], ['talk', 'daon', '다온에게 돌아가 알려 주자']);
 });
 
-test('nextGoal: 부탁을 다 끝냈고 숨은 낱말이 남았으면 숨은 곳, 모두 끝나면 다음으로', () => {
+test('nextGoal: 부탁을 다 끝냈고 숨은 낱말이 남았으면 알려 줄 인물, 알려 준 뒤에는 숨은 곳, 모두 끝나면 출구', () => {
   let s = talkTo(winSmall(talkTo(afterQ1Done(), ch1, 'daon').state, ch1), ch1, 'daon').state;
   let g = nextGoal(s, ch1);
+  assert.deepEqual([g.kind, g.npcId, g.text], ['talk', 'gardener', '텃밭 아저씨 이야기를 들어 보자']);
+  s = talkTo(s, ch1, 'gardener').state;
+  g = nextGoal(s, ch1);
   assert.deepEqual([g.kind, g.objectSlot, g.text], ['hidden', '1', '반짝이는 곳을 찾아 조사해 보자']);
   s = acquireWords(inspect(s, ch1, '1').state, chapterWords(ch1), 'x');
   g = nextGoal(s, ch1);
-  assert.equal(g.kind, 'none'); // 1-1은 끝이면 장 클리어로 넘어간다
+  assert.deepEqual([g.kind, g.text], ['exit', '골목 끝 길로 마을 어귀로 가자']);
+});
+
+test('nextGoal: 부탁이 남아 있으면 아저씨 이야기보다 부탁이 먼저다', () => {
+  const g = nextGoal(afterQ1Done(), ch1); // 다온의 부탁이 열려 있다
+  assert.deepEqual([g.kind, g.npcId], ['talk', 'daon']);
 });
 
 test('nextGoal: 1-2 모으기는 남은 곳과 개수, 전하기는 받는 이, 끝나면 보스', () => {
@@ -79,18 +88,33 @@ test('nextGoal: 1-2 모으기는 남은 곳과 개수, 전하기는 받는 이, 
   g = nextGoal(s, ch2);
   assert.deepEqual([g.kind, g.npcId, g.text], ['talk', 'gate', '편지를 어귀 할아버지에게 전하자']);
   s = talkTo(s, ch2, 'gate').state;
+  g = nextGoal(s, ch2);
+  assert.deepEqual([g.kind, g.npcId, g.text], ['talk', 'laundry', '빨래터 아주머니 이야기를 들어 보자']);
   s = talkTo(s, ch2, 'laundry').state;
   g = nextGoal(s, ch2);
   assert.equal(g.kind, 'hidden');
   s = acquireWords(inspect(s, ch2, '3').state, chapterWords(ch2), 'x');
   g = nextGoal(s, ch2);
   assert.deepEqual([g.kind, g.text], ['boss', '안개 덩이와 맞서자']);
-  assert.equal(nextGoal({ ...s, clearedActs: [1] }, ch2).kind, 'none');
+  // 보스를 이기면(막 기록) 출구로 가자
+  g = nextGoal({ ...s, clearedActs: [1] }, ch2);
+  assert.deepEqual([g.kind, g.text], ['exit', '북쪽 길로 너울장으로 가자']);
+});
+
+test('nextGoal: 출구 글이 없는 장은 옛 글 그대로(다음 장으로 가자 / 막을 마쳤어요)', () => {
+  const bare = structuredClone(ch1);
+  delete bare.exit;
+  const done = acquireWords(inChapter2(), chapterWords(ch1), 'x');
+  const s = { ...done, chapter: '1-1', hiddenFound: { '1-1': true } };
+  assert.deepEqual([nextGoal(s, bare).kind, nextGoal(s, bare).text], ['none', '다음 장으로 가자']);
 });
 
 test('nextGoal: 글은 25자 이하이고 받는 글에 인물 이름이 들어간다', () => {
-  const states = [fresh(), afterQ1Done(), inChapter2()];
+  const states = [fresh(), afterQ1Done(), inChapter2(), { ...inChapter2(), clearedActs: [1] }];
   for (const s of states) for (const ch of [ch1, ch2]) assert.ok(nextGoal(s, ch).text.length <= 25, nextGoal(s, ch).text);
+  for (const ch of [ch1, ch2]) {
+    for (const t of [ch.exit.goal, ch.exit.won, ch.hidden.revealGoal]) if (t) assert.ok(t.length <= 25, t);
+  }
   for (const q of [...ch1.quests, ...ch2.quests]) {
     assert.ok(q.goal && q.goal.length <= 25, `${q.id} goal`);
   }

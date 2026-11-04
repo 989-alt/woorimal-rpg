@@ -38,6 +38,7 @@ function afterChapter1Quests() {
 // 1-2로 넘어간 상태
 function inChapter2() {
   let s = afterChapter1Quests();
+  ({ state: s } = talkTo(s, ch1, 'gardener'));
   ({ state: s } = inspect(s, ch1, '1'));
   s = acquireWords(s, chapterWords(ch1), 'x');
   return { ...s, chapter: '1-2', quests: { ...s.quests, q3: { stage: 'open', gathered: [] } } };
@@ -229,18 +230,55 @@ test('chase: winSmall 뒤 보고하면 완료', () => {
   assert.deepEqual(d.state.bag, []);
 });
 
-test('숨은 낱말: 처음 조사만 낱말을 준다, 부탁 2개가 끝나면 bright', () => {
-  // 첫 부탁을 받기 전에는 flavour만
+test('숨은 낱말: 텃밭 아저씨가 알려 주기 전에는 조사해도 낱말이 없고 반짝이지도 않는다', () => {
   const s0 = fresh();
   assert.equal(hiddenGlow(s0, ch1), 'none');
   let r = inspect(s0, ch1, '1');
   assert.equal(r.event, 'nothing');
   assert.deepEqual(r.script, [{ who: 'narration', text: ch1.objects[1].text }]);
   assert.deepEqual(r.state.hiddenFound, {});
-  // 받은 뒤에는 일찍 찾아도 된다
+  // 말빛 주머니를 받은 뒤에도 아저씨 이야기를 듣기 전에는 그대로다
   const s1 = talkTo(s0, ch1, 'dodam').state;
-  assert.equal(hiddenGlow(s1, ch1), 'dim');
+  assert.equal(hiddenGlow(s1, ch1), 'none');
   r = inspect(s1, ch1, '1');
+  assert.equal(r.event, 'nothing');
+  assert.deepEqual(r.words, []);
+  assert.deepEqual(r.script, [{ who: 'narration', text: ch1.objects[1].text }]);
+  assert.deepEqual(r.state.hiddenFound, {});
+  assert.deepEqual(r.state.acquired, {});
+  // 부탁을 다 끝내도 알려 주기 전에는 반짝이지 않는다
+  assert.equal(hiddenGlow(afterChapter1Quests(), ch1), 'none');
+});
+
+test('텃밭 아저씨: 주머니를 받기 전에는 알려 주지 않고, 받은 뒤 처음 말하면 알려 주며, 그 뒤에는 장독대를 일러 준다', () => {
+  const g = ch1.npcs.find((n) => n.id === 'gardener');
+  // 주머니를 받기 전: 그냥 대화(도담 할머니께 가 보라는 말), 알려 주지 않는다
+  let r = talkTo(fresh(), ch1, 'gardener');
+  assert.equal(r.event, 'chat');
+  assert.deepEqual(r.script, g.chat);
+  assert.deepEqual(r.state.revealed ?? {}, {});
+  assert.equal(hiddenGlow(r.state, ch1), 'none');
+  // 주머니를 받은 뒤 처음: 알려 준다
+  const pouch = talkTo(fresh(), ch1, 'dodam').state;
+  r = talkTo(pouch, ch1, 'gardener');
+  assert.equal(r.event, 'reveal');
+  assert.deepEqual(r.script, g.reveal);
+  assert.deepEqual(r.words, []);
+  assert.deepEqual(r.state.revealed, { '1-1': true });
+  assert.equal(hiddenGlow(r.state, ch1), 'dim');
+  // 다시 말하면 장독대 쪽을 일러 주고 상태는 그대로
+  const again = talkTo(r.state, ch1, 'gardener');
+  assert.equal(again.event, 'chat');
+  assert.deepEqual(again.script, g.after);
+  assert.equal(again.state, r.state);
+  // 다른 인물과 말해도 알려지지 않는다
+  assert.deepEqual(talkTo(pouch, ch1, 'daon').state.revealed ?? {}, {});
+});
+
+test('숨은 낱말: 알려 준 뒤 처음 조사만 낱말을 준다, 부탁 2개가 끝나면 bright', () => {
+  const told = talkTo(talkTo(fresh(), ch1, 'dodam').state, ch1, 'gardener').state;
+  assert.equal(hiddenGlow(told, ch1), 'dim');
+  let r = inspect(told, ch1, '1');
   assert.equal(r.event, 'hidden');
   assert.deepEqual(r.words, ['오롯이']);
   assert.deepEqual(r.script, ch1.hidden.lines);
@@ -251,10 +289,38 @@ test('숨은 낱말: 처음 조사만 낱말을 준다, 부탁 2개가 끝나면
   assert.equal(again.event, 'nothing');
   assert.deepEqual(again.words, []);
   // 부탁 2개가 끝나면 bright
-  const s2 = afterChapter1Quests();
+  const s2 = talkTo(afterChapter1Quests(), ch1, 'gardener').state;
   assert.equal(hiddenGlow(s2, ch1), 'bright');
-  const mid = afterQ1();
+  const mid = talkTo(afterQ1(), ch1, 'gardener').state;
   assert.equal(hiddenGlow(mid, ch1), 'dim');
+});
+
+test('숨은 낱말: revealedBy가 없는 장은 주머니를 받으면 바로 반짝이고, 옛 저장(revealed 없음·이미 찾음)도 막히지 않는다', () => {
+  const plain = structuredClone(ch1);
+  delete plain.hidden.revealedBy;
+  const pouch = talkTo(fresh(), ch1, 'dodam').state;
+  assert.equal(hiddenGlow(pouch, plain), 'dim');
+  assert.equal(inspect(pouch, plain, '1').event, 'hidden');
+  // 옛 저장: revealed 필드가 없다
+  const { revealed, ...old } = talkTo(fresh(), ch1, 'dodam').state;
+  assert.equal(hiddenGlow(old, ch1), 'none');
+  assert.equal(inspect(old, ch1, '1').event, 'nothing');
+  // 옛 저장에서 숨은 낱말을 이미 찾았다면 알려 준 것으로 본다: 아저씨는 알려 주는 말을 다시 하지 않는다
+  const found = { ...old, hiddenFound: { '1-1': true } };
+  const r = talkTo(found, ch1, 'gardener');
+  assert.equal(r.event, 'chat');
+  assert.deepEqual(r.script, ch1.npcs.find((n) => n.id === 'gardener').after);
+});
+
+test('1-2: 빨래터 아주머니가 알려 주기 전에는 빨랫줄이 반짝이지 않는다', () => {
+  let s = inChapter2();
+  assert.equal(hiddenGlow(s, ch2), 'none');
+  assert.equal(inspect(s, ch2, '3').event, 'nothing');
+  const r = talkTo(s, ch2, 'laundry'); // 아직 q3이 끝나지 않아 q4는 잠겨 있다: 그냥 이야기 = 알려 주기
+  assert.equal(r.event, 'reveal');
+  assert.deepEqual(r.script, ch2.npcs.find((n) => n.id === 'laundry').reveal);
+  assert.equal(hiddenGlow(r.state, ch2), 'dim');
+  assert.equal(inspect(r.state, ch2, '3').event, 'hidden');
 });
 
 test('인물 표시: open → !, active → …, ready·받는 인물 → ?, 그 밖 null', () => {
@@ -286,7 +352,7 @@ test('currentTask 순서', () => {
   assert.equal(currentTask(s, ch1), '꼬마 안개 쫓아내기');
   s = afterChapter1Quests();
   assert.equal(currentTask(s, ch1), '숨은 낱말을 찾아라');
-  s = inspect(s, ch1, '1').state;
+  s = inspect(talkTo(s, ch1, 'gardener').state, ch1, '1').state;
   // 낱말이 아직 등록되기 전에는 다음 장 안내를 하지 않는다
   assert.equal(currentTask(s, ch1), '꼬마 안개 쫓아내기');
   s = acquireWords(s, chapterWords(ch1), 'x');
@@ -298,7 +364,7 @@ test('currentTask 순서', () => {
   assert.equal(currentTask(t, ch2), '할머니 편지 전하기');
   t = talkTo(talkTo(t, ch2, 'laundry').state, ch2, 'gate').state;
   assert.equal(currentTask(t, ch2), '숨은 낱말을 찾아라');
-  t = inspect(t, ch2, '3').state;
+  t = inspect(talkTo(t, ch2, 'laundry').state, ch2, '3').state;
   t = acquireWords(t, chapterWords(ch2), 'x');
   assert.equal(currentTask(t, ch2), '그림자를 물리쳐라');
   // 막을 마친 뒤
@@ -352,6 +418,8 @@ test('막은 넘겨 받은 장에서 찾는다 (1막 하드코딩 금지)', () =
     assert.equal(inspect(s, a, '1').event, 'nothing');
     s = talkTo(s, a, 'dodam').state;
     assert.equal(s.quests.xq1.stage, 'active');
+    assert.equal(hiddenGlow(s, a), 'none'); // 아저씨가 알려 주기 전
+    s = talkTo(s, a, 'gardener').state;
     assert.equal(hiddenGlow(s, a), 'dim');
     assert.equal(inspect(s, a, '1').event, 'hidden');
     // 2막의 마지막 장이므로 "그림자를 물리쳐라", 첫 장은 "다음 장으로"

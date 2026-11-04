@@ -37,7 +37,7 @@ test('부탁이 active면 quest, talk보다 뒤', () => {
   assert.equal(dueHint(markTip(s, 'quest'), ch, ex()), null);
 });
 
-test('반짝임: 주머니를 받은 뒤 화면 안이면 sparkle, 화면 밖이거나 주머니 전이면 없음', () => {
+test('반짝임: 주머니를 받고 텃밭 아저씨가 알려 준 뒤 화면 안이면 sparkle, 화면 밖이거나 알려 주기 전이면 없음', () => {
   const base = markTip(s0, 'move');
   assert.equal(dueHint(base, ch, ex(null, true)), null); // 주머니 전(none)
   let s = base;
@@ -45,6 +45,8 @@ test('반짝임: 주머니를 받은 뒤 화면 안이면 sparkle, 화면 밖이
   ({ state: s } = inspect(s, ch, '0'));
   ({ state: s } = talkTo(s, ch, 'dodam')); // q1 끝, 주머니 받음
   s = markTip(markTip(s, 'talk'), 'quest');
+  assert.equal(dueHint(s, ch, ex(null, true)), null); // 주머니는 받았어도 아저씨가 알려 주기 전
+  ({ state: s } = talkTo(s, ch, 'gardener'));
   assert.deepEqual(pick(dueHint(s, ch, ex(null, true))), { id: 'sparkle', anchor: 'sparkle', until: 'inspect', ms: HINT_MS });
   assert.equal(dueHint(s, ch, ex(null, false)), null);
 });

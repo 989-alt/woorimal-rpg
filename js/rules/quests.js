@@ -1,7 +1,7 @@
 // 부탁 규칙: 말 걸기, 물건 조사, 가방, 숨은 낱말, 인물 표시, 현재 할 일. 모두 순수 함수.
 // 낱말 습득 자체는 탐험 화면이 대화를 열기 전에 takeWords로 한다. 여기서는 바뀐 상태와 줄 낱말만 돌려준다.
 import { actOfChapter } from '../../data/acts/index.js';
-import { chapterComplete } from './game.js';
+import { chapterComplete, actCleared } from './game.js';
 import { attachJosa } from './josa.js';
 
 const BAG_SIZE = 3;
@@ -38,10 +38,25 @@ function holdsPouch(state, chapter) {
   return stage !== 'locked' && stage !== 'open';
 }
 
-const hiddenFound = (state, chapter) => state.hiddenFound?.[chapter.id] === true;
+export const hiddenFound = (state, chapter) => state.hiddenFound?.[chapter.id] === true;
+// 숨은 낱말을 알려 준 인물과 말했는가. revealedBy가 없는 장은 주머니만 받으면 되고(지금까지처럼), 이미 찾은 옛 저장도 알려 준 것으로 본다.
+export const hiddenRevealed = (state, chapter) =>
+  !chapter.hidden.revealedBy || state.revealed?.[chapter.id] === true || hiddenFound(state, chapter);
 const questsDone = (state, chapter) => chapter.quests.every((q) => stageOf(state, q) === 'done');
 
+// 말 걸기. 숨은 낱말을 알려 주는 인물(hidden.revealedBy)은, 주머니를 받은 뒤 그냥 이야기하는 때에 처음으로 알려 준다
+// (reveal 대사, 이벤트 'reveal'). 알려 준 뒤에는 after 대사, 주머니를 받기 전에는 chat 대사가 나온다.
 export function talkTo(state, chapter, npcId) {
+  const r = talk(state, chapter, npcId);
+  const npc = chapter.npcs.find((n) => n.id === npcId);
+  // 그냥 이야기하는 때만(가방이 가득 찼다는 말 같은 알림은 이야기가 아니다)
+  if (!npc || r.script !== npc.chat || chapter.hidden.revealedBy !== npcId) return r;
+  if (hiddenRevealed(state, chapter)) return npc.after ? { ...r, script: npc.after } : r;
+  if (!npc.reveal || !holdsPouch(state, chapter)) return r;
+  return { state: { ...state, revealed: { ...state.revealed, [chapter.id]: true } }, script: npc.reveal, event: 'reveal', words: [] };
+}
+
+function talk(state, chapter, npcId) {
   const npc = chapter.npcs.find((n) => n.id === npcId);
   const chat = { state, script: npc ? npc.chat : [], event: 'chat', words: [] };
 
@@ -113,7 +128,7 @@ export function inspect(state, chapter, objectSlot) {
     return { state: next, script: note(`${getsItem} 가방에 넣었다.`), event: 'item', words: [] };
   }
 
-  if (objectSlot === chapter.hidden.object && !hiddenFound(state, chapter) && holdsPouch(state, chapter)) {
+  if (objectSlot === chapter.hidden.object && !hiddenFound(state, chapter) && holdsPouch(state, chapter) && hiddenRevealed(state, chapter)) {
     return {
       state: { ...state, hiddenFound: { ...state.hiddenFound, [chapter.id]: true } },
       script: chapter.hidden.lines,
@@ -167,7 +182,7 @@ export function npcMarker(state, chapter, npcId) {
 
 // 막을 마친 뒤 할 일 자리에 쓰는 말
 export const actDoneText = (act) => `${act.id}막을 마쳤어요`;
-export const actCleared = (state, act) => (state.clearedActs ?? []).includes(act.id);
+export { actCleared };
 
 export function currentTask(state, chapter) {
   const act = actOfChapter(chapter.id);
@@ -182,7 +197,7 @@ export function currentTask(state, chapter) {
 }
 
 export function hiddenGlow(state, chapter) {
-  if (hiddenFound(state, chapter) || !holdsPouch(state, chapter)) return 'none';
+  if (hiddenFound(state, chapter) || !holdsPouch(state, chapter) || !hiddenRevealed(state, chapter)) return 'none';
   return questsDone(state, chapter) ? 'bright' : 'dim';
 }
 

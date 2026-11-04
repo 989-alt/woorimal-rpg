@@ -1,6 +1,6 @@
 // 탐험 HUD: 메달·할 일 두루마리, 낱말 n/5와 가방 3칸 명판, 도감·할 일 아이콘 단추, 토스트.
 import { ACTS } from '../../data/acts/index.js';
-import { acquiredCount, chapterWords } from '../rules/game.js';
+import { acquiredCount, chapterWords, wordsLeftText } from '../rules/game.js';
 import { nextGoal } from '../rules/guide.js';
 import { ASSETS, bustFor } from '../../data/assets.js';
 import { setArt } from '../ui/images.js';
@@ -8,10 +8,7 @@ import { blockColor, initial, labelBlockEl, textOn } from '../ui/placeholder.js'
 
 export const BAG_SLOTS = 3;
 
-export function fogMessage(state, chapter) {
-  const left = chapterWords(chapter).length - acquiredCount(state, chapter);
-  return `아직 찾지 못한 낱말이 ${left}개 있어.`;
-}
+export const fogMessage = wordsLeftText;
 
 export function itemName(itemId) {
   for (const act of ACTS) {

@@ -1,5 +1,6 @@
 // 게임 상태와 장 진행: 모두 순수 함수. 받은 상태를 바꾸지 않고 새 상태를 돌려준다.
 import ACT1 from '../../data/acts/act1.js';
+import { actOfChapter } from '../../data/acts/index.js';
 import { parseMap } from '../explore/grid.js';
 
 export function chapterOf(act, chapterId) {
@@ -41,6 +42,7 @@ export function newGame({ nickname, avatar }) {
     quests,
     bag: [],
     hiddenFound: {},
+    revealed: {}, // 장별로 숨은 낱말을 알려 준 인물과 말했는지(옛 저장에는 없다: 없으면 빈 것으로 본다)
     smallGone: {},
     askedWordIds: [],
     clearedChapters: [],
@@ -74,6 +76,31 @@ export function chapterComplete(state, chapter) {
 
 export function fogOpen(state, chapter) {
   return chapterComplete(state, chapter);
+}
+
+export const actCleared = (state, act) => (state.clearedActs ?? []).includes(act.id);
+
+// 막 보스를 이겨 막을 마쳤으면 보스는 그 자리에서 사라진다(막 클리어 화면은 출구에서 연다).
+export const bossGone = (state, chapter) => actCleared(state, actOfChapter(chapter.id));
+
+export const wordsLeftText = (state, chapter) =>
+  `아직 찾지 못한 낱말이 ${chapterWords(chapter).length - acquiredCount(state, chapter)}개 있어.`;
+
+// 출구(맵 가장자리 길)가 열렸는가. 앞 장은 그 장의 낱말을 다 모았을 때, 뒷(보스) 장은 막 보스를 이긴 뒤.
+// 열려 있어도 저절로 넘어가지 않는다: 학생이 그 칸으로 걸어 들어서야 장·막 클리어 화면이 열린다.
+export function exitOpen(state, chapter) {
+  if (!chapter.exit) return false;
+  const act = actOfChapter(chapter.id);
+  const last = act.chapters[act.chapters.length - 1].id === chapter.id;
+  return last ? actCleared(state, act) : chapterComplete(state, chapter);
+}
+
+// 닫힌 출구 칸에 들어섰을 때 띄울 한 줄. 열려 있거나 출구가 없으면 null.
+export function exitBlockedText(state, chapter) {
+  if (!chapter.exit || exitOpen(state, chapter)) return null;
+  const act = actOfChapter(chapter.id);
+  const last = act.chapters[act.chapters.length - 1].id === chapter.id;
+  return last ? chapter.exit.closed : wordsLeftText(state, chapter);
 }
 
 const addOnce = (list, v) => (list.includes(v) ? list : [...list, v]);

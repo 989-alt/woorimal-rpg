@@ -1,7 +1,7 @@
 // 저장소: 닉네임별 localStorage 저장. storage는 주입한다.
 import { ACTS } from '../data/acts/index.js';
 import { parseMap, isWalkable } from './explore/grid.js';
-import { fogOpen } from './rules/game.js';
+import { fogOpen, bossGone } from './rules/game.js';
 const SAVE = 'malbit:save:';
 const NAMES = 'malbit:names';
 const PROBE = 'malbit:probe';
@@ -42,7 +42,7 @@ function repair(state) {
   if (!chapter) return null;
   const map = parseMap(chapter.map.rows);
   const { x, y } = state.pos;
-  const opts = { fogOpen: fogOpen(state, chapter), smallMonsterGone: !!state.smallGone[chapter.id] };
+  const opts = { fogOpen: fogOpen(state, chapter), smallMonsterGone: !!state.smallGone[chapter.id], bossGone: bossGone(state, chapter) };
   if (Number.isInteger(x) && Number.isInteger(y) && isWalkable(map, x, y, opts)) {
     return FACINGS.includes(state.facing) ? state : { ...state, facing: 'down' };
   }

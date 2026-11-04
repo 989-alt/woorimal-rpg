@@ -2,6 +2,10 @@
 // 맵 글자: # 막힘 · . 길 · S 시작 · F 안개 문 · M 막 보스 · m 작은 몬스터 · a~e 인물 · 0~9 물건
 // 부탁의 goal은 부탁을 받아 하는 동안 HUD·할 일 창에 보이는 "지금 할 일" 한 줄(25자 이하). 받기 전·돌아가 알리기는 js/rules/guide.js가 인물 이름으로 만든다.
 // 대사: 낱말은 [[낱말]]로 쓰고 done·hidden.lines에서만 처음 나온다. {이름}, {이름|아/이/은/을}은 닉네임으로 바뀐다.
+// 출구 exit: 맵 그림의 길이 맵 밖으로 이어지는 가장자리 칸 { x, y, dir } (맵 글자는 그대로 두고 좌표로 둔다).
+//   goal은 열렸을 때 지금 할 일 한 줄(25자 이하), 뒷 장은 won(보스를 이기고 돌아왔을 때 길잡이)과 closed(아직 닫혔을 때 알림)도 둔다.
+// 숨은 낱말 알려 주기: hidden.revealedBy(인물 id)와 revealGoal(그 인물에게 가자는 한 줄). 인물의 reveal 대사는 처음 알려 줄 때,
+//   after는 알려 준 뒤, chat은 그 밖의 때(주머니를 받기 전)에 나온다.
 
 const npc = (id, face, text) => (face ? { who: 'npc', npc: id, face, text } : { who: 'npc', npc: id, text });
 const hero = (face, text) => (face ? { who: 'hero', face, text } : { who: 'hero', text });
@@ -69,8 +73,17 @@ const CH_1_1 = {
       chat: [
         npc('gardener', 'base', '어, 그… 그걸 뭐라고 하더라?'),
         npc('gardener', 'base', '말이 혀끝에서 맴도는데 도무지 생각이 안 나는구먼.'),
+        npc('gardener', 'base', '도담 할머니께 먼저 여쭈어 보는 게 좋겠구나.'),
+      ],
+      reveal: [
+        npc('gardener', 'base', '어, 그… 그걸 뭐라고 하더라?'),
+        npc('gardener', 'base', '말이 혀끝에서 맴도는데 도무지 생각이 안 나는구먼.'),
         npc('gardener', 'base', '참, 아까 할머니 댁 근처에서 뭔가 반짝이는 걸 봤단다.'),
         npc('gardener', 'joy', '한번 찾아보렴.'),
+      ],
+      after: [
+        npc('gardener', 'base', '장독대 쪽은 살펴봤니?'),
+        npc('gardener', 'joy', '할머니 댁 옆에서 뭔가 반짝였단다.'),
       ],
     },
   ],
@@ -140,8 +153,11 @@ const CH_1_1 = {
       ],
     },
   ],
+  exit: { x: 21, y: 1, dir: 'up', goal: '골목 끝 길로 마을 어귀로 가자' },
   hidden: {
     object: '1',
+    revealedBy: 'gardener',
+    revealGoal: '텃밭 아저씨 이야기를 들어 보자',
     word: '오롯이',
     lines: [
       say('할머니 집 옆 장독대에 크고 작은 장독들이 모여 있다.'),
@@ -204,6 +220,10 @@ const CH_1_2 = {
     {
       id: 'laundry', slot: 'b', name: '빨래터 아주머니', color: '#C9A97E',
       chat: [
+        npc('laundry', 'base', '안개가 걷혀야 빨래가 마를 텐데 걱정이구나.'),
+        npc('laundry', 'base', '빨래터 일은 걱정 말고 네 일부터 보렴.'),
+      ],
+      reveal: [
         npc('laundry', 'base', '안개에 젖은 빨래가 죄다 잿빛이 돼 버렸어.'),
         npc('laundry', 'base', '그런데 빨래 너는 곳에서 가끔 뭔가 반짝이더라.'),
         npc('laundry', 'joy', '눈 밝은 네가 한번 찾아보겠니?'),
@@ -280,8 +300,16 @@ const CH_1_2 = {
       ],
     },
   ],
+  exit: {
+    x: 16, y: 2, dir: 'up',
+    goal: '북쪽 길로 너울장으로 가자',
+    won: '그림자를 물리쳤어! 길 끝으로 가 보자',
+    closed: '길을 막은 그림자를 먼저 물리치자',
+  },
   hidden: {
     object: '3',
+    revealedBy: 'laundry',
+    revealGoal: '빨래터 아주머니 이야기를 들어 보자',
     word: '해거름',
     lines: [
       say('빨랫줄에 젖은 빨래가 나란히 걸려 있다.'),
