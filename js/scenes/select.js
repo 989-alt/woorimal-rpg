@@ -55,7 +55,7 @@ export const select = {
     main.dataset.scene = 'select';
     main.dataset.mode = mode;
 
-    const heading = el('h1', { className: 'select-title frame-plate', textContent: mode === 'new' ? '모습 고르기' : '이어하기' });
+    const heading = el('h1', { className: 'select-title frame-plate', textContent: mode === 'new' ? '캐릭터 선택' : '이어하기' });
 
     // ── 이름 패널 ──
     const input = el('input', {
