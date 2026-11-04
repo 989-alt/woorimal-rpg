@@ -1,7 +1,8 @@
 // 그림 불러오기: 경로가 null이거나 불러오지 못하면 null. 거부(reject)하지 않는다.
 // 불러온 그림은 경로별로 캐시하고, 화면은 getLoaded()로 곧바로 꺼내 쓴다(없으면 임시 그림).
 // 불러오지 못한 그림은 그 장면 동안만 null로 두고, 다음 장면을 열 때(forgetFailed) 한 번 더 받아 본다.
-import { ASSETS } from '../../data/assets.js';
+import { ASSETS, endingBg } from '../../data/assets.js';
+import ENDING from '../../data/ending.js';
 import { actOfChapter } from '../../data/acts/index.js';
 import { nextChapterOf } from '../rules/game.js';
 
@@ -82,12 +83,15 @@ export function preloadChapter(chapterId, avatar = 'f') {
   const i = act.chapters.findIndex((c) => c.id === chapterId);
   const now = Promise.all(chapterPaths(act, act.chapters[i], avatar).map(loadImage)).then(() => undefined);
   // 막의 마지막 장이면 세계 지도와 다음 막 첫 장을 미리 받는다.
+  // 마지막 막의 마지막 장이면 엔딩 그림을 미리 받는다.
   const next = nextChapterOf(chapterId);
   if (next) {
     now.then(() => {
       if (i === act.chapters.length - 1) loadImage(ASSETS.worldmap);
       chapterPaths(actOfChapter(next.id), next, avatar).forEach(loadImage);
     });
+  } else if (i === act.chapters.length - 1) {
+    now.then(() => [...ENDING.scenes.map((sc) => endingBg(sc.bg)), ASSETS.ending.ending03].forEach(loadImage));
   }
   return now;
 }

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { ASSETS, UI_KIT, bustFor } from '../data/assets.js';
+import { ASSETS, UI_KIT, bustFor, endingBg } from '../data/assets.js';
 import { loadImage, getLoaded, preloadChapter, onImageLoaded } from '../js/ui/images.js';
 import { ACTS } from '../data/acts/index.js';
 import ENDING from '../data/ending.js';
@@ -46,6 +46,12 @@ test('틀: 장·인물·물건·표정·막 번호 키가 데이터와 맞는다
   const actNos = ACTS.map((a) => String(a.id));
   for (const key of ['small', 'bossPixel', 'battleBg', 'monster']) assert.deepEqual(Object.keys(ASSETS[key]), actNos, key);
   assert.ok('title' in ASSETS);
+  assert.deepEqual(Object.keys(ASSETS.ending), ['ending01', 'ending02', 'ending03'], '엔딩 그림 칸');
+  // 엔딩 장면 bg는 엔딩 그림 칸이거나 장 id(그 장의 대화 배경 그림을 다시 쓴다)
+  for (const sc of ENDING.scenes) assert.ok(sc.bg in ASSETS.ending || sc.bg in ASSETS.dialogueBg, `엔딩 장면 bg ${sc.bg}`);
+  assert.equal(endingBg('ending02'), ASSETS.ending.ending02);
+  assert.equal(endingBg('1-1'), ASSETS.dialogueBg['1-1']);
+  assert.equal(endingBg('없는 키'), null);
 });
 
 test('UI 키트: ASSETS.ui는 assets/ui/<이름>.v1.png이고 UI_KIT과 키가 같다', () => {

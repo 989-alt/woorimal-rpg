@@ -2,7 +2,7 @@
 // 그림은 칸당 48픽셀이므로 세계 상자 크기를 정해서 그린다(맵 512×384 상자에 1536×1152 그림이 1:1).
 import { BASE_W, BASE_H, TILE, ART } from './scale.js';
 import { fogOpen, bossGone, exitOpen } from '../rules/game.js';
-import { npcMarker, hiddenGlow } from '../rules/quests.js';
+import { npcMarker, hiddenGlow, visibleNpcs } from '../rules/quests.js';
 import { drawLabelBlock, initial, MEOK } from '../ui/placeholder.js';
 import { ASSETS } from '../../data/assets.js';
 import { getLoaded } from '../ui/images.js';
@@ -376,7 +376,7 @@ export function drawExplore(ctx, { map, state, chapter, camera, view = { w: BASE
 
   // 인물과 주인공: 아래쪽에 있는 것을 나중에 그린다(그림은 16×32 상자, 임시 블록은 16×24, 발이 칸 아래에 닿게)
   const people = [];
-  for (const npc of chapter.npcs) {
+  for (const npc of visibleNpcs(state, chapter)) {
     const p = map.slots[npc.slot];
     if (p) people.push({ p, color: npc.color, label: initial(npc.name), mark: npcMarker(state, chapter, npc.id), art: getLoaded(ASSETS.npcs[npc.id]), flash: flashNpc === npc.id });
   }

@@ -1,4 +1,4 @@
-// 클리어 화면. kind 'chapter': 장 클리어 → 다음 장 첫 이야기. kind 'act': 막 클리어 → 세계 지도(마지막 막은 처음 화면).
+// 클리어 화면. kind 'chapter': 장 클리어 → 다음 장 첫 이야기. kind 'act': 막 클리어 → 세계 지도(마지막 막은 엔딩).
 import { WORDS } from '../../data/words.js';
 import { actOfChapter } from '../../data/acts/index.js';
 import { ASSETS } from '../../data/assets.js';
@@ -47,13 +47,14 @@ export const clear = {
 
     if (isAct) {
       body.append(el('h2', 'end-title', `${act.id}막 클리어!`), wordCards(actWords(act)));
-      // 다음 막이 있으면 세계 지도로, 마지막 막은 (엔딩이 생길 때까지) 처음 화면으로
+      // 다음 막이 있으면 세계 지도로, 마지막 막은 엔딩으로(엔딩은 몇 번이든 다시 볼 수 있다)
       const toMap = !!travelOf(state);
-      btn.textContent = toMap ? '세계 지도로' : '처음 화면으로';
+      btn.textContent = toMap ? '세계 지도로' : '엔딩 보기';
       btn.addEventListener('click', () => {
         if (leaving) return;
         leaving = true;
-        ctx.router.show(toMap ? 'worldmap' : 'title');
+        if (toMap) ctx.router.show('worldmap');
+        else ctx.router.show('ending', { step: 0 });
       });
     } else {
       const n = act.chapters.indexOf(chapter) + 1;

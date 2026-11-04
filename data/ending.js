@@ -1,5 +1,5 @@
 // 엔딩 — 설계 3절(결: 도담도담, 마지막 메시지), 아트 바이블 2절(엔딩 새벽 금빛 역광).
-// 장면마다 배경 그림 하나와 대사. 대사 규칙은 막 대본과 같고, 새 낱말([[ ]])은 없다(50개는 5-2까지 다 모았다).
+// 장면마다 배경 그림 하나와 대사. bg는 엔딩 그림 키(ending01~03) 또는 장 id(그 장의 대화 배경 그림). 대사 규칙은 막 대본과 같고, 새 낱말([[ ]])은 없다(50개는 5-2까지 다 모았다).
 const npc = (id, face, text) => (face ? { who: 'npc', npc: id, face, text } : { who: 'npc', npc: id, text });
 const hero = (face, text) => (face ? { who: 'hero', face, text } : { who: 'hero', text });
 const say = (text) => ({ who: 'narration', text });
@@ -10,6 +10,19 @@ const ENDING = {
     { id: 'daon', name: '다온', color: '#C9A97E' },
     { id: 'haesol', name: '해솔', color: '#F08A3C' },
     { id: 'narae', name: '나래', color: '#A9C9D6' },
+    // 되찾은 마을들(장면 2~5)의 주민: 이름·색은 막 데이터 그대로
+    { id: 'fruit', name: '사과 장수 아저씨', color: '#9C8670' },
+    { id: 'shopper', name: '장 보는 할머니', color: '#D8CDB8' },
+    { id: 'flower', name: '꽃 파는 아이', color: '#E6DCC8' },
+    { id: 'ferryman', name: '나룻배 사공', color: '#6E5E50' },
+    { id: 'skygran', name: '날씨 할머니', color: '#9A8B7A' },
+    { id: 'miru', name: '미루', color: '#C2B49A' },
+    { id: 'tea', name: '찻집 아주머니', color: '#A08C76' },
+    { id: 'garam', name: '가람', color: '#CBBBA4' },
+    { id: 'signpost', name: '푯말 할아버지', color: '#7F7060' },
+    { id: 'greykid', name: '잿빛 아이', color: '#8A8D91' },
+    { id: 'woodcutter', name: '나무꾼 아저씨', color: '#7D6A58' },
+    { id: 'chestnut', name: '밤 장수 할머니', color: '#857565' },
   ],
   scenes: [
     { // 1. 돌아오는 새벽
@@ -21,7 +34,48 @@ const ENDING = {
         npc('daon', 'joy', '{이름|아}, 어서 와!'),
       ],
     },
-    { // 2. 할머니와 나래
+    // 2~5. 되찾은 마을들: 색과 말을 되찾은 마을과 주민들(선생님 요청). 배경은 그 막 장의 대화 배경 그림을 그대로 쓴다.
+    { // 2. 너울장
+      bg: '2-1',
+      lines: [
+        say('너울장 차양마다 알록달록한 빛깔이 되살아났다.'),
+        npc('fruit', 'joy', '오늘은 문을 열자마자 마수걸이를 했다네!'),
+        npc('shopper', 'base', '사과가 이렇게 옹골지니 제값을 주고 사야지.'),
+        npc('flower', 'joy', '꽃을 한 아름 안고 장터를 한 바퀴 돌 거예요!'),
+        npc('haesol', 'base', '장터가 다시 시끌벅적하니 마음이 가뜬하다!'),
+      ],
+    },
+    { // 3. 윤슬내
+      bg: '3-2',
+      lines: [
+        say('윤슬내 물빛이 다시 푸르러지고 숲에도 초록이 번졌다.'),
+        npc('ferryman', 'joy', '냇물 위로 윤슬이 반짝이니 노 젓는 맛이 나는구먼.'),
+        npc('skygran', 'joy', '아침에 는개가 살짝 내려서 풀잎이 촉촉하구나.'),
+        npc('miru', 'joy', '나뭇잎 사이로 볕뉘가 드니까 숲길이 환해요!'),
+        npc('narae', 'light', '물소리도 사람들 목소리도 다시 맑게 들려.'),
+      ],
+    },
+    { // 4. 안개 고개
+      bg: '4-1',
+      lines: [
+        say('고갯길의 안개가 걷히고 들꽃 빛깔이 또렷해졌다.'),
+        npc('tea', 'joy', '처음 오는 손님에게도 살갑게 차를 따라 드려요.'),
+        npc('garam', 'joy', '서먹하던 친구와 이제는 너나들이하며 지내요.'),
+        npc('signpost', 'joy', '길손들이 서로 다독이며 고개를 넘어가는구먼.'),
+        npc('haesol', 'base', '이제 아무도 애꿎은 사람을 의심하지 않겠지?'),
+      ],
+    },
+    { // 5. 잿빛 탑: 잿빛이던 탑이 새벽빛으로 물든다(warm: 대화 배경 그림을 따뜻한 빛깔로)
+      bg: '5-1',
+      warm: true,
+      lines: [
+        say('잿빛이던 탑이 새벽빛을 받아 따스한 빛깔로 물들었다.'),
+        npc('greykid', 'joy', '탑을 다부지게 오른 너희 덕분에 나도 색을 찾았어!'),
+        npc('woodcutter', 'joy', '너울가지 좋은 사람들이 앞뜰에 모여 이야기꽃을 피우네.'),
+        npc('chestnut', 'joy', '이 아이들은 늘품이 있으니 한울이 더 밝아지겠구먼.'),
+      ],
+    },
+    { // 6. 할머니와 나래
       bg: 'ending02',
       lines: [
         npc('dodam', 'laugh', '{이름|아}, 수고했다.'),
@@ -34,7 +88,7 @@ const ENDING = {
         npc('dodam', 'laugh', '그래, 날개를 꿈꾸며 부르던 말이 바로 너였지.'),
       ],
     },
-    { // 3. 도담도담
+    { // 7. 도담도담
       bg: 'ending02',
       lines: [
         npc('haesol', 'base', '할머니 이름은 무슨 뜻이에요?'),
@@ -44,7 +98,7 @@ const ENDING = {
         npc('dodam', 'laugh', '너희가 도담도담 자라서 한울을 구했구나.'),
       ],
     },
-    { // 4. 마지막 말
+    { // 8. 마지막 말
       bg: 'ending03',
       still: true,
       lines: [

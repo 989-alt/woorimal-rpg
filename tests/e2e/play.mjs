@@ -2,6 +2,8 @@
 // 검사 파일이 아니다(이름이 .test.mjs가 아니라서 node --test가 돌리지 않는다).
 import assert from 'node:assert/strict';
 import { collectErrors, finishDialogue, startFromTitle } from './browser.mjs';
+import { ACTS } from '../../data/acts/index.js';
+import { actWords } from '../../js/rules/game.js';
 
 export const state = (page) => page.evaluate(() => window.__test.state());
 export const hudTask = (page) => page.locator('.hud-task').innerText();
@@ -89,4 +91,39 @@ export async function continueAs(page, name) {
   await boot(page);
   await startFromTitle(page, { name, mode: 'continue' });
   await page.waitForSelector('[data-scene="explore"]');
+}
+
+// 5-2에서 보스를 이기고 마지막 장면까지 본 상태(낱말 50개, 부탁 끝, 5막 마침)로 세운다. 출구로 걷기만 남는다.
+export async function atEndingExit(page) {
+  const ids = actWords(ACTS[4]);
+  await page.evaluate(() => window.__test.goChapter('5-2'));
+  await page.evaluate((words) => window.__test.patchState((s) => ({
+    clearedActs: [1, 2, 3, 4, 5],
+    seenScenes: [...(s.seenScenes ?? []), '5-2:afterBoss'],
+    acquired: { ...s.acquired, ...Object.fromEntries(words.map((w) => [w, { from: '검사' }])) },
+    quests: { ...s.quests, q19: { stage: 'done', gathered: [] }, q20: { stage: 'done', gathered: [] } },
+  })), ids);
+  await page.waitForSelector('[data-scene="explore"] canvas');
+}
+
+// 마무리 퀴즈를 끝까지 푼다(결과 화면에서 멈춘다). wrong: 일부러 틀릴 문제 번호(0부터).
+// 돌려주는 값: 문제마다 { type, word, ok }
+export async function answerQuiz(page, { wrong = [] } = {}) {
+  const asked = [];
+  for (let i = 0; i < 10; i++) {
+    await page.waitForSelector(`[data-scene="review-quiz"][data-phase="ask"][data-qn="${i}"]`);
+    const q = await page.evaluate(() => window.__test.quiz());
+    const miss = wrong.includes(i);
+    if (q.type === 'chosung') {
+      await page.locator('.quiz-input').fill(miss ? '모르겠다' : q.answerText);
+      await page.keyboard.press('Enter');
+    } else {
+      await page.keyboard.press(`Digit${(miss ? (q.answerIndex + 1) % 4 : q.answerIndex) + 1}`);
+    }
+    await page.waitForSelector('[data-scene="review-quiz"][data-phase="feedback"] .quiz-next');
+    asked.push({ type: q.type, word: q.word, ok: !miss });
+    await page.keyboard.press('Enter'); // 초점은 "다음"(마지막은 "결과 보기")
+  }
+  await page.waitForSelector('[data-scene="review-quiz"][data-phase="result"]');
+  return asked;
 }

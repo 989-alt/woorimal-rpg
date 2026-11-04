@@ -3,7 +3,7 @@
 import { actOfChapter } from '../../data/acts/index.js';
 import { reachable, isWalkable } from '../explore/grid.js';
 import { chapterComplete, fogOpen } from './game.js';
-import { actCleared, actDoneText, hiddenGlow, hiddenFound, hiddenRevealed } from './quests.js';
+import { actCleared, actDoneText, hiddenGlow, hiddenFound, hiddenRevealed, visibleNpcs } from './quests.js';
 import { attachJosa } from './josa.js';
 
 // 길잡이 말풍선 id(안내 말풍선과 같은 층을 쓰지만 seenTips에는 넣지 않는다: 언제든 다시 뜰 수 있는 도움말)
@@ -98,7 +98,7 @@ function walkDistances(map, spot, opts) {
 export function leavingTooSoon(state, chapter, fromPos, toPos, map) {
   const ready = chapter.quests.find((q) => stageOf(state, q) === 'ready');
   if (!ready) return false;
-  const giver = chapter.npcs.find((n) => n.id === ready.giver);
+  const giver = visibleNpcs(state, chapter).find((n) => n.id === ready.giver);
   const spot = giver && map.slots[giver.slot];
   if (!spot) return false;
   // 시작 자리에서 몬스터와 안개 문을 지나지 않고 갈 수 있는 곳 밖이 "막혀 있던 곳 너머"

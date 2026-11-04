@@ -138,9 +138,21 @@ export const battle = {
       hints.show(hint, anchorOf[hint.anchor]);
     }
 
+    // 5막 마지막 문제('나래'): 문제 말풍선 위에 해설 한 줄을 한 번만 두고, 몬스터의 숄 자리를 조금 밝힌다.
+    let cueEl = null;
+    function showFinalCue() {
+      if (!cueEl) {
+        cueEl = el('p', 'final-cue', act.finalCue);
+        cueEl.setAttribute('role', 'status');
+        f.bottom.appendChild(cueEl);
+      }
+      f.monster.classList.add('shawl-lit');
+    }
+
     function ask() {
       q = makeQuestion();
       qn += 1;
+      if (b && act.finalCue && q.wordId === act.finalWordId) showFinalCue();
       f.typeTag.textContent = TYPE_LABEL[q.type];
       blank = renderPrompt(f.prompt, q);
       const next = buildOptions(q.type, q.options, pick);
@@ -243,7 +255,7 @@ export const battle = {
     probe = {
       answerIndex: () => q?.answer ?? -1,
       snapshot: () => (b
-        ? { mode, order: [...b.order], hearts: b.hearts, hp: b.hp, correct: b.correct, wrong: b.wrong, streak: b.streak }
+        ? { mode, current: currentWord(b), order: [...b.order], hearts: b.hearts, hp: b.hp, correct: b.correct, wrong: b.wrong, streak: b.streak }
         : { mode, pool: [...r.pool], correct: r.correct, wrong: wrongCount, need: r.need, streak }),
     };
 

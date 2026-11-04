@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { shouldSubmit, titleDecision, stillSameName } from '../js/scenes/select.js';
+import { hasEndingSave } from '../js/scenes/title.js';
 import { createStore } from '../js/save.js';
 import { newGame } from '../js/rules/game.js';
 
@@ -67,4 +68,13 @@ test('확인 창 단추: 창을 열 때 이름과 지금 이름 칸이 같을 �
   assert.equal(stillSameName('하늘', '하늘2'), false);
   assert.equal(stillSameName('하늘', '바다'), false);
   assert.equal(stillSameName('하늘', ''), false);
+});
+
+test('hasEndingSave: 마지막 막(5막)을 마친 저장이 있을 때만 참', () => {
+  const store = createStore(memStorage());
+  assert.equal(hasEndingSave(store), false, '저장이 없음');
+  store.save({ ...newGame({ nickname: '하늘', avatar: 'f' }), clearedActs: [1, 2, 3, 4] });
+  assert.equal(hasEndingSave(store), false, '4막까지');
+  store.save({ ...newGame({ nickname: '바다', avatar: 'm' }), clearedActs: [1, 2, 3, 4, 5] });
+  assert.equal(hasEndingSave(store), true, '5막을 마친 저장이 하나 있음');
 });

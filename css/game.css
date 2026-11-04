@@ -213,19 +213,59 @@ canvas, img {
 :root.ui-medallion .hud-initial { inset: 15px; border-radius: 50%; font-size: 32px; }
 .hud-face-clip.has-art ~ .hud-initial { display: none; }
 
+/* 좁은 화면(1024 안팎): 틈을 줄여 할 일 두루마리 글이 두 줄 안에 다 보이게 한다 */
+@media (max-width: 1100px) {
+  .hud { gap: 4px; }
+  .hud-words { gap: 8px; }
+}
+
+/* 동료 초상: 메달 오른쪽에 작은 메달(지름 48, 놋쇠 테)을 늘어놓는다. 동료가 없으면 자리도 없다 */
+.hud-companions { flex: none; display: flex; gap: 4px; margin-top: 26px; z-index: 2; }
+.hud-companions:empty { display: none; }
+.hud-companion.medallion {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-width: 3px;
+  filter: drop-shadow(0 3px 3px rgba(20, 10, 0, .5));
+}
+:root.ui-medallion .hud-companion.medallion { border: 0; background: radial-gradient(circle at center, var(--parchment-deep) 0 16px, transparent 17px); }
+.hud-companion-clip { position: absolute; inset: 0; overflow: hidden; border-radius: 50%; }
+:root.ui-medallion .hud-companion-clip { inset: 7px; }
+.hud-companion-clip > .hud-companion-face {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 15%; /* 상반신에서 얼굴 쪽만 */
+  transform: scale(1.8); transform-origin: 50% 20%;
+  image-rendering: auto; border-radius: 0;
+}
+.hud-companion-initial {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-family: var(--font-title);
+  font-size: 26px;
+  line-height: 1;
+}
+:root.ui-medallion .hud-companion-initial { inset: 7px; font-size: 22px; }
+.hud-companion-clip.has-art ~ .hud-companion-initial { display: none; }
+/* 동료 초상이 있으면 두루마리는 그 오른쪽에서 시작한다(메달 밑으로 말려 들어가지 않는다) */
+.hud-companions:not(:empty) + .hud-task { margin-left: 0; }
+.hud-companions:not(:empty) + .hud-task .hud-dot { margin-left: 4px; }
+
 /* 지금 할 일 두루마리: 메달 오른쪽에 물린다 */
 .hud-task {
   flex: 1 1 auto;
   min-width: 160px;
   max-width: 460px;
-  height: 60px;
+  min-height: 60px; /* 긴 글은 두 줄로 늘어난다(할 일 글은 잘리지 않는다) */
   margin: 18px 0 0 -48px; /* 메달 밑으로 말려 들어간다(사이 8px 포함) */
   display: flex;
   align-items: center;
   gap: 10px;
   font-size: 20px;
   line-height: 24px;
-  white-space: nowrap;
   filter: drop-shadow(0 3px 2px rgba(20, 10, 0, .4));
 }
 .hud-dot {
@@ -237,7 +277,7 @@ canvas, img {
   background: radial-gradient(circle at 35% 30%, #D6F5B0, var(--gem-green) 55%, #3E7A2C);
   box-shadow: 0 0 0 2px rgba(43, 38, 34, .6);
 }
-.hud-task-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.hud-task-text { flex: 1 1 auto; min-width: 0; word-break: keep-all; overflow-wrap: break-word; } /* 낱말 단위로 줄을 바꾼다. 줄임표로 자르지 않는다 */
 
 /* 낱말 수와 가방 */
 .hud-words {
@@ -1003,6 +1043,40 @@ canvas, img {
   line-height: 1.5;
 }
 .battle-prompt { margin: 0; padding: 0 20px; }
+/* 5막 마지막 문제의 해설 한 줄: 문제 말풍선 바로 위(주인공 명판 오른쪽), 불투명 한지 명판 */
+.final-cue {
+  position: absolute;
+  z-index: 3;
+  left: 348px;
+  right: 24px;
+  bottom: calc(100% + 8px);
+  margin: 0;
+  padding: 8px 18px;
+  border: 3px solid var(--brass-dark);
+  border-radius: 8px;
+  background: var(--hanji);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 20px;
+  line-height: 1.4;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, .35);
+}
+/* 숄 밝힘: 몬스터 상자 가운데에 하늘색 빛이 1초 동안 조금 밝아진다(금빛 아님) */
+.battle-monster.shawl-lit { --shawl-x: 50%; --shawl-y: 58%; }
+.battle-monster.shawl-lit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--shawl-x) var(--shawl-y), rgba(159, 211, 232, .75) 0, rgba(159, 211, 232, .35) 9%, transparent 20%);
+  opacity: .8;
+  animation: shawl-lit 1s ease-out;
+}
+@keyframes shawl-lit { from { opacity: 0; } to { opacity: .8; } }
+@media (prefers-reduced-motion: reduce) {
+  .battle-monster.shawl-lit::after { animation: none; }
+}
 .battle-who {
   --bt: 9px; --br: 9px; --bb: 9px; --bl: 9px; --ring: 2px;
   position: absolute;
@@ -1443,3 +1517,393 @@ img.art { image-rendering: auto; } /* 도트가 아닌 그림은 부드럽게 �
 .battle-monster-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .mode-review .battle-monster { --mon-h: calc(min(49.5vh, 36vw) * .7); }
 .battle-monster.has-art { background: none; box-shadow: none; }
+
+/* ── 엔딩: 마지막 말 · 말빛 주머니 · 만든 이 ───────────────
+   바탕은 엔딩 그림(ASSETS.ending.ending03). 그림이 없으면 새벽 하늘 + 산마루 뒤로 떠오르는 해 + 새벽골 지붕 그림자(임시 그림).
+   글은 모두 불투명 한지 패널 위에 둔다(빛 번짐 위에 글자를 두지 않는다). 금빛은 낱말 카드 테두리와 낱말 띠에만. */
+.ending-scene { background: #2E3558; }
+.ending-bg, .dialogue-scene.own-bg {
+  --dawn-land: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900' preserveAspectRatio='xMidYMax slice'%3E%3Cdefs%3E%3CradialGradient id='h'%3E%3Cstop offset='0' stop-color='%23FFE6A6' stop-opacity='.85'/%3E%3Cstop offset='.45' stop-color='%23FFC978' stop-opacity='.35'/%3E%3Cstop offset='1' stop-color='%23FFB86B' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='800' cy='650' r='330' fill='url(%23h)'/%3E%3Ccircle cx='800' cy='650' r='88' fill='%23FFF3CF'/%3E%3Cpath d='M0 610 C120 572 230 548 340 572 S540 622 660 586 S880 524 1000 566 S1220 612 1340 572 S1530 546 1600 574 V900 H0Z' fill='%23A7798D'/%3E%3Cpath d='M0 680 C140 650 270 626 390 656 S610 708 770 676 S990 636 1130 664 S1390 708 1600 658 V900 H0Z' fill='%2376526D'/%3E%3Cpath d='M0 768 C200 742 420 734 640 754 S1000 778 1220 752 S1480 734 1600 748 V900 H0Z' fill='%233E2B42'/%3E%3Cpath d='M120 752 Q132.0 728.9 147.0 710.0 L243.0 710.0 Q258.0 728.9 270 752 L252.0 744.44 L252.0 792 L138.0 792 L138.0 744.44 Z' fill='%233E2B42'/%3E%3Cpath d='M300 748 Q309.6 729.52 321.6 714.4 L398.4 714.4 Q410.4 729.52 420 748 L405.6 741.952 L405.6 788 L314.4 788 L314.4 741.952 Z' fill='%233E2B42'/%3E%3Cpath d='M1170 752 Q1182.8 727.36 1198.8 707.2 L1301.2 707.2 Q1317.2 727.36 1330 752 L1310.8 743.936 L1310.8 792 L1189.2 792 L1189.2 743.936 Z' fill='%233E2B42'/%3E%3Cpath d='M1360 744 Q1369.6 725.52 1381.6 710.4 L1458.4 710.4 Q1470.4 725.52 1480 744 L1465.6 737.952 L1465.6 784 L1374.4 784 L1374.4 737.952 Z' fill='%233E2B42'/%3E%3Ccircle cx='470' cy='726' r='26' fill='%233E2B42'/%3E%3Ccircle cx='488.2' cy='736.4' r='19.5' fill='%233E2B42'/%3E%3Ccircle cx='451.8' cy='737.7' r='18.2' fill='%233E2B42'/%3E%3Ccircle cx='1080' cy='730' r='30' fill='%233E2B42'/%3E%3Ccircle cx='1101.0' cy='742.0' r='22.5' fill='%233E2B42'/%3E%3Ccircle cx='1059.0' cy='743.5' r='21.0' fill='%233E2B42'/%3E%3Ccircle cx='1510' cy='724' r='24' fill='%233E2B42'/%3E%3Ccircle cx='1526.8' cy='733.6' r='18.0' fill='%233E2B42'/%3E%3Ccircle cx='1493.2' cy='734.8' r='16.799999999999997' fill='%233E2B42'/%3E%3Ccircle cx='60' cy='748' r='22' fill='%233E2B42'/%3E%3Ccircle cx='75.4' cy='756.8' r='16.5' fill='%233E2B42'/%3E%3Ccircle cx='44.6' cy='757.9' r='15.399999999999999' fill='%233E2B42'/%3E%3Cpath d='M220 700 q-14 -24 2 -44 t-4 -46 t8 -40' fill='none' stroke='%23F6E3D3' stroke-width='5' stroke-linecap='round' opacity='.45'/%3E%3Cpath d='M1260 698 q-14 -24 2 -44 t-4 -46 t8 -40' fill='none' stroke='%23F6E3D3' stroke-width='5' stroke-linecap='round' opacity='.45'/%3E%3C/svg%3E");
+  background:
+    var(--dawn-land) center bottom / cover no-repeat,
+    linear-gradient(#232B55 0%, #43477A 24%, #8E6A88 46%, #E2A27A 64%, #F8CF8E 76%, #F6E4C0 100%);
+}
+.ending-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; }
+.ending-bg.has-art { background: none; }
+.ending-bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* 주머니·만든 이: 바탕을 조금 가라앉혀 패널이 앞으로 나오게 */
+.ending-scene[data-part='pouch'] .ending-bg::after, .ending-scene[data-part='credits'] .ending-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(20, 14, 30, .25) 30%, rgba(20, 14, 30, .62) 100%);
+}
+
+/* 마지막 말: 화면 위쪽 가운데 한지 패널(아래로 해와 마을이 보이게), 글 위아래에 놋쇠 장식 줄 */
+.ending-scene[data-part='message'] { align-content: start; gap: 28px; padding-top: max(24px, 15vh); }
+.ending-card {
+  --bt: 28px; --br: 28px; --bb: 28px; --bl: 28px; --ring: 8px;
+  z-index: 1;
+  width: min(800px, 100%);
+  background: var(--paper);
+  filter: drop-shadow(0 18px 30px rgba(20, 10, 30, .55));
+  animation: ending-rise 900ms ease-out both;
+}
+:root.ui-panel .ending-card { border-image-width: 40px; background: var(--paper) center / calc(100% - 2 * var(--ring)) calc(100% - 2 * var(--ring)) no-repeat border-box; }
+.ending-card-body { position: relative; padding: 52px 28px; }
+.ending-card-body::before, .ending-card-body::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: min(380px, 70%);
+  height: 14px;
+  translate: -50% 0;
+  background:
+    linear-gradient(45deg, transparent 0 calc(50% - 4px), var(--brass) calc(50% - 4px) calc(50% + 4px), transparent calc(50% + 4px)) center / 14px 14px no-repeat,
+    linear-gradient(-45deg, transparent 0 calc(50% - 4px), var(--brass) calc(50% - 4px) calc(50% + 4px), transparent calc(50% + 4px)) center / 14px 14px no-repeat,
+    linear-gradient(90deg, transparent, var(--brass-dark) 20%, var(--brass-dark) calc(50% - 16px), transparent calc(50% - 16px) calc(50% + 16px), var(--brass-dark) calc(50% + 16px), var(--brass-dark) 80%, transparent) center / 100% 2px no-repeat;
+}
+.ending-card-body::before { top: 18px; }
+.ending-card-body::after { bottom: 18px; }
+p.ending-message {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 40px;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--wood-dark);
+  letter-spacing: .02em;
+}
+.ending-actions { z-index: 1; display: flex; justify-content: center; min-height: 64px; }
+.ending-next { min-width: 200px; animation: ending-fade 400ms ease-out both; }
+@keyframes ending-rise { from { opacity: 0; translate: 0 18px; } to { opacity: 1; translate: 0 0; } }
+@keyframes ending-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* 말빛 주머니: 제목 명판 + (막 다섯 줄 | 상세 칸과 단추) */
+.ending-scene[data-part='pouch'] { padding: 12px 16px; }
+.pouch {
+  --bt: 24px; --br: 24px; --bb: 24px; --bl: 24px; --ring: 6px;
+  z-index: 1;
+  display: grid;
+  gap: 10px;
+  width: min(1320px, 100%);
+  background: var(--paper);
+  filter: drop-shadow(0 14px 26px rgba(20, 10, 30, .5));
+  animation: panel-in 180ms ease-out;
+}
+:root.ui-panel .pouch { background: var(--paper) center / calc(100% - 2 * var(--ring)) calc(100% - 2 * var(--ring)) no-repeat border-box; }
+/* 제목 명판: 나무판 + 크림색 주아(이름·모습 고르기 제목과 같은 모습) */
+.pouch-title, .credits-title {
+  --bt: 14px; --br: 14px; --bb: 14px; --bl: 14px; --ring: 3px;
+  justify-self: center;
+  max-width: 100%;
+  margin: 2px 0 0;
+  padding-inline: 36px;
+  font-family: var(--font-title);
+  font-size: 30px;
+  font-weight: normal;
+  line-height: 40px;
+  white-space: nowrap;
+  color: #FFF4DC;
+  -webkit-text-stroke: 5px #3A1B08;
+  paint-order: stroke fill;
+}
+:root .pouch-title.frame-plate, :root .credits-title.frame-plate { background: linear-gradient(#A15A24, #7A3E14 55%, #6E3211); }
+:root.ui-panel .pouch-title.frame-plate, :root.ui-panel .credits-title.frame-plate { padding-inline: 36px; background: linear-gradient(#A15A24, #7A3E14 55%, #6E3211) center / calc(100% - 6px) calc(100% - 6px) no-repeat border-box; }
+.pouch-body { display: grid; grid-template-columns: minmax(0, 1fr) clamp(230px, 25vw, 330px); gap: 14px; padding: 0 4px 4px; }
+.pouch-acts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+/* 막 한 줄: 위에 줄머리(막 번호 + 이름), 아래로 카드 10장 */
+.pouch-act {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 5px;
+  border-radius: 10px;
+  background: rgba(138, 94, 42, .1);
+  box-shadow: inset 0 0 0 1px rgba(138, 94, 42, .35);
+}
+.pouch-head { margin: 0; text-align: center; font-family: var(--font-title); font-weight: normal; line-height: 1.15; }
+.pouch-act-no { display: block; font-size: 18px; color: var(--brass-dark); }
+.pouch-act-name { display: block; font-size: 22px; color: var(--wood-dark); white-space: nowrap; }
+.pouch-cards { display: grid; gap: 4px; }
+.pouch .codex-card {
+  --bt: 10px; --br: 10px; --bb: 10px; --bl: 10px; --ring: 2px;
+  min-height: 48px;
+  padding-inline: 4px;
+  opacity: 0;
+}
+:root.ui-card .pouch .codex-card { padding: 0 2px; }
+:root .pouch .codex-card.frame-card { border-radius: 8px; }
+.pouch .codex-word { font-size: clamp(18px, 1.55vw, 22px); line-height: 1.1; white-space: nowrap; }
+.pouch .codex-q { width: 28px; height: 28px; font-size: 18px; }
+.pouch .codex-card.unknown .codex-meaning { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+/* 줄이 켜질 때: 카드가 떠오르며 둘레에 금빛 테두리가 한 번 켜졌다 잦아든다(테두리는 ::after가 맡아 고른 칸 표시와 겹치지 않는다) */
+.pouch-act.lit .codex-card { opacity: 1; animation: pouch-in 420ms ease-out backwards; }
+.pouch-act.lit .codex-card::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 10px;
+  box-shadow: 0 0 0 3px var(--gold), 0 0 14px 3px rgba(242, 193, 78, .7);
+  opacity: 0;
+  pointer-events: none;
+  animation: pouch-ring 1000ms ease-out;
+}
+.pouch-act.calm .codex-card, .pouch-act.calm .codex-card::after { animation: none; }
+@keyframes pouch-in { from { opacity: 0; translate: 0 6px; } to { opacity: 1; translate: 0 0; } }
+@keyframes pouch-ring { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
+.pouch-side { display: grid; grid-template-rows: 1fr auto; gap: 12px; min-width: 0; }
+/* 상세 칸: 낱말(금빛 띠) · 뜻 · 예문 · 만난 곳을 가운데에 */
+.pouch-detail { display: flex; flex-direction: column; justify-content: center; gap: 10px; min-height: 0; text-align: center; overflow-wrap: break-word; }
+.codex-detail.pouch-detail > p { margin: 0 10px; }
+.pouch-detail .detail-word { align-self: center; padding: 0 8px; font-size: 34px; background: linear-gradient(transparent 60%, rgba(242, 193, 78, .8) 60%); }
+.pouch-detail .detail-example::before, .pouch-detail .detail-example::after { content: '"'; }
+.pouch-detail .detail-from { margin-top: 6px; padding-top: 10px; border-top: 2px dashed rgba(138, 94, 42, .4); }
+.pouch-hint { color: var(--gray-3); }
+.pouch-next { justify-self: center; width: 100%; }
+
+/* 만든 이: 한지 패널, 제목 명판, 길면 패널 안에서 스크롤 */
+.credits {
+  --bt: 28px; --br: 28px; --bb: 28px; --bl: 28px; --ring: 8px;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  width: min(760px, 100%);
+  max-height: calc(100dvh - 48px);
+  background: var(--paper);
+  filter: drop-shadow(0 18px 30px rgba(20, 10, 30, .55));
+  animation: ending-rise 600ms ease-out both;
+}
+:root.ui-panel .credits { border-image-width: 40px; background: var(--paper) center / calc(100% - 2 * var(--ring)) calc(100% - 2 * var(--ring)) no-repeat border-box; }
+.credits-title { font-size: 32px; line-height: 42px; padding-inline: 44px; }
+.credits-roll { display: grid; gap: 14px; overflow-y: auto; padding: 4px 20px; text-align: center; }
+.credit { display: grid; gap: 2px; }
+.credit-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 0 0 2px;
+  font-family: var(--font-title);
+  font-size: 22px;
+  font-weight: normal;
+  color: var(--brass-dark);
+}
+.credit-title::before, .credit-title::after { content: ''; width: 36px; height: 2px; background: var(--brass); }
+.credit-line { margin: 0; font-size: 20px; line-height: 1.5; }
+p.ending-thanks {
+  margin: 6px 0 0;
+  padding-top: 14px;
+  border-top: 2px dashed rgba(138, 94, 42, .45);
+  font-family: var(--font-title);
+  font-size: 28px;
+  line-height: 1.4;
+  color: var(--wood-dark);
+}
+.credits .ending-actions { padding-bottom: 2px; }
+
+/* 엔딩 대화: 한 장 그림(still)은 상반신을 띄우지 않는다. warm은 잿빛 탑 그림을 새벽빛으로 물들인다 */
+.dialogue-scene.still .bust { display: none; }
+.dialogue-scene.warm .dialogue-bg { filter: sepia(.35) saturate(1.45) hue-rotate(-10deg) brightness(1.08); }
+
+@media (max-width: 1100px) {
+  .pouch-body { grid-template-columns: minmax(0, 1fr) 236px; gap: 10px; }
+  .pouch-acts { gap: 6px; }
+  .pouch-act { padding-inline: 3px; }
+}
+@media (max-width: 760px) {
+  .pouch-body { grid-template-columns: 1fr; }
+  .pouch-acts { grid-template-columns: 1fr 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ending-card, .ending-next, .pouch, .credits { animation: none; }
+  .pouch-act.lit .codex-card, .pouch-act.lit .codex-card::after { animation: none; }
+}
+
+/* ── 마무리 퀴즈 ─────────────────────────
+   엔딩 새벽 바탕 위 한지 패널: 머리(제목 명판 · 10칸 진행 · n/10) → 문제 말풍선(유형 표) → 보기 카드(전투와 같은 모습)
+   또는 초성 칸과 쓰기 칸 → 알림 명판(맞음/틀림, 뜻, "다음"). 결과는 맞힌 수와 낱말별 ○/× 카드. */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.quiz-scene { padding: 16px; }
+.quiz-scene .ending-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(20, 14, 30, .3) 30%, rgba(20, 14, 30, .66) 100%);
+}
+.quiz {
+  --bt: 28px; --br: 28px; --bb: 28px; --bl: 28px; --ring: 8px;
+  z-index: 1;
+  display: grid;
+  gap: 16px;
+  width: min(1100px, 100%);
+  background: var(--paper);
+  filter: drop-shadow(0 16px 28px rgba(20, 10, 30, .5));
+  animation: panel-in 180ms ease-out;
+}
+:root.ui-panel .quiz { border-image-width: 40px; background: var(--paper) center / calc(100% - 2 * var(--ring)) calc(100% - 2 * var(--ring)) no-repeat border-box; }
+.quiz > * { margin-inline: 6px; }
+.quiz-head { display: flex; align-items: center; gap: 18px; }
+.quiz-title {
+  --bt: 14px; --br: 14px; --bb: 14px; --bl: 14px; --ring: 3px;
+  flex: none;
+  margin: 0;
+  padding-inline: 30px;
+  font-family: var(--font-title);
+  font-size: 28px;
+  font-weight: normal;
+  line-height: 38px;
+  white-space: nowrap;
+  color: #FFF4DC;
+  -webkit-text-stroke: 5px #3A1B08;
+  paint-order: stroke fill;
+}
+:root .quiz-title.frame-plate { background: linear-gradient(#A15A24, #7A3E14 55%, #6E3211); }
+:root.ui-panel .quiz-title.frame-plate { padding-inline: 30px; background: linear-gradient(#A15A24, #7A3E14 55%, #6E3211) center / calc(100% - 6px) calc(100% - 6px) no-repeat border-box; }
+/* 진행 10칸: 지금 칸은 나무색 고리, 맞힌 칸은 금빛, 틀린 칸은 잿빛 */
+.quiz-steps { flex: 1; display: flex; justify-content: center; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.quiz-step { width: 18px; height: 18px; border: 2px solid var(--brass-dark); border-radius: 50%; background: var(--parchment-deep); }
+.quiz-step.now { box-shadow: 0 0 0 3px var(--parchment), 0 0 0 6px var(--wood-dark); }
+.quiz-step.right { border-color: var(--ink); background: var(--gold); }
+.quiz-step.wrong { border-color: var(--hp); background: var(--hp-empty); }
+.quiz-count { flex: none; margin: 0; font-family: var(--font-title); font-size: 26px; color: var(--wood-dark); }
+
+/* 문제 말풍선: 유형 표가 위 테에 걸친다 */
+.quiz-question {
+  --bt: 24px; --br: 24px; --bb: 24px; --bl: 24px; --ring: 6px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 6px;
+  min-height: 116px;
+  padding-top: 30px;
+  text-align: center;
+}
+:root.ui-panel .quiz-question { padding-top: 8px; }
+.quiz-type {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  translate: -50% -50%;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 22px;
+  border: 3px solid #2F5A22;
+  border-radius: 10px;
+  background: linear-gradient(#6FAE3B, var(--tag-green) 55%, #3E7A2C);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, .25), inset 0 0 0 1px rgba(255, 255, 255, .28);
+  color: #fff;
+  -webkit-text-stroke: 4px var(--ink);
+  paint-order: stroke fill;
+  font-family: var(--font-title);
+  font-size: 22px;
+  line-height: 1;
+  white-space: nowrap;
+}
+:root.ui-panel .quiz-type { top: -24px; }
+.quiz-prompt { margin: 0; padding: 0 16px; font-size: 28px; line-height: 1.5; }
+.quiz-clue { margin: 0; padding: 0 16px; font-size: 24px; line-height: 1.45; color: var(--wood-dark); }
+
+/* 초성 칸과 쓰기 칸 */
+.quiz-area { display: grid; gap: 16px; }
+.quiz-jamo { display: flex; justify-content: center; gap: 14px; }
+.quiz-tile {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border: 3px solid var(--brass);
+  border-radius: 14px;
+  background: linear-gradient(#FFFDF4, var(--parchment-deep));
+  box-shadow: inset 0 0 0 2px rgba(138, 94, 42, .35), 0 4px 0 var(--brass-dark);
+  font-family: var(--font-body); /* 주아에는 홑자모가 없어 고운돋움으로 */
+  font-size: 44px;
+  line-height: 1;
+  color: var(--wood-dark);
+}
+.quiz-write { display: flex; justify-content: center; align-items: center; gap: 14px; }
+.quiz-input {
+  width: min(380px, 60vw);
+  height: 64px;
+  padding: 0 18px;
+  border: 3px solid var(--line);
+  border-radius: 12px;
+  background: #FFFDF6;
+  color: var(--ink);
+  font-family: var(--font-body); /* 아무 글자나 칠 수 있어 한글 2,350자를 다 가진 고운돋움으로 */
+  font-size: 32px;
+  text-align: center;
+}
+.quiz-input::placeholder { font-family: var(--font-body); font-size: 22px; color: var(--gray-2); }
+.quiz-input:focus-visible { outline: 3px solid var(--hero); outline-offset: 2px; }
+.quiz-write.right .quiz-input { border-color: var(--gold); box-shadow: 0 0 0 3px var(--ink), 0 0 18px 4px rgba(242, 193, 78, .6); }
+.quiz-write.wrong .quiz-input { border-color: var(--hp); background: #E6E4DE; color: var(--hp); }
+.quiz-submit { min-width: 120px; }
+
+/* 알림 명판: 답하기 전에는 도움말, 답한 뒤에는 맞음/틀림과 뜻, "다음" */
+.quiz-feedback {
+  --bt: 16px; --br: 16px; --bb: 16px; --bl: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 108px;
+  padding-inline: 20px;
+}
+:root.ui-panel .quiz-feedback { padding-inline: 12px; }
+.quiz-hint { margin: 0 auto; font-size: 20px; color: var(--gray-3); }
+.quiz-feedback-body { display: grid; gap: 4px; min-width: 0; }
+.quiz-feedback p { margin: 0; }
+.quiz-verdict { display: flex; align-items: center; gap: 10px; font-family: var(--font-title); font-size: 26px; color: var(--wood-dark); }
+.quiz-answer, .quiz-meaning-word { font-family: var(--font-title); font-weight: normal; padding: 0 3px; background: linear-gradient(transparent 58%, rgba(242, 193, 78, .8) 58%); }
+.quiz-meaning { font-size: 22px; line-height: 1.45; }
+.quiz-typed { font-size: 18px; color: var(--gray-3); }
+.quiz-next { flex: none; min-width: 160px; }
+
+/* 낱말 보기 넷은 퀴즈 패널 안에서 2×2로(긴 낱말과 ○ × 표가 겹치지 않게) */
+.quiz .opts-blank { grid-template-columns: 1fr 1fr; gap: 12px; }
+.quiz .opts-blank .battle-option { height: 76px; font-size: 30px; }
+.quiz .opts-blank .opt-text { margin: 0 56px 0 60px; }
+.quiz .opts-blank .opt-mark { top: 50%; right: 14px; translate: 0 -50%; }
+/* ○ ×: 금빛 고리(맞음) · 잿빛 가위표(틀림), 전투 보기의 표와 같은 모양 */
+.quiz-mark { position: relative; flex: none; display: inline-block; width: 32px; height: 32px; }
+.quiz-mark::before, .quiz-mark::after { content: ''; position: absolute; }
+.quiz-mark.right::before { inset: 3px; border: 6px solid var(--gold); border-radius: 50%; box-shadow: 0 0 0 2px var(--ink), inset 0 0 0 2px var(--ink); }
+.quiz-mark.wrong::before, .quiz-mark.wrong::after { left: 3px; top: 13px; width: 26px; height: 6px; border-radius: 3px; background: var(--hp); rotate: 45deg; }
+.quiz-mark.wrong::after { rotate: -45deg; }
+
+/* 결과 */
+.quiz-result-head { display: grid; justify-items: center; gap: 4px; }
+.quiz-score { margin: 6px 0 0; font-family: var(--font-title); font-size: 40px; line-height: 1.2; color: var(--wood-dark); }
+.quiz-cheer { margin: 0; font-size: 22px; color: var(--ink); }
+.quiz-results { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin: 0; padding: 0; list-style: none; }
+.quiz-result {
+  --bt: 12px; --br: 12px; --bb: 12px; --bl: 12px; --ring: 3px;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  min-height: 52px;
+  padding-inline: 14px;
+}
+:root.ui-card .quiz-result { padding: 2px 8px; }
+.quiz-result.wrong { --parchment: #ECE9E1; }
+.quiz-result p { margin: 0; }
+.quiz-result-line { display: flex; align-items: center; gap: 10px; }
+.quiz-result-word { font-family: var(--font-title); font-weight: normal; font-size: 24px; color: var(--wood-dark); }
+.quiz-result-meaning { padding-left: 42px; font-size: 18px; line-height: 1.35; color: var(--gray-3); }
+.quiz-actions { margin-top: 2px; }
+.quiz-actions .btn { min-width: 180px; }
+
+@media (max-width: 760px) {
+  .quiz-head { flex-wrap: wrap; justify-content: center; }
+  .quiz-steps { order: 3; flex-basis: 100%; }
+  .quiz-feedback { flex-direction: column; align-items: stretch; }
+  .quiz-results { grid-template-columns: 1fr; }
+  .quiz-tile { width: 60px; height: 60px; font-size: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quiz { animation: none; }
+}

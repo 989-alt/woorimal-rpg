@@ -93,18 +93,26 @@ const el = (tag, className, text) => {
   return e;
 };
 
+// params: { script, words, from, next?, nextParams?, cast?, bg?, still?, warm? }
+//  cast: 있으면 말하는 이의 이름·색·상반신 id를 장 인물(chapter.npcs) 대신 여기서 찾는다(엔딩).
+//  bg: 키가 있으면 장 배경 대신 이 그림 경로(null이면 임시 바탕). still: 한 장 그림이라 상반신을 띄우지 않는다.
+//  warm: 배경 그림을 따뜻한 새벽빛으로 물들인다(엔딩에서 빛깔을 되찾은 잿빛 탑).
 export const dialogue = {
   mount(root, params, ctx) {
-    const { script = [], words = [], from = '' } = params;
+    const { script = [], words = [], from = '', cast = null, still = false, warm = false } = params;
+    const ownBg = 'bg' in params;
     const initState = ctx.getState();
     const nickname = initState?.nickname ?? '';
     const chapter = initState ? actOfChapter(initState.chapter).chapters.find((c) => c.id === initState.chapter) : null;
-    const npcs = chapter?.npcs ?? [];
+    const npcs = cast ?? chapter?.npcs ?? [];
     const hasHero = script.some((l) => l.who === 'hero');
     const hasNpc = script.some((l) => l.who === 'npc');
 
     const scene = el('section', 'dialogue-scene');
     scene.dataset.scene = 'dialogue';
+    scene.classList.toggle('own-bg', ownBg);
+    scene.classList.toggle('still', !!still);
+    scene.classList.toggle('warm', !!warm);
     const heroBust = labelBlockEl(initial(nickname), HERO_COLOR, 'bust bust-hero');
     const npcBust = el('span', 'bust bust-npc');
     const box = el('div', 'dialogue-box frame-dialogue');
@@ -120,10 +128,9 @@ export const dialogue = {
     const hints = createHintLayer(scene);
     // 그림이 있으면 배경·상반신을 그림으로, 없거나 못 불러오면 지금의 임시 그림 그대로
     const avatar = initState?.avatar === 'm' ? 'm' : 'f';
-    if (chapter) {
-      setArt(scene, ASSETS.dialogueBg[chapter.id], 'dialogue-bg art');
-      preloadChapter(chapter.id, avatar);
-    }
+    if (ownBg) setArt(scene, params.bg, 'dialogue-bg art');
+    else if (chapter) setArt(scene, ASSETS.dialogueBg[chapter.id], 'dialogue-bg art');
+    if (chapter) preloadChapter(chapter.id, avatar);
     let heroFace = 'base';
 
     let index = -1;
@@ -193,8 +200,8 @@ export const dialogue = {
       const narration = !sp;
       box.classList.toggle('narration', narration);
       tag.hidden = narration;
-      heroBust.hidden = narration || !hasHero;
-      npcBust.hidden = narration || !hasNpc;
+      heroBust.hidden = still || narration || !hasHero;
+      npcBust.hidden = still || narration || !hasNpc;
       if (!narration) {
         tag.textContent = sp.name;
         tag.dataset.side = sp.side;
@@ -318,7 +325,7 @@ export const dialogue = {
       if (index + 1 < script.length) { showLine(index + 1); return; }
       leaving = true;
       scene.removeAttribute('data-ready');
-      ctx.router.show(params.next || 'explore');
+      ctx.router.show(params.next || 'explore', params.nextParams);
     }
 
     const onKey = (e) => {
@@ -371,7 +378,7 @@ export const dialogue = {
 
     if (script.length === 0) {
       leaving = true;
-      queueMicrotask(() => { if (scene.isConnected) ctx.router.show(params.next || 'explore'); });
+      queueMicrotask(() => { if (scene.isConnected) ctx.router.show(params.next || 'explore', params.nextParams); });
     } else {
       showLine(0);
     }

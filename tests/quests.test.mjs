@@ -5,7 +5,7 @@ import { newGame, chapterOf, chapterWords, acquireWords, fastForward } from '../
 import { ACTS, actOfChapter } from '../data/acts/index.js';
 import {
   talkTo, inspect, winSmall, npcMarker, currentTask, hiddenGlow, questList,
-  fightGate,
+  fightGate, visibleNpcs, chatLines,
 } from '../js/rules/quests.js';
 
 const deepFreeze = (o) => {
@@ -483,4 +483,75 @@ test('talkTo: 1막 첫 부탁을 받기 전에는 chat만 하는 알려 주는 �
   const r = talkTo(s, ch, 'guard');
   assert.equal(r.event, 'chat');
   assert.deepEqual(r.state.revealed, {});
+});
+
+const doneQuests = (s, ...ids) => ({
+  ...s, quests: { ...s.quests, ...Object.fromEntries(ids.map((id) => [id, { stage: 'done', gathered: [] }])) },
+});
+
+test('visibleNpcs: 4-2 나래는 보스 전에만, 5-2 나래는 보스 뒤에만', () => {
+  const [ch42, ch52] = [ACTS[3].chapters[1], ACTS[4].chapters[1]];
+  const s4 = fastForward(newGame({ nickname: '하늘', avatar: 'f' }), '4-2');
+  assert.ok(visibleNpcs(s4, ch42).some((n) => n.id === 'narae'));
+  assert.ok(!visibleNpcs({ ...s4, clearedActs: [...s4.clearedActs, 4] }, ch42).some((n) => n.id === 'narae'));
+  const s5 = fastForward(s4, '5-2');
+  assert.ok(!visibleNpcs(s5, ch52).some((n) => n.id === 'narae'));
+  assert.ok(visibleNpcs({ ...s5, clearedActs: [...s5.clearedActs, 5] }, ch52).some((n) => n.id === 'narae'));
+});
+
+test('visibleNpcs: show가 없으면 늘 보이고 순서는 chapter.npcs 그대로', () => {
+  const s = fresh();
+  assert.deepEqual(visibleNpcs(s, ch1).map((n) => n.id), ch1.npcs.map((n) => n.id));
+  const ch42 = ACTS[3].chapters[1];
+  const s4 = fastForward(s, '4-2');
+  const ids = visibleNpcs(s4, ch42).map((n) => n.id);
+  assert.deepEqual(ids, ch42.npcs.map((n) => n.id));
+  const after = visibleNpcs({ ...s4, clearedActs: [4] }, ch42).map((n) => n.id);
+  assert.deepEqual(after, ch42.npcs.filter((n) => n.id !== 'narae').map((n) => n.id));
+});
+
+test('visibleNpcs: 받은 상태를 바꾸지 않는다', () => {
+  const s = deepFreeze(fastForward(fresh(), '4-2'));
+  visibleNpcs(s, ACTS[3].chapters[1]);
+});
+
+test('chatAfter: 4-2 해솔·나래는 q16을 끝낸 뒤 말이 바뀌고, 5-1 잿빛 아이는 q18 뒤', () => {
+  const ch42 = ACTS[3].chapters[1];
+  const [haesol, narae] = ['haesol', 'narae'].map((id) => ch42.npcs.find((n) => n.id === id));
+  const s4 = fastForward(newGame({ nickname: '하늘', avatar: 'f' }), '4-2');
+  for (const npc of [haesol, narae]) {
+    assert.equal(talkTo(s4, ch42, npc.id).script, npc.chat);
+    assert.equal(chatLines(s4, npc), npc.chat);
+  }
+  // q15만 끝나서는 바뀌지 않는다
+  assert.equal(talkTo(doneQuests(s4, 'q15'), ch42, 'haesol').script, haesol.chat);
+  const done = doneQuests(s4, 'q15', 'q16');
+  for (const npc of [haesol, narae]) {
+    const r = talkTo(done, ch42, npc.id);
+    assert.equal(r.script, npc.chatAfter.lines);
+    assert.equal(r.event, 'chat');
+  }
+  // 5-1 잿빛 아이
+  const ch51 = ACTS[4].chapters[0];
+  const grey = ch51.npcs.find((n) => n.id === 'greykid');
+  const s5 = fastForward(s4, '5-1');
+  assert.equal(talkTo(s5, ch51, 'greykid').script, grey.chat);
+  assert.equal(talkTo(doneQuests(s5, 'q17', 'q18'), ch51, 'greykid').script, grey.chatAfter.lines);
+});
+
+test('chatLines: chatAfter가 없는 인물은 늘 chat', () => {
+  const dodam = ch1.npcs.find((n) => n.id === 'dodam');
+  assert.equal(chatLines(doneQuests(fresh(), 'q1', 'q2'), dodam), dodam.chat);
+});
+
+test('talkTo: 안 보이는 인물에게는 대사가 없다', () => {
+  const ch42 = ACTS[3].chapters[1];
+  const s = { ...fastForward(fresh(), '4-2'), clearedActs: [1, 2, 3, 4] };
+  const r = talkTo(s, ch42, 'narae');
+  assert.deepEqual(r, { state: s, script: [], event: 'chat', words: [] });
+  // 5-2 보스 전 나래도 마찬가지
+  const ch52 = ACTS[4].chapters[1];
+  const s5 = fastForward(fresh(), '5-2');
+  assert.deepEqual(talkTo(s5, ch52, 'narae').script, []);
+  assert.ok(talkTo({ ...s5, clearedActs: [1, 2, 3, 4, 5] }, ch52, 'narae').script.length > 0);
 });

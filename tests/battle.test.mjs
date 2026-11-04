@@ -5,6 +5,7 @@ import { makeRng } from '../js/rules/rng.js';
 import { actWords } from '../js/rules/game.js';
 import { WORDS } from '../data/words.js';
 import ACT from '../data/acts/act1.js';
+import { ACTS } from '../data/acts/index.js';
 
 const ten = actWords(ACT);
 
@@ -113,5 +114,22 @@ test('optionOrder는 정답 보기를 따라간다', () => {
       assert.deepEqual([...o.options].sort(), [...quiz.options].sort());
       assert.equal(o.options[o.answer], quiz.options[quiz.answer]);
     }
+  }
+});
+
+test('5막 데이터 전투: 나래는 늘 마지막, 앞 9문제를 다 맞혀도 HP 1칸에서 멈춤, 틀리면 같은 문제, 재도전에도 마지막', () => {
+  const act5 = ACTS[4];
+  for (const seed of [1, 7, 42, 999]) {
+    let b = createBattle({ wordIds: actWords(act5), seed, finalWordId: act5.finalWordId });
+    assert.equal(b.order[9], '나래');
+    for (let i = 0; i < 9; i++) b = answer(b, true);
+    assert.equal(b.hp, 1);
+    assert.equal(b.result, null);
+    assert.equal(currentWord(b), '나래');
+    b = answer(b, false);
+    assert.equal(currentWord(b), '나래');
+    assert.equal(b.hearts, 4);
+    assert.equal(answer(b, true).result, 'win');
+    assert.equal(retry(b, seed + 1).order[9], '나래');
   }
 });

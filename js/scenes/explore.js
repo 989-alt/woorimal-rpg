@@ -7,8 +7,8 @@ import { drawExplore, cameraFor, animKey, inViewWorld } from '../explore/render.
 import { nextGlide, drawnPos, glideEnd } from '../explore/motion.js';
 import { onImageLoaded, preloadChapter } from '../ui/images.js';
 import { createHud, createToast, fogMessage, HUD_INSET } from '../explore/hud.js';
-import { chapterOf, fogOpen, bossGone, exitOpen, exitBlockedText, setPos, markTip, takeWords } from '../rules/game.js';
-import { talkTo, inspect, fightGate } from '../rules/quests.js';
+import { chapterOf, fogOpen, bossGone, exitOpen, exitBlockedText, setPos, markTip, takeWords, afterBossKey, afterBossDue, markSceneSeen } from '../rules/game.js';
+import { talkTo, inspect, fightGate, visibleNpcs } from '../rules/quests.js';
 import { openCodex } from './codex.js';
 import { openTasks } from './quests.js';
 import { formatLine } from '../rules/josa.js';
@@ -26,6 +26,21 @@ export const explore = {
     const actData = actOfChapter(state.chapter);
     const chapter = chapterOf(actData, state.chapter);
     const map = parseMap(chapter.map.rows);
+
+    // 보스 뒤 장면: 방금 본 장면은 기록하고 저장한다. 아직 안 봤으면(끝까지 보기 전에 새로 고침한 때도) 대화를 먼저 연다.
+    // 길잡이("길 끝으로 가 보자")는 장면을 다 본 뒤 이 장면이 guide:'won'으로 다시 열릴 때 띄운다.
+    if (params?.sceneSeen) {
+      state = markSceneSeen(state, params.sceneSeen);
+      ctx.setState(state);
+      ctx.store?.save?.(state);
+    }
+    if (afterBossDue(state, chapter)) {
+      const key = afterBossKey(chapter);
+      queueMicrotask(() => ctx.router.show('dialogue', {
+        script: chapter.afterBoss, words: [], from: '', next: 'explore', nextParams: { sceneSeen: key, guide: 'won' },
+      }));
+      return () => {};
+    }
     let leaving = false;
 
     const el = document.createElement('section');
@@ -122,7 +137,7 @@ export const explore = {
     };
     // 목표가 있는 칸. 모으기처럼 여럿이면 가장 가까운 곳.
     function goalTile() {
-      if (goal.kind === 'talk') { const n = chapter.npcs.find((x) => x.id === goal.npcId); return n ? map.slots[n.slot] ?? null : null; }
+      if (goal.kind === 'talk') { const n = visibleNpcs(state, chapter).find((x) => x.id === goal.npcId); return n ? map.slots[n.slot] ?? null : null; }
       if (goal.kind === 'find' || goal.kind === 'hidden') {
         const spots = (goal.objectSlots?.length ? goal.objectSlots : [goal.objectSlot]).map((k) => map.objects[k]).filter(Boolean);
         spots.sort((a, b) => Math.abs(a.x - state.pos.x) + Math.abs(a.y - state.pos.y) - Math.abs(b.x - state.pos.x) - Math.abs(b.y - state.pos.y));
@@ -167,11 +182,11 @@ export const explore = {
       if (Math.abs(guideArrow.x - state.pos.x) + Math.abs(guideArrow.y - state.pos.y) <= 1) clearGuide();
     }
     const firstQuest = chapter.quests[0];
-    const firstGiver = chapter.npcs.find((n) => n.id === firstQuest.giver);
-    const tipTarget = () =>
-      !state.seenTips.includes(TIP.FIRST_NPC) && state.quests[firstQuest.id]?.stage === 'open' && firstGiver
-        ? map.slots[firstGiver.slot]
-        : null;
+    const tipTarget = () => {
+      if (state.seenTips.includes(TIP.FIRST_NPC) || state.quests[firstQuest.id]?.stage !== 'open') return null;
+      const giver = visibleNpcs(state, chapter).find((n) => n.id === firstQuest.giver);
+      return giver ? map.slots[giver.slot] : null;
+    };
 
     const g = canvas.getContext('2d');
     let size = 0; // 캔버스 크기를 바꿀 때마다 늘린다(크기를 바꾸면 그림이 지워진다)
@@ -310,8 +325,8 @@ export const explore = {
       const target = facingTarget(map, state.pos, state.facing, opts());
       if (!target) return;
       if (target.kind === 'npc') {
-        const npc = chapter.npcs.find((n) => n.slot === target.slot);
-        if (!npc) return;
+        const npc = visibleNpcs(state, chapter).find((n) => n.slot === target.slot);
+        if (!npc) return; // 맵에 없는 인물의 칸은 지나갈 수 없는 빈칸
         hints.done('talk');
         progressed();
         const r = talkTo(state, chapter, npc.id);

@@ -214,6 +214,19 @@ export function fastForward(state, chapterId) {
   };
 }
 
+// 보스 뒤 장면: 막 보스를 이기고 탐험으로 돌아오면 장(chapter.afterBoss)마다 한 번 나온다.
+// 끝까지 보면 seenScenes에 키를 남긴다. 끝까지 보기 전에 새로 고침하면 기록이 없으므로 다시 나온다.
+export const afterBossKey = (chapter) => `${chapter.id}:afterBoss`;
+
+export function afterBossDue(state, chapter) {
+  if (!chapter.afterBoss || !bossGone(state, chapter)) return false;
+  return !(state.seenScenes ?? []).includes(afterBossKey(chapter));
+}
+
+export function markSceneSeen(state, key) {
+  return { ...state, seenScenes: addOnce(state.seenScenes ?? [], key) };
+}
+
 export function finishAct(state, act, askedIds) {
   let asked = state.askedWordIds;
   for (const id of askedIds) asked = addOnce(asked, id);

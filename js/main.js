@@ -2,6 +2,7 @@ import { createRouter } from './router.js';
 import { createStore } from './save.js';
 import { newGame, acquireWords, takeWords, actWords, chapterWords, enterNextChapter, chapterOf, setPos, fogOpen, bossGone, fastForward } from './rules/game.js';
 import { actOfChapter } from '../data/acts/index.js';
+import { visibleNpcs } from './rules/quests.js';
 import { parseMap, isWalkable, reachable } from './explore/grid.js';
 import { explore } from './scenes/explore.js';
 import { title } from './scenes/title.js';
@@ -11,6 +12,8 @@ import { battle, battleProbe } from './scenes/battle.js';
 import { gameover } from './scenes/gameover.js';
 import { clear } from './scenes/clear.js';
 import { worldmap } from './scenes/worldmap.js';
+import { ending, setEndingDelay, MESSAGE_DELAY_MS } from './scenes/ending.js';
+import { reviewQuiz, reviewQuizProbe } from './scenes/review-quiz.js';
 import { ASSETS } from '../data/assets.js';
 import { loadImage, forgetFailed } from './ui/images.js';
 import { loadUiKit } from './ui/ui-kit.js';
@@ -51,7 +54,7 @@ function teleportTo(target) {
   if (!state) throw new Error('teleportTo: 게임이 시작되지 않았습니다');
   const chapter = chapterOf(actOfChapter(state.chapter), state.chapter);
   const map = parseMap(chapter.map.rows);
-  const npc = chapter.npcs.find((n) => n.id === target);
+  const npc = visibleNpcs(state, chapter).find((n) => n.id === target); // 안 보이는 인물은 지도에 없는 것과 같다
   const obj = chapter.objects.find((o) => o.name === target);
   const spot = npc ? map.slots[npc.slot]
     : obj ? map.objects[obj.slot]
@@ -81,6 +84,8 @@ router.register('battle', battle);
 router.register('gameover', gameover);
 router.register('clear', clear);
 router.register('worldmap', worldmap);
+router.register('ending', ending);
+router.register('review-quiz', reviewQuiz);
 
 // 검사용 도움 기능: 주소에 ?test=1이 있을 때만 만든다.
 if (new URLSearchParams(location.search).get('test') === '1') {
@@ -92,10 +97,10 @@ if (new URLSearchParams(location.search).get('test') === '1') {
       router.show('explore');
     },
     // 탐험 장면처럼 낱말을 먼저 얻고 대화를 연다. 이미 얻은 낱말은 카드 없이 띠만 보인다.
-    dialogue(script, words = [], from = '', next) {
+    dialogue(script, words = [], from = '', next, nextParams) {
       const got = takeWords(state, words, from);
       state = got.state;
-      router.show('dialogue', { script, words: got.fresh, from, next });
+      router.show('dialogue', { script, words: got.fresh, from, next, nextParams });
     },
     // 필요한 낱말을 얻은 상태로 전투를 연다(지금 막 기준).
     // review: 지금 막에서 쫓기 부탁이 있는 첫 장으로 가서 그 앞 부탁들을 끝내고(낱말 얻음) 쫓기 부탁 진행 중 / boss: 그 막 낱말 10개 + 앞 장이면 뒷 장
@@ -143,9 +148,12 @@ if (new URLSearchParams(location.search).get('test') === '1') {
       router.show('explore');
     },
     answerIndex: () => battleProbe()?.answerIndex() ?? -1,
+    // 마무리 퀴즈의 지금 문제: { phase, qn, type, word, answerIndex, answerText }
+    quiz: () => reviewQuizProbe()?.snapshot() ?? null,
     battle: () => battleProbe()?.snapshot() ?? null,
     teleportTo,
-    fastText: (on) => setTypeSpeed(on ? 0 : 30),
+    // 타자 효과와 엔딩 마지막 말의 '다음' 기다림을 끈다(false면 되돌린다)
+    fastText: (on) => { setTypeSpeed(on ? 0 : 30); setEndingDelay(on ? 0 : MESSAGE_DELAY_MS); },
     // 그림 경로를 바꿔 끼운다(예: setAsset('npcs.dodam', url)). 경로는 ASSETS 안의 점 표기이며 url은 null도 된다.
     setAsset(where, url) {
       const keys = where.split('.');

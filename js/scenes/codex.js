@@ -4,6 +4,51 @@ import { mountOverlay } from '../ui/overlay.js';
 
 export const ACT_COUNT = 5;
 
+// 낱말 칸 하나(누르거나 초점·Enter로 고르는 것은 쓰는 쪽이 단다). got: 얻은 기록({ from }) 또는 없음.
+// 엔딩의 말빛 주머니 50장도 이 칸을 쓴다.
+export function codexCardEl(word, got) {
+  const card = document.createElement('div');
+  card.tabIndex = 0;
+  card.setAttribute('role', 'button');
+  if (got) {
+    card.className = 'codex-card frame-card found';
+    const name = document.createElement('p');
+    name.className = 'codex-word';
+    name.textContent = word.word;
+    card.append(name);
+  } else {
+    card.className = 'codex-card frame-card unknown';
+    const q = document.createElement('p');
+    q.className = 'codex-q coin';
+    q.setAttribute('aria-hidden', 'true');
+    q.textContent = '?';
+    const t = document.createElement('p');
+    t.className = 'codex-meaning';
+    t.textContent = '아직 못 찾음';
+    card.append(q, t);
+  }
+  return card;
+}
+
+// 상세 칸(detailEl)을 그 낱말의 뜻·예문·만난 곳으로 채운다. 못 찾은 낱말이면 안내 한 줄.
+export function showWordDetail(detailEl, word, got) {
+  detailEl.replaceChildren();
+  const add = (cls, text) => {
+    const p = document.createElement('p');
+    p.className = cls;
+    p.textContent = text;
+    detailEl.appendChild(p);
+  };
+  if (got) {
+    add('detail-word', word.word);
+    add('detail-meaning', word.meaning);
+    add('detail-example', word.example);
+    add('detail-from', `만난 곳: ${got.from}`);
+  } else {
+    add('detail-meaning', '아직 못 찾은 낱말이에요.');
+  }
+}
+
 export function openCodex(root, state, { actTab = state.act, onClose, focusAfter } = {}) {
   const el = document.createElement('div');
   el.className = 'overlay codex';
@@ -37,23 +82,6 @@ export function openCodex(root, state, { actTab = state.act, onClose, focusAfter
 
   let current = actTab;
   const tabBtns = [];
-  function showDetail(w, got) {
-    detail.replaceChildren();
-    const add = (cls, text) => {
-      const p = document.createElement('p');
-      p.className = cls;
-      p.textContent = text;
-      detail.appendChild(p);
-    };
-    if (got) {
-      add('detail-word', w.word);
-      add('detail-meaning', w.meaning);
-      add('detail-example', w.example);
-      add('detail-from', `만난 곳: ${got.from}`);
-    } else {
-      add('detail-meaning', '아직 못 찾은 낱말이에요.');
-    }
-  }
   function show(act) {
     current = act;
     tabBtns.forEach((b, i) => {
@@ -69,31 +97,11 @@ export function openCodex(root, state, { actTab = state.act, onClose, focusAfter
     const select = (i) => {
       cells.forEach((c, j) => c.classList.toggle('selected', i === j));
       const w = words[i];
-      showDetail(w, w && state.acquired[w.id]);
+      showWordDetail(detail, w, w && state.acquired[w.id]);
     };
     for (let i = 0; i < 10; i++) {
       const w = words[i];
-      const got = w && state.acquired[w.id];
-      const card = document.createElement('div');
-      card.tabIndex = 0;
-      card.setAttribute('role', 'button');
-      if (got) {
-        card.className = 'codex-card frame-card found';
-        const name = document.createElement('p');
-        name.className = 'codex-word';
-        name.textContent = w.word;
-        card.append(name);
-      } else {
-        card.className = 'codex-card frame-card unknown';
-        const q = document.createElement('p');
-        q.className = 'codex-q coin';
-        q.setAttribute('aria-hidden', 'true');
-        q.textContent = '?';
-        const t = document.createElement('p');
-        t.className = 'codex-meaning';
-        t.textContent = '아직 못 찾음';
-        card.append(q, t);
-      }
+      const card = codexCardEl(w, w && state.acquired[w.id]);
       card.addEventListener('click', () => select(i));
       card.addEventListener('focus', () => select(i));
       card.addEventListener('keydown', (e) => {
@@ -104,7 +112,7 @@ export function openCodex(root, state, { actTab = state.act, onClose, focusAfter
     }
     const first = words.findIndex((w) => state.acquired[w.id]);
     if (first >= 0) select(first);
-    else showDetail(null, null);
+    else showWordDetail(detail, null, null);
   }
   for (let a = 1; a <= ACT_COUNT; a++) {
     const b = document.createElement('button');
