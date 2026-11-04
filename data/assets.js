@@ -24,12 +24,12 @@ export const ASSETS = {
   busts: {
     hero_f: { base: 'assets/illust/bust_hero_f_base.webp', surprise: 'assets/illust/bust_hero_f_surprise.webp', joy: 'assets/illust/bust_hero_f_joy.webp' },
     hero_m: { base: 'assets/illust/bust_hero_m_base.webp', surprise: 'assets/illust/bust_hero_m_surprise.webp', joy: 'assets/illust/bust_hero_m_joy.webp' },
-    dodam: { base: null, worry: null, laugh: null },
-    daon: { base: null, joy: null },
-    gardener: { base: null },
-    baker: { base: null, joy: null },
-    laundry: { base: null, joy: null },
-    gate: { base: null, joy: null },
+    dodam: { base: 'assets/illust/bust_dodam_base.webp', worry: 'assets/illust/bust_dodam_worry.webp', laugh: 'assets/illust/bust_dodam_laugh.webp' },
+    daon: { base: 'assets/illust/bust_daon_base.webp', joy: 'assets/illust/bust_daon_joy.webp' },
+    gardener: { base: 'assets/illust/bust_gardener_base.webp', joy: 'assets/illust/bust_gardener_joy.webp' },
+    baker: { base: 'assets/illust/bust_baker_base.webp', joy: 'assets/illust/bust_baker_joy.webp' },
+    laundry: { base: 'assets/illust/bust_laundry_base.webp', joy: 'assets/illust/bust_laundry_joy.webp' },
+    gate: { base: 'assets/illust/bust_gate_base.webp', joy: 'assets/illust/bust_gate_joy.webp' },
   },
   dialogueBg: { '1-1': null, '1-2': null }, // 장 id
   battleBg: { 1: null }, // 막 번호

@@ -133,6 +133,26 @@ def align(base, var, top=0.6):
     return out, {'iou_head': round(float(iou), 4), 'scale': round(s, 3), 'dx': dx, 'dy': dy}
 
 
+# 표정 그림을 만들며 옷 색이 바랜/짙어진 경우: 그 색 무리(이름)만 base의 색 분포에 맞춘다.
+COLOR_MATCH = {'dodam_laugh': 'plum'}
+GROUPS = {'plum': lambda r, g, b: (r > g + 30) & (b > g + 20)}
+
+
+def match_colors(base, var, group):
+    """var에서 group 색 픽셀의 채널별 분포(1·10·50·90·99 백분위)를 base의 같은 색 무리에 맞춘다."""
+    A = np.asarray(base).astype(np.float32)
+    V = np.asarray(var).astype(np.float32).copy()
+    sel = GROUPS[group]
+    ma = (A[..., 3] > 250) & sel(A[..., 0], A[..., 1], A[..., 2])
+    mv = (V[..., 3] > 0) & sel(V[..., 0], V[..., 1], V[..., 2])
+    q = [1, 10, 50, 90, 99]
+    for ch in range(3):
+        src = np.percentile(V[..., ch][mv & (V[..., 3] > 250)], q)
+        dst = np.percentile(A[..., ch][ma], q)
+        V[..., ch][mv] = np.interp(V[..., ch][mv], src, dst)
+    return Image.fromarray(np.clip(V, 0, 255).astype(np.uint8), 'RGBA')
+
+
 def save_webp(im, path, limit, quality=85):
     im.save(path, 'WEBP', quality=quality, method=6)
     size = os.path.getsize(path)
@@ -150,6 +170,9 @@ def bust(who, face, src):
     if face != 'base':
         base = despill(Image.open(raw(f'{_base_src(who)}_cut.png')).convert('RGBA'))
         im, info = align(base, im)
+        if f'{who}_{face}' in COLOR_MATCH:
+            im = match_colors(base, im, COLOR_MATCH[f'{who}_{face}'])
+            info['color_match'] = COLOR_MATCH[f'{who}_{face}']
     im = frame(im, FIT.get(who, FIT['default']))
     out = im.resize(BUST, Image.LANCZOS)
     q = save_webp(out, os.path.join(OUT, f'bust_{who}_{face}.webp'), LIMITS['bust'])
