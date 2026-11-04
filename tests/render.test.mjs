@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cameraFor, questObjectSlots } from '../js/explore/render.js';
+import { cameraFor, inViewWorld, questObjectSlots } from '../js/explore/render.js';
 import { parseMap } from '../js/explore/grid.js';
 import { newGame, chapterOf } from '../js/rules/game.js';
 import { talkTo } from '../js/rules/quests.js';
@@ -17,6 +17,29 @@ test('카메라는 주인공을 가운데 두고 맵 밖으로 나가지 않는�
 
 test('맵이 화면보다 작으면 가운데 놓는다', () => {
   assert.deepEqual(cameraFor({ w: 20, h: 10 }, { x: 3, y: 3 }), { x: (320 - 384) / 2, y: (160 - 216) / 2 });
+});
+
+test('카메라: 보이는 크기(view)와 위쪽 HUD 여백(insetTop)에 맞춘다', () => {
+  const view = { w: 1366 / 3, h: 256 };
+  const inset = 88 / 3;
+  // 주인공은 HUD 아래 영역의 가운데
+  assert.deepEqual(cameraFor(big, { x: 16, y: 12 }, view, inset).y, 12 * 16 + 8 - (256 + inset) / 2);
+  assert.equal(cameraFor(big, { x: 16, y: 12 }, view, inset).x, 16 * 16 + 8 - view.w / 2);
+  // 맵 맨 위: HUD 바로 아래에서 맵이 시작한다
+  assert.equal(cameraFor(big, { x: 16, y: 0 }, view, inset).y, -inset);
+  assert.equal(cameraFor(big, { x: 16, y: 23 }, view, inset).y, 384 - 256);
+  // 낮은 맵은 HUD 아래 영역의 가운데
+  assert.equal(cameraFor({ w: 20, h: 10 }, { x: 3, y: 3 }, view, inset).y, (160 - 256 - inset) / 2);
+  // 맵이 화면 폭보다 좁으면 가로 가운데
+  assert.equal(cameraFor({ w: 20, h: 10 }, { x: 3, y: 3 }, view, inset).x, (320 - view.w) / 2);
+});
+
+test('inViewWorld: 카메라가 보는 세계 상자 안인지', () => {
+  const cam = { x: 100, y: 50 };
+  const view = { w: 200, h: 100 };
+  assert.equal(inViewWorld(cam, view, { x: 150, y: 80 }), true);
+  assert.equal(inViewWorld(cam, view, { x: 99, y: 80 }), false);
+  assert.equal(inViewWorld(cam, view, { x: 150, y: 151 }), false);
 });
 
 test('부탁 대상 물건: 부탁을 받은 뒤에만, 물건을 얻으면 사라진다', () => {

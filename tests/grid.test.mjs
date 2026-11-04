@@ -2,20 +2,19 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeRng, shuffle } from '../js/rules/rng.js';
 import { parseMap, isWalkable, step, facingTarget, reachable } from '../js/explore/grid.js';
-import { computeScale, CANVAS_W, CANVAS_H } from '../js/explore/scale.js';
+import { computeView, CANVAS_W, CANVAS_H } from '../js/explore/scale.js';
 
-test('배율: 캔버스 1152×648을 넘지 않게 줄이기만 한다', () => {
+test('화면: 창을 꽉 채우는 캔버스(1152×648보다 작으면 줄이고, 크면 키우지 않고 더 보인다)', () => {
   assert.equal(CANVAS_W, 1152);
   assert.equal(CANVAS_H, 648);
-  assert.deepEqual(computeScale(1366, 680), { factor: 1, cssWidth: 1152, cssHeight: 648 });
-  assert.deepEqual(computeScale(1920, 1080), { factor: 1, cssWidth: 1152, cssHeight: 648 }); // 키우지 않는다
-  const s = computeScale(1024, 768);
-  assert.ok(Math.abs(s.factor - 1024 / 1152) < 1e-9); // 0.888…
-  assert.equal(s.cssWidth, 1024);
-  assert.ok(Math.abs(s.cssHeight - 576) < 1e-9);
-  const tiny = computeScale(300, 150);
+  assert.deepEqual(computeView(1366, 768), { factor: 1, canvasW: 1366, canvasH: 768, cssW: 1366, cssH: 768, viewW: 1366 / 3, viewH: 256 });
+  const t = computeView(1024, 768); // 태블릿: 줄여서 보이고 세계는 384×288칸 만큼
+  assert.ok(Math.abs(t.factor - 1024 / 1152) < 1e-9);
+  assert.deepEqual([t.canvasW, t.canvasH, t.cssW, t.cssH, t.viewW, t.viewH], [1152, 864, 1024, 768, 384, 288]);
+  assert.deepEqual(computeView(1920, 1080), { factor: 1, canvasW: 1920, canvasH: 1080, cssW: 1920, cssH: 1080, viewW: 640, viewH: 360 }); // 키우지 않는다
+  const tiny = computeView(300, 150);
   assert.ok(tiny.factor > 0 && tiny.factor < 0.3);
-  assert.ok(tiny.cssWidth <= 300 && tiny.cssHeight <= 150);
+  assert.ok(tiny.cssW === 300 && tiny.cssH === 150);
 });
 
 test('막힌 칸은 제자리, 방향만 바뀜', () => {

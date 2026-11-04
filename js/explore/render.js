@@ -21,11 +21,20 @@ function clampAxis(center, mapPx, viewPx) {
 }
 
 // 주인공을 가운데 두되 맵 밖은 보이지 않게 한다. 맵이 화면보다 작으면 가운데 놓는다.
-export function cameraFor(map, pos) {
-  return {
-    x: clampAxis(pos.x * TILE + TILE / 2, map.w * TILE, BASE_W),
-    y: clampAxis(pos.y * TILE + TILE / 2, map.h * TILE, BASE_H),
-  };
+// view: 보이는 세계 크기 { w, h }. insetTop: 화면 위쪽 HUD가 덮는 세계 높이 — 맵과 주인공은 그 아래 영역의 가운데에 둔다
+// (맨 위로 걸어도 맵 윗부분이 HUD 밑으로 들어가지 않는다).
+export function cameraFor(map, pos, view = { w: BASE_W, h: BASE_H }, insetTop = 0) {
+  const mapH = map.h * TILE;
+  const heroY = pos.y * TILE + TILE / 2;
+  const y = mapH <= view.h - insetTop
+    ? (mapH - view.h - insetTop) / 2
+    : Math.min(Math.max(heroY - (view.h + insetTop) / 2, 0 - insetTop), mapH - view.h);
+  return { x: clampAxis(pos.x * TILE + TILE / 2, map.w * TILE, view.w), y };
+}
+
+// 세계 좌표 점 p({x, y}, 칸 단위가 아니라 세계 픽셀)가 카메라가 보는 상자 안인지(HUD 밑은 가리지 않고 센다)
+export function inViewWorld(camera, view, p) {
+  return p.x >= camera.x && p.x <= camera.x + view.w && p.y >= camera.y && p.y <= camera.y + view.h;
 }
 
 const stageOf = (state, q) => state.quests[q.id]?.stage ?? 'locked';
@@ -42,11 +51,11 @@ export function questObjectSlots(state, chapter) {
 }
 
 // 그림이 있으면 바닥·벽 색 대신 맵 그림을 깔고, 닫힌 안개 칸만 그 위에 그린다.
-function drawTiles(ctx, map, camera, open, hasArt) {
+function drawTiles(ctx, map, camera, view, open, hasArt) {
   const x0 = Math.max(0, Math.floor(camera.x / TILE));
   const y0 = Math.max(0, Math.floor(camera.y / TILE));
-  const x1 = Math.min(map.w - 1, Math.floor((camera.x + BASE_W) / TILE));
-  const y1 = Math.min(map.h - 1, Math.floor((camera.y + BASE_H) / TILE));
+  const x1 = Math.min(map.w - 1, Math.floor((camera.x + view.w) / TILE));
+  const y1 = Math.min(map.h - 1, Math.floor((camera.y + view.h) / TILE));
   for (let y = y0; y <= y1; y++) {
     for (let x = x0; x <= x1; x++) {
       const c = map.tileAt(x, y);
@@ -163,40 +172,41 @@ export function tipLift(chapter, map, target) {
   return npc && getLoaded(ASSETS.npcs[npc.id]) ? 8 : 0;
 }
 
+// view = { w, h, insetTop? }: 보이는 세계 크기와 위쪽 HUD가 덮는 높이.
 // 첫 부탁 인물 머리 위 화살표가 화면 안에 그려지는지(그렇지 않으면 가장자리에 멈춘 화살표).
 // lift: 인물 도트 그림이 있으면 머리 위 표시가 8 높아지므로 화살표도 그만큼 올린다.
-function tipInView(camera, target, lift = 0) {
+function tipInView(camera, view, target, lift = 0) {
   const tx = target.x * TILE + TILE / 2;
   const ty = target.y * TILE - 8 - lift;
-  return tx >= camera.x + 8 && tx <= camera.x + BASE_W - 8 && ty - 20 >= camera.y && ty <= camera.y + BASE_H - 8;
+  return tx >= camera.x + 8 && tx <= camera.x + view.w - 8 && ty - 20 >= camera.y + (view.insetTop ?? 0) && ty <= camera.y + view.h - 8;
 }
 
 // 첫 부탁 인물 쪽 화살표: 화면 안이면 머리 위에서, 밖이면 화면 가장자리에서 그쪽을 가리킨다.
-function drawTipArrow(ctx, camera, target, hero, bob, lift = 0) {
+function drawTipArrow(ctx, camera, view, target, hero, bob, lift = 0) {
   const tx = target.x * TILE + TILE / 2;
   const ty = target.y * TILE - 8 - lift;
-  if (tipInView(camera, target, lift)) {
+  if (tipInView(camera, view, target, lift)) {
     drawArrow(ctx, tx, ty - 20 + bob, Math.PI / 2, 8);
     return;
   }
   const hx = hero.x * TILE + TILE / 2, hy = hero.y * TILE + TILE / 2;
   const angle = Math.atan2(ty - hy, tx - hx);
   const m = 10;
-  const ax = Math.min(Math.max(tx, camera.x + m), camera.x + BASE_W - m);
-  const ay = Math.min(Math.max(ty, camera.y + m), camera.y + BASE_H - m);
+  const ax = Math.min(Math.max(tx, camera.x + m), camera.x + view.w - m);
+  const ay = Math.min(Math.max(ty, camera.y + (view.insetTop ?? 0) + m), camera.y + view.h - m); // 위쪽은 HUD 아래에서 멈춘다
   drawArrow(ctx, ax, ay, angle, 8);
 }
 
 // heroAt: 그려지는 주인공 자리(칸 단위, 미끄러지는 중이면 소수). 없으면 state.pos.
-export function drawExplore(ctx, { map, state, chapter, camera, time = 0, tipTarget = null, still = false, moving = false, heroAt = state.pos }) {
+export function drawExplore(ctx, { map, state, chapter, camera, view = { w: BASE_W, h: BASE_H }, time = 0, tipTarget = null, still = false, moving = false, heroAt = state.pos }) {
   ctx.save();
   ctx.fillStyle = WALL;
-  ctx.fillRect(0, 0, BASE_W, BASE_H);
+  ctx.fillRect(0, 0, view.w + 1, view.h + 1); // 보이는 세계 전체(맵 밖은 숲색). 분수 크기여서 한 칸 더
   ctx.translate(-Math.round(camera.x * ART) / ART, -Math.round(camera.y * ART) / ART); // 그림 픽셀(1/3 세계 단위)에 맞춘다
   const actId = Number(String(chapter.id).split('-')[0]);
   const mapArt = getLoaded(ASSETS.maps[chapter.id]);
   if (mapArt) ctx.drawImage(mapArt, 0, 0, map.w * TILE, map.h * TILE);
-  drawTiles(ctx, map, camera, fogOpen(state, chapter), !!mapArt);
+  drawTiles(ctx, map, camera, view, fogOpen(state, chapter), !!mapArt);
 
   const bob = bobAt(time, still);
   const arrows = questObjectSlots(state, chapter);
@@ -257,20 +267,20 @@ export function drawExplore(ctx, { map, state, chapter, camera, time = 0, tipTar
     if (who.mark) drawMarker(ctx, px + TILE / 2, headTop(who.p.y, !!(who.art || who.sheet)), who.mark);
   }
 
-  if (tipTarget) drawTipArrow(ctx, camera, tipTarget, heroAt, bob, tipLift(chapter, map, tipTarget));
+  if (tipTarget) drawTipArrow(ctx, camera, view, tipTarget, heroAt, bob, tipLift(chapter, map, tipTarget));
   ctx.restore();
 }
 
 // 시간에 따라 바뀌는 그림(발밑·머리 위 화살표 흔들림, 숨은 낱말 반짝임) 중 화면 안에 있는 것만의 지금 모습.
 // 이 값과 상태·카메라가 그대로면 같은 그림이므로 다시 그리지 않아도 된다.
-export function animKey({ map, state, chapter, camera, time = 0, tipTarget = null, still = false, moving = false, heroAt = state.pos }) {
+export function animKey({ map, state, chapter, camera, view = { w: BASE_W, h: BASE_H }, time = 0, tipTarget = null, still = false, moving = false, heroAt = state.pos }) {
   // 칸(위로 8px 솟은 인물·화살표 여유 포함)이 화면에 조금이라도 걸치는지
-  const inView = (p) => p.x * TILE + TILE > camera.x && p.x * TILE < camera.x + BASE_W
-    && p.y * TILE + TILE + 8 > camera.y && p.y * TILE - 8 < camera.y + BASE_H;
+  const inView = (p) => p.x * TILE + TILE > camera.x && p.x * TILE < camera.x + view.w
+    && p.y * TILE + TILE + 8 > camera.y && p.y * TILE - 8 < camera.y + view.h;
   const parts = [];
   if (!still) {
     const arrowSeen = questObjectSlots(state, chapter).some((slot) => map.objects[slot] && inView(map.objects[slot]));
-    if (arrowSeen || (tipTarget && tipInView(camera, tipTarget, tipLift(chapter, map, tipTarget)))) parts.push(`b${bobAt(time, still)}`);
+    if (arrowSeen || (tipTarget && tipInView(camera, view, tipTarget, tipLift(chapter, map, tipTarget)))) parts.push(`b${bobAt(time, still)}`);
   }
   if (moving && !still && heroSheet(state)) parts.push(`w${walkFrame(time, true)}`);
   if (heroAt.x !== state.pos.x || heroAt.y !== state.pos.y) parts.push(`h${heroAt.x},${heroAt.y}`); // 미끄러지는 중
