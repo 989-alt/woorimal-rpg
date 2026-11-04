@@ -66,7 +66,7 @@ export const ASSETS = {
     greykid: { base: null, joy: null },
   },
   dialogueBg: { '1-1': 'assets/illust/bg_ch1-1.webp', '1-2': 'assets/illust/bg_ch1-2.webp', '2-1': 'assets/illust/bg_ch2-1.webp', '2-2': 'assets/illust/bg_ch2-2.webp', '3-1': null, '3-2': null, '4-1': null, '4-2': null, '5-1': null, '5-2': null }, // 장 id (2560×1440)
-  battleBg: { 1: 'assets/illust/battle_bg_act1.webp', 2: null, 3: null, 4: null, 5: null }, // 막 번호 (2560×1440, 잿빛)
+  battleBg: { 1: 'assets/illust/battle_bg_act1.webp', 2: 'assets/illust/battle_bg_act2.webp', 3: null, 4: null, 5: null }, // 막 번호 (2560×1440, 잿빛)
   battleHero: { f: 'assets/illust/battle_hero_f.webp', m: 'assets/illust/battle_hero_m.webp' }, // 1080×1440, 오른쪽(몬스터 쪽)을 봄
   monster: { 1: 'assets/illust/monster_act1.webp', 2: null, 3: null, 4: null, 5: null }, // 보스(막 번호), 1440×1440
   title: 'assets/illust/title.webp', // 2560×1440, 글자 없음(제목은 HTML)
