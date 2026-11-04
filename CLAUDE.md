@@ -14,7 +14,7 @@
   엔진(Godot/Unity/Unreal) 관련 지시는 이 프로젝트(순수 웹)에 맞지 않으므로 따르지 않는다.
 - `reference/game-dev-agentic-skills/`: Godot용 참고 문서(LGPL-3.0). 설계 참고로만 읽고 코드를 옮겨 오지 않는다.
 - 그림: `tools/setup-art-tools.sh`로 sprite-gen과 Codex CLI를 설치하고 `codex login --device-auth`로 구독 로그인한다.
-  그림은 1장 것을 먼저 만들어 선생님 확인을 받은 뒤 나머지를 만든다.
+  그림은 1막 것을 먼저 만들어 선생님 확인을 받은 뒤 나머지를 만든다.
 
 ## 검사
 - `npm test` (node --test), `npm run test:e2e` (Playwright)
