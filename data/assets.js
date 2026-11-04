@@ -24,7 +24,7 @@ export const ASSETS = {
     laundry: { base: null, joy: null },
     gate: { base: null, joy: null },
   },
-  dialogueBg: { '1-1': null, '1-2': 'assets/pixel/map_ch1-2_maeul-eogwi.png' }, // 장 id
+  dialogueBg: { '1-1': null, '1-2': null }, // 장 id
   battleBg: { 1: null }, // 막 번호
   battleHero: { f: null, m: null },
   monster: { 1: null }, // 보스(막 번호)

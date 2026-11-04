@@ -144,8 +144,8 @@ holding its placeholder is incomplete; a later run fills only those.
 - 그림자: 잿빛, 윤곽선 없음, 가장자리 디더링, 녹아 흐르는 발끝. 도트에서도 안개 너머 실루엣으로 보인다.
 
 **도트 크기**
-- 인물은 16×24로 그려 16×32 칸에 넣는다. 위쪽 8px은 쪽머리·보따리·숄이 삐져나올 자리다. 머리는 약 10px, 2.5등신이다.
-- 남는 것: 머리 실루엣, 대표색 덩어리, 특징 하나, 주머니 2×3px, 눈 1~2px. 버리는 것: 무늬, 손가락, 입(입은 일러스트에서만 그린다).
+- 인물은 48×72로 그려 48×96 칸에 넣는다(칸당 48도트, 세계 좌표로는 16×32 상자). 위쪽 24px은 쪽머리·보따리·숄이 삐져나올 자리다. 머리는 약 30px, 2.5등신이다.
+- 남는 것: 머리 실루엣, 대표색 덩어리, 특징 하나, 주머니 6×9px, 눈 3~5px, 옷 주름과 머리카락 결 정도의 큰 무늬. 버리는 것: 잔무늬, 손가락 하나하나, 입(입은 일러스트에서만 그린다).
 
 **표정과 자세 (일러스트)**
 - 5~5.5등신, 6학년 또래 비율. 지나친 아기 체형이나 어른 체형은 쓰지 않는다.
@@ -175,11 +175,11 @@ holding its placeholder is incomplete; a later run fills only those.
 - 5장 잿빛 탑: 수직과 직각만. 아치가 없고 문도 네모다.
 
 **도트 질감**
-- 맵 그림은 16px 칸에 맞춘다. 그려진 가장자리가 곧 걸을 수 있는 칸의 경계다.
+- 맵 그림은 48px 칸(세계 좌표 16 단위 칸 하나)에 맞춘다. 그려진 가장자리가 곧 걸을 수 있는 칸의 경계다.
 - 바닥은 평평하게 칠하고 2~3단 음영만 쓴다. 윤곽선은 넣지 않는다.
 - 물체에는 그 색조를 어둡게 한 1px 윤곽선을 넣는다.
 - 디더링은 안개, 그림자, 그림자 무리 가장자리에만 쓴다.
-- 마지막에 4절 색표로 줄인다. 음영을 위해 주요 색마다 밝기 단계 1~2개를 더해 쓴다(전체 30색 안팎, 뜻은 4절 그대로).
+- 마지막에 4절 색표로 줄인다. 음영을 위해 주요 색마다 밝기 단계 1~2개를 더해 쓴다(맵은 64색 이하, 뜻은 4절 그대로).
 - 인물은 언제나 맵 그림 위에 그린다. 지붕·나무 뒤로 걸어 들어가지 않으며, 높은 물체의 윗부분은 걸을 수 없는 칸으로 둔다.
 
 **소품 밀도** (16×16칸당 큰 소품 수)
@@ -323,14 +323,14 @@ holding its placeholder is incomplete; a later run fills only those.
 **AI 그림 다듬기 (도트)**
 1. 배경을 마젠타 `#FF00FF`로 만들게 한 뒤 지운다. 투명도는 0 또는 100%만.
 2. 픽셀 격자 크기를 찾아 최근접 방식으로 원래 크기까지 줄인다.
-3. 4절 색표(음영 단계 포함 약 30색)로 줄인다. 디더링은 안개와 그림자에만.
+3. 4절 색표(음영 단계 포함, 맵은 64색 이하)로 줄인다. 디더링은 안개와 그림자에만.
 4. 안티에일리어싱(중간색·반투명 가장자리)을 지우고, 같은 색조를 어둡게 한 1px 윤곽선을 다시 찍는다.
-5. 16px 격자를 겹쳐 본다. 인물 발은 칸 맨 아래 줄 가운데. 잿빛 구역 그림은 맵 위에서 1px도 어긋나지 않아야 한다.
+5. 48px 칸 격자를 겹쳐 본다. 인물 발은 칸 맨 아래 줄 가운데. 잿빛 구역 그림은 맵 위에서 1px도 어긋나지 않아야 한다.
 
 **AI 그림 다듬기 (일러스트)**: 마젠타 번짐을 지운다. 같은 인물의 표정 셋은 겹쳤을 때 머리와 어깨 위치가 같다(눈높이 1/3, 아래 끝 맞춤). AI가 한글을 그리게 하지 않는다. 간판은 비워서 만들고 주아체 글자를 손으로 넣는다.
 
 **자동 검사 (`npm test`, 의존성 없이 파일 머리를 읽음)**
-- PNG: 크기, 색표 방식, 32색 이하, 투명도 0/100%. 맵 크기가 16의 배수이고 `data/chapters`의 칸 수와 맞는지.
+- PNG: 크기, 색표 방식, 64색 이하, 투명도 0/100%. 맵 크기가 48의 배수이고 `data/chapters`의 칸 수 × 48과 맞는지.
 - WebP: 크기가 위 표와 맞는지.
 - 종류별 파일 상한, 장별 합계 예산.
 - 데이터가 가리키는 그림이 모두 있는지, 쓰지 않는 파일이 없는지, 이름 규칙.
@@ -350,13 +350,13 @@ holding its placeholder is incomplete; a later run fills only those.
 
 > 참고 그림은 게임 이름이나 작가 이름이 아니라 **화풍 갈래**로만 적는다. 네 갈래는 서로 다른 것을 하나씩 맡는다: 칸과 윤곽은 A, 색 단계는 B, 일러스트 칠은 C, 화면 구도는 D.
 
-**A. 2000년대 휴대용 게임기 시대의 16px 탑다운 도트 마을 (3/4 시점)**
-- 가져올 것: 16px 칸에 딱 맞는 타일, 물체 색을 어둡게 한 1px 윤곽, 둥글고 짙은 나무 덩어리, 윤곽이 있는 물길, 턱으로 나뉜 풀밭(3·6절). 북적이는 항구 도시 그림은 2장 너울장의 소품 밀도(12~16) 기준으로 쓴다.
+**A. 2000년대 휴대용 게임기 시대의 탑다운 도트 마을 (3/4 시점)**
+- 가져올 것: 칸(48px)에 딱 맞는 타일, 물체 색을 어둡게 한 1px 윤곽, 둥글고 짙은 나무 덩어리, 윤곽이 있는 물길, 턱으로 나뉜 풀밭(3·6절). 북적이는 항구 도시 그림은 2장 너울장의 소품 밀도(12~16) 기준으로 쓴다.
 - 피할 것: 이 시대 특정 게임의 타일 모양, 건물, 인물, 몬스터 디자인. 검정 윤곽.
 
 **B. 부드러운 회화풍 도트**
 - 가져올 것: 색조를 옮겨 가며 칠하는 음영(그늘은 푸른 쪽, 밝은 면은 금빛 쪽). 3장 냇물과 웅덩이의 부드러운 물빛(4·6절).
-- 피할 것: 30색이 넘는 색, 안티에일리어싱, 바닥 디더링(6절). 참고 그림 속 기존 인물과 돌길 무늬.
+- 피할 것: 64색이 넘는 색, 안티에일리어싱, 바닥 디더링(6절). 참고 그림 속 기존 인물과 돌길 무늬.
 
 **C. 요즘 애니메이션 키 아트의 칠**
 - 가져올 것: 셀 음영 2단에 부드러운 그라데이션 하나, 섬세한 머리카락 하이라이트, 감정이 잘 보이는 큰 눈(5절).
@@ -367,7 +367,7 @@ holding its placeholder is incomplete; a later run fills only those.
 - 피할 것: 도시의 현실적인 군중, 압박감이나 공포. 빛 알갱이는 그림자가 풀려나는 순간에만.
 
 **AI 생성 프롬프트에 쓸 말 / 쓰지 말 말**
-- 쓸 말: `16px pixel art`, `top-down 3/4 view`, `limited palette`, `1px darker-hue outline`, `flat ground shading`, `rounded tree canopy`, `cozy fantasy village`, `light from upper left`, `soft cel shading`, `modern adventure outfit`, `child-friendly`, `faceless grey silhouette crowd`, `desaturated`, `solid magenta background`
+- 쓸 말: `detailed pixel art, 48 pixels per tile`, `top-down 3/4 view`, `limited palette`, `1px darker-hue outline`, `flat ground shading`, `rounded tree canopy`, `cozy fantasy village`, `light from upper left`, `soft cel shading`, `modern adventure outfit`, `child-friendly`, `faceless grey silhouette crowd`, `desaturated`, `solid magenta background`
 - 쓰지 말 말: 게임·시리즈·회사·작가 이름, `in the style of`, `hanbok`, `kimono`, `hanfu`, `traditional ... costume`, `thatched roof`, `giwa`, `hanok`, `pagoda`, `sexy`, `seductive`, `mature`, `cleavage`, `fanservice`, `horror`, `teeth`, `blood`, `claws`. `bloom`과 `bokeh`는 효과 그림에만 쓴다.
 - 옷이나 건물을 설명할 때 나라 이름(`Korean`, `Japanese`, `Chinese` 등)을 붙이지 않는다. 장독·빨랫줄 같은 생활 소품은 나라 이름 없이 물건 이름으로만 지시한다(예: `large clay storage jars`, `clothesline`).
 

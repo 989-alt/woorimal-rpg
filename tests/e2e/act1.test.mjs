@@ -191,7 +191,7 @@ test('1막 끝까지: 시작 화면 → 부탁 4개 → 숨은 낱말 2개 → �
   assert.equal(await toast(page), '장작을 모았다. (1/3)');
   await interact(page, '냇가 마른 나무');
   assert.equal(await toast(page), '장작을 모았다. (2/3)');
-  await interact(page, '어귀 언덕 마른 나무');
+  await interact(page, '아랫마을 마른 나무');
   assert.equal(await toast(page), '장작을 다 모아서 가방에 넣었다.');
   assert.equal(await marker(page, 'baker'), '?');
   assert.deepEqual(await talkThrough(page, 'baker'), ['부리나케', '짬']);
