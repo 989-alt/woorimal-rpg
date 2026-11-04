@@ -212,6 +212,14 @@ print(im.size, all(p[:3] == (255, 255, 255) for p in rgba.getdata() if p[3] > 0)
 `), '(300, 104) True 0 True');
 });
 
+test('ui-slice mask: 위·아래 조각이 0이면 알아볼 수 있는 말로 멈춘다', (t) => {
+  const s = uiSliceSetup(t); if (!s) return;
+  const r = spawnSync(VENV_PY, ['-I', 'tools/ui-slice.py', 'mask', s.src, join(s.dir, 'm.png'), '--size', '400x104', '--slice', '0,80,0,80', '--src-corner', '60']);
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr.toString(), /bar --mask/);
+  assert.doesNotMatch(r.stderr.toString(), /Traceback/);
+});
+
 test('ui-slice sheet: 덩어리 셋을 이름 순서대로', (t) => {
   const s = uiSliceSetup(t); if (!s) return;
   const sheet = join(s.dir, 'sheet.png');

@@ -191,9 +191,12 @@ def build_bar(src, size, sl, asym_right=False):
 
 
 def cmd_frame(a, white=False):
+    sl = parse_slice(a.slice)
+    if min(sl) <= 0:
+        sys.exit(f"{a.cmd}: --slice의 네 값은 모두 1 이상이어야 합니다(위·아래가 0인 리본 가면은 bar --mask)")
     src = load_cropped(a.src)
     size = parse_size(a.size)
-    out = build_frame(src, size, parse_slice(a.slice), a.src_corner, getattr(a, "asym_right", False), a.fill or white)
+    out = build_frame(src, size, sl, a.src_corner, getattr(a, "asym_right", False), a.fill or white)
     save_palette_png(out, a.dst, white=white)
 
 

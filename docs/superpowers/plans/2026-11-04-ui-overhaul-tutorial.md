@@ -49,7 +49,8 @@
 ```
 design/art/art-bible.md         3·4·7·8절 고침(Task 1)
 design/art/ui/prompts/*.txt     UI 키트 프롬프트(Task 2), design/art/ui/raw/는 .gitignore
-tools/ui-slice.py               틀 대칭 9조각·아이콘 맞추기·시트 나누기·가면(Task 1)
+tools/ui-slice.py               틀 대칭 9조각·아이콘 맞추기·시트 나누기·가면(Task 1), 가로 3조각 bar(Task 2)
+tools/ui-postprocess.py         놋쇠 탁하게·바둑판 지우기·동전 면·마젠타 번짐 빼기(Task 2), 만든 기록 design/art/ui/BUILD.md
 tools/subset-fonts.py           고운돋움·주아 서브셋(Task 3), tools/fonts/*.chars.txt
 assets/ui/*.v1.png              UI 키트(Task 2)   assets/fonts/*.v1.woff2, OFL-*.txt(Task 3)
 data/assets.js                  ASSETS.ui, UI_KIT(Task 2)
@@ -80,6 +81,7 @@ tests/fixtures/ui-kit.html      UI 부품 견본 페이지(Task 3)
   - `ui-slice.py fit IN OUT --size WxH` → 알파 상자로 자르고 비율 유지해 맞춤(남는 곳 투명) — 메달, 로고, 아이콘 하나
   - `ui-slice.py sheet IN OUTDIR --names a,b,c --size WxH` → 연결된 덩어리를 위→아래, 왼→오 순서로 나눠 `OUTDIR/<name>.png`(각각 `fit`)
   - `ui-slice.py mask IN OUT --size WxH --slice T,R,B,L --src-corner PX` → 리본 가면(RGB는 모두 흰색, 알파만 모양), 좌우 대칭
+  - `ui-slice.py bar IN OUT --size WxH --slice T,R,B,L [--asym-right] [--mask]` → (Task 2에서 더함) 높이 H에 맞춰 비율대로 줄이고 왼 끝 L열 + 가운데 띠 + 오른 끝(왼쪽 거울, `--asym-right`이면 원본 오른 끝), 위아래 뒤집기 없음. 버튼·두루마리·HP 칸, `--mask`는 위·아래 조각이 0인 리본 가면. `frame`·`mask`는 조각 값에 0이 있으면 `bar --mask`를 쓰라는 말로 멈춘다
   - 모든 출력: 8비트 색표 PNG(256색 이하) + tRNS, 알파 8 이하는 0.
 
 - [ ] **Step 1: 아트 바이블 고치기** — README "아트 바이블과 다른 점" 표의 일곱 줄을 해당 절에 옮겨 쓴다. 3절 UI 모양 규칙 → 조각한 꿀빛 나무 테 + 놋쇠 선 + 모서리 놋쇠 잎 + 초록·파랑 보석 징, 틀은 2배 PNG 9조각. 4절 UI 색 → Global Constraints의 토큰 표(말빛 금 예외 문장 포함). 7절 → "UI는 그림 틀(PNG 9조각), 글자는 HTML", 탐험 HUD는 위 88px 영역의 떠 있는 명판·초상 메달·두루마리·아이콘 버튼, 타이틀 두 단계(타이틀 → 모습 고르기), 대화 상자 수치(좌우 24·높이 200·아래 16·글자 28), 글꼴 크기 표(Global Constraints), "처음 하는 학생 안내"를 Task 8의 안내 표로 바꾸고 "첫 전투 전 규칙 한 장"을 "첫 전투의 안내 말풍선"으로. 8절 → 형식 표에 `assets/ui/` 줄(8비트 색표 + 투명, 2배, 틀 40KB·로고 200KB·아이콘 12KB 이하), 로고는 그림 한글의 유일한 예외, 맵 표시는 "캔버스가 화면을 꽉 채운다: 내부 크기 = 화면 크기 / f", 처음 열 때 3MB의 범위(코드·글꼴·UI 키트·타이틀·모습 카드 상반신 2장·1장 도트), 글꼴 상한(고운돋움 320KB, 주아 120KB, 아래 Task 3 사유), 폴더에 `assets/ui/`.
