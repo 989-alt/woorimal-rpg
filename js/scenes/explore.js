@@ -118,6 +118,8 @@ export const explore = {
     const WALK_MS = 220; // 걸음을 뗀 뒤 이 시간 동안은 걷는 모습
     // 그림 한 장이 막 도착하면 상태가 그대로여도 다시 그린다.
     const stopImages = onImageLoaded(() => { drawn = null; });
+    // 글꼴이 늦게 오면(font-display: swap) 가만히 있는 화면의 캔버스 글자(머리 위 표시 등)가 대신 글꼴로 남는다. 한 번 다시 그린다.
+    document.fonts?.ready.then(() => { drawn = null; });
     preloadChapter(state.chapter, state.avatar);
     // 상태(자리·부탁 등)가 바뀌었거나, 화면 안의 움직이는 그림이 바뀌었거나, 캔버스가 지워졌을 때만 다시 그린다.
     // 겹침 창이 열려 있는 동안은 (캔버스가 지워진 때가 아니면) 그리지 않는다.

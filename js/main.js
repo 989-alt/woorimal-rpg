@@ -11,7 +11,7 @@ import { battle, battleProbe } from './scenes/battle.js';
 import { gameover } from './scenes/gameover.js';
 import { clear } from './scenes/clear.js';
 import { ASSETS } from '../data/assets.js';
-import { loadImage } from './ui/images.js';
+import { loadImage, forgetFailed } from './ui/images.js';
 
 function safeLocalStorage() {
   try { return window.localStorage; } catch { return null; }
@@ -25,9 +25,11 @@ const setState = (next) => { state = next; };
 const router = createRouter(document.getElementById('app'), { store, getState, setState });
 
 // 장면이 바뀔 때마다 저장한다(한 칸 걸을 때마다 저장하지는 않는다).
+// 앞 장면에서 못 받은 그림은 새 장면에서 한 번 더 받아 본다.
 const show = router.show;
 router.show = (name, params) => {
   if (state) store.save(state);
+  forgetFailed();
   show(name, params);
 };
 // 창을 닫거나 다른 탭으로 갈 때도 걸어 온 자리를 남긴다.
