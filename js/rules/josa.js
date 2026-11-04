@@ -6,7 +6,7 @@ export function hasBatchim(ch) {
 
 export function attachJosa(name, kind) {
   const b = hasBatchim(name.slice(-1));
-  const josa = { '아': b ? '아' : '야', '이': b ? '이' : '가', '은': b ? '은' : '는', '을': b ? '을' : '를' }[kind];
+  const josa = { '아': b ? '아' : '야', '이': b ? '이' : '가', '은': b ? '은' : '는', '을': b ? '을' : '를', '와': b ? '과' : '와' }[kind];
   return name + (josa ?? '');
 }
 

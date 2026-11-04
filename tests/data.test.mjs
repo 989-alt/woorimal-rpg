@@ -188,6 +188,7 @@ test('부탁 대상이 맵에 있다: 물건 slot은 objects와 맵에, deliver 
       ids.push(q.id);
       assert.ok(npcIds.includes(q.giver), `${q.id} giver`);
       assert.ok(q.title && q.title.length <= 20, `${q.id} 제목`);
+      assert.ok(typeof q.goal === 'string' && q.goal.length > 0 && q.goal.length <= 20, `${q.id} 지금 할 일 한 줄(개수 덧붙임 여유 5자)`);
       assert.ok(Array.isArray(q.targets), `${q.id} targets`);
       if (['fetch', 'find', 'gather'].includes(q.kind)) {
         const n = q.kind === 'gather' ? q.targets.length : 1;

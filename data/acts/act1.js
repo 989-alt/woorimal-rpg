@@ -1,5 +1,6 @@
 // 1막 「새벽골」 — 설계 3절(줄거리), 5-2·5-3절(부탁·숨은 낱말 배정)을 따른다.
 // 맵 글자: # 막힘 · . 길 · S 시작 · F 안개 문 · M 막 보스 · m 작은 몬스터 · a~e 인물 · 0~9 물건
+// 부탁의 goal은 부탁을 받아 하는 동안 HUD·할 일 창에 보이는 "지금 할 일" 한 줄(25자 이하). 받기 전·돌아가 알리기는 js/rules/guide.js가 인물 이름으로 만든다.
 // 대사: 낱말은 [[낱말]]로 쓰고 done·hidden.lines에서만 처음 나온다. {이름}, {이름|아/이/은/을}은 닉네임으로 바뀐다.
 
 const npc = (id, face, text) => (face ? { who: 'npc', npc: id, face, text } : { who: 'npc', npc: id, text });
@@ -82,6 +83,7 @@ const CH_1_1 = {
   quests: [
     {
       id: 'q1', giver: 'dodam', kind: 'fetch', title: '우물에서 물 길어 오기',
+      goal: '우물에서 물을 길어 오자',
       targets: ['0'], item: { id: 'water', name: '물동이' },
       words: ['어스름', '아침나절'],
       offer: [
@@ -111,6 +113,7 @@ const CH_1_1 = {
     },
     {
       id: 'q2', giver: 'daon', kind: 'chase', title: '꼬마 안개 쫓아내기',
+      goal: '꼬마 안개를 쫓아내자',
       targets: [],
       words: ['매무새', '손사래'],
       offer: [
@@ -225,6 +228,7 @@ const CH_1_2 = {
   quests: [
     {
       id: 'q3', giver: 'baker', kind: 'gather', title: '마른 나무에서 장작 모으기',
+      goal: '마른 나무에서 장작을 모으자',
       targets: ['0', '1', '2'], item: { id: 'firewood', name: '장작' },
       words: ['부리나케', '짬'],
       offer: [
@@ -250,6 +254,7 @@ const CH_1_2 = {
     },
     {
       id: 'q4', giver: 'laundry', kind: 'deliver', title: '할머니 편지 전하기',
+      goal: '편지를 어귀 할아버지에게 전하자',
       targets: ['gate'], item: { id: 'letter', name: '편지' },
       words: ['곰비임비', '얼추'],
       offer: [
