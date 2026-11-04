@@ -318,7 +318,7 @@ export const dialogue = {
       if (index + 1 < script.length) { showLine(index + 1); return; }
       leaving = true;
       scene.removeAttribute('data-ready');
-      ctx.router.show(params.next || 'explore');
+      ctx.router.show(params.next || 'explore', params.nextParams);
     }
 
     const onKey = (e) => {
@@ -371,7 +371,7 @@ export const dialogue = {
 
     if (script.length === 0) {
       leaving = true;
-      queueMicrotask(() => { if (scene.isConnected) ctx.router.show(params.next || 'explore'); });
+      queueMicrotask(() => { if (scene.isConnected) ctx.router.show(params.next || 'explore', params.nextParams); });
     } else {
       showLine(0);
     }

@@ -23,12 +23,13 @@ after(async () => {
 const FIXTURE = '/tests/fixtures/sprite-16x32.png';
 const MISSING = '/assets/illust/missing_404.webp';
 
-// 1막 뒷 장에서 보스까지 이긴 상태(낱말을 다 얻고 막을 마침)로 세운다. 걷기만 남는다.
+// 그 막 뒷 장에서 보스까지 이긴 상태(낱말을 다 얻고 막을 마침, 보스 뒤 장면은 이미 봄)로 세운다. 걷기만 남는다.
 async function atActEnd(page, act = 1) {
   const ids = actWords(ACTS[act - 1]);
   await page.evaluate((a) => window.__test.goChapter(`${a}-2`), act);
   await page.evaluate(([a, words]) => window.__test.patchState((s) => ({
     clearedActs: Array.from({ length: a }, (_, i) => i + 1),
+    seenScenes: a > 1 ? [...(s.seenScenes ?? []), `${a}-2:afterBoss`] : (s.seenScenes ?? []), // 1막에는 보스 뒤 장면이 없다
     acquired: { ...s.acquired, ...Object.fromEntries(words.map((w) => [w, { from: '검사' }])) },
   })), [act, ids]);
   await page.waitForSelector('[data-scene="explore"] canvas');

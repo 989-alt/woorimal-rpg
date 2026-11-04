@@ -7,6 +7,7 @@ import {
   newGame, chapterOf, chapterWords, actWords, acquireWords, takeWords, acquiredCount,
   fogOpen, chapterComplete, enterNextChapter, finishAct, setPos, markTip, extractWords, wordMark,
   exitOpen, exitBlockedText, bossGone, enterNextAct, nextChapterOf, fastForward,
+  afterBossKey, afterBossDue, markSceneSeen,
 } from '../js/rules/game.js';
 
 const deepFreeze = (o) => {
@@ -243,4 +244,24 @@ test('막마다 뒷 장 출구는 보스를 이긴 뒤에만 열리고, 닫혔�
     assert.equal(exitBlockedText(s, last), '길을 막은 그림자를 먼저 물리치자');
     assert.equal(exitOpen({ ...s, clearedActs: [...s.clearedActs, act.id] }, last), true, last.id);
   }
+});
+
+test('afterBossDue: 보스를 이기고 아직 안 봤을 때만, markSceneSeen 뒤에는 false', () => {
+  const ch = ACTS[3].chapters[1];
+  const s = fastForward(newGame({ nickname: '하늘', avatar: 'f' }), '4-2');
+  assert.equal(afterBossKey(ch), '4-2:afterBoss');
+  assert.equal(afterBossDue(s, ch), false);
+  const won = { ...s, clearedActs: [...s.clearedActs, 4] };
+  assert.equal(afterBossDue(won, ch), true);
+  const seen = markSceneSeen(won, afterBossKey(ch));
+  assert.equal(afterBossDue(seen, ch), false);
+  assert.deepEqual(markSceneSeen(seen, '4-2:afterBoss').seenScenes, seen.seenScenes);
+  const { seenScenes, ...old } = won; // 옛 상태
+  assert.deepEqual(markSceneSeen(old, '4-2:afterBoss').seenScenes, ['4-2:afterBoss']);
+  assert.equal(afterBossDue(old, ch), true); // seenScenes가 없으면 빈 것으로 본다
+  assert.equal(afterBossDue({ ...won, chapter: '1-2' }, ACTS[0].chapters[1]), false); // 1막에는 afterBoss 없음
+  assert.equal(afterBossDue(won, ACTS[3].chapters[0]), false); // 앞 장에는 afterBoss 없음
+  // 받은 상태를 바꾸지 않는다
+  const frozen = deepFreeze({ ...won });
+  markSceneSeen(frozen, '4-2:afterBoss');
 });

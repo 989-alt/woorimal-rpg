@@ -93,10 +93,10 @@ if (new URLSearchParams(location.search).get('test') === '1') {
       router.show('explore');
     },
     // 탐험 장면처럼 낱말을 먼저 얻고 대화를 연다. 이미 얻은 낱말은 카드 없이 띠만 보인다.
-    dialogue(script, words = [], from = '', next) {
+    dialogue(script, words = [], from = '', next, nextParams) {
       const got = takeWords(state, words, from);
       state = got.state;
-      router.show('dialogue', { script, words: got.fresh, from, next });
+      router.show('dialogue', { script, words: got.fresh, from, next, nextParams });
     },
     // 필요한 낱말을 얻은 상태로 전투를 연다(지금 막 기준).
     // review: 지금 막에서 쫓기 부탁이 있는 첫 장으로 가서 그 앞 부탁들을 끝내고(낱말 얻음) 쫓기 부탁 진행 중 / boss: 그 막 낱말 10개 + 앞 장이면 뒷 장

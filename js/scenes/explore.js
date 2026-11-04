@@ -7,7 +7,7 @@ import { drawExplore, cameraFor, animKey, inViewWorld } from '../explore/render.
 import { nextGlide, drawnPos, glideEnd } from '../explore/motion.js';
 import { onImageLoaded, preloadChapter } from '../ui/images.js';
 import { createHud, createToast, fogMessage, HUD_INSET } from '../explore/hud.js';
-import { chapterOf, fogOpen, bossGone, exitOpen, exitBlockedText, setPos, markTip, takeWords } from '../rules/game.js';
+import { chapterOf, fogOpen, bossGone, exitOpen, exitBlockedText, setPos, markTip, takeWords, afterBossKey, afterBossDue, markSceneSeen } from '../rules/game.js';
 import { talkTo, inspect, fightGate, visibleNpcs } from '../rules/quests.js';
 import { openCodex } from './codex.js';
 import { openTasks } from './quests.js';
@@ -26,6 +26,21 @@ export const explore = {
     const actData = actOfChapter(state.chapter);
     const chapter = chapterOf(actData, state.chapter);
     const map = parseMap(chapter.map.rows);
+
+    // 보스 뒤 장면: 방금 본 장면은 기록하고 저장한다. 아직 안 봤으면(끝까지 보기 전에 새로 고침한 때도) 대화를 먼저 연다.
+    // 길잡이("길 끝으로 가 보자")는 장면을 다 본 뒤 이 장면이 guide:'won'으로 다시 열릴 때 띄운다.
+    if (params?.sceneSeen) {
+      state = markSceneSeen(state, params.sceneSeen);
+      ctx.setState(state);
+      ctx.store?.save?.(state);
+    }
+    if (afterBossDue(state, chapter)) {
+      const key = afterBossKey(chapter);
+      queueMicrotask(() => ctx.router.show('dialogue', {
+        script: chapter.afterBoss, words: [], from: '', next: 'explore', nextParams: { sceneSeen: key, guide: 'won' },
+      }));
+      return () => {};
+    }
     let leaving = false;
 
     const el = document.createElement('section');
