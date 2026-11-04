@@ -306,3 +306,62 @@
   background: none;
   border-image: var(--ui-hp-cell) 0 20 0 20 fill / 0 10px 0 10px stretch;
 }
+
+/* ── 안내 말풍선(js/ui/hint.js) ─────────────
+   나무 명판(.frame-plate) + 가리키는 꼬리. 눌림은 모두 통과시키고(pointer-events: none), 나타날 때 서서히 떠오른 뒤 천천히 둥실거린다.
+   제목·강조 낱말(.hint-em)은 단추 글자처럼 흰 글자 + 먹갈 윤곽 주아. 말빛 금색은 쓰지 않는다. */
+.hint-layer { position: absolute; inset: 0; z-index: 40; overflow: hidden; pointer-events: none; }
+.hint {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: 420px;
+  pointer-events: none;
+  opacity: 0;
+}
+.hint[data-ready] { animation: hint-in 180ms ease-out forwards; }
+.hint[data-place='above'][data-ready] { --from: 6px; }
+.hint[data-place='below'][data-ready] { --from: -6px; }
+.hint-float { position: relative; filter: drop-shadow(0 4px 5px rgba(20, 10, 0, .38)); animation: hint-bob 2.4s ease-in-out 180ms infinite; }
+.hint-plate { background: var(--parchment); }
+.hint-body { padding: 8px 12px; }
+.hint-line {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 20px;
+  line-height: 1.55;
+  color: var(--ink);
+  word-break: keep-all;
+}
+.hint-em {
+  font-family: var(--font-title, 'Jua', sans-serif);
+  font-weight: 400;
+  font-size: 22px;
+  color: #fff;
+  -webkit-text-stroke: 5px var(--wood-dark);
+  paint-order: stroke fill;
+  letter-spacing: .02em;
+}
+/* 꼬리: 돌린 정사각형. 한지 면이 명판 테두리를 살짝 덮어 말풍선이 이어진 모습이 된다. 바깥 두 변만 나무색 선. */
+.hint-tail {
+  position: absolute;
+  left: var(--arrow-x, 40px);
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  box-sizing: border-box;
+  background: var(--parchment);
+  transform: rotate(45deg);
+}
+.hint[data-place='above'] .hint-tail { top: calc(100% - 16px); border-right: 4px solid var(--wood); border-bottom: 4px solid var(--wood); }
+.hint[data-place='below'] .hint-tail { top: -4px; border-left: 4px solid var(--wood); border-top: 4px solid var(--wood); }
+@keyframes hint-in {
+  from { opacity: 0; translate: 0 var(--from, 6px); }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes hint-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) {
+  .hint[data-ready] { animation-name: hint-fade; }
+  .hint-float { animation: none; }
+  @keyframes hint-fade { from { opacity: 0; } to { opacity: 1; } }
+}
