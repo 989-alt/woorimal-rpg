@@ -4,7 +4,7 @@
 export const ASSETS = {
   // 탐험 맵(1536×1152, 칸당 48, 장 id)
   maps: { '1-1': 'assets/pixel/map_ch1-1_saebyeokgol.png', '1-2': 'assets/pixel/map_ch1-2_maeul-eogwi.png' },
-  // 주인공 걷기 시트 144×384: 48×96칸 × 3프레임(왼발·서기·오른발) × 4방향(아래·왼·오·위) (f 여 · m 남)
+  // 주인공 걷기 시트 144×384: 48×96칸 × 3프레임(서기·왼발·오른발) × 4방향(아래·왼·오·위) (f 여 · m 남)
   walk: { f: 'assets/pixel/walk_hero_f.png', m: 'assets/pixel/walk_hero_m.png' },
   // 인물 도트 48×96(그림 48×72쯤, 발이 맨 아래 줄 가운데) (인물 id)
   npcs: {

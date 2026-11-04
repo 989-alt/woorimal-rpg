@@ -189,7 +189,54 @@ def frame(img, box, scale, pal, anchor_cx=True):
     return a
 
 
-def hero(sex, raw, target_h=70):
+# 말빛 주머니 7×9(아트 바이블 5절 6×9 + 윤곽): W 한지색 몸, c 그늘, o 크림을 어둡게 한 윤곽, b 놋쇠 단추
+POUCH = ['.ooooo.',
+         'oWWWWWo',
+         'oWWWWco',
+         'ooobooo',
+         'oWWWWco',
+         'oWWWWco',
+         'oWWWcco',
+         'occccco',
+         '.ooooo.']
+POUCH_COL = {'W': '#FBF5E6', 'c': '#D3C9B5', 'o': '#7E6646', 'b': '#D9A55B'}
+
+
+def stamp_pouch(cell, top=73, band=(72, 80)):
+    """오른쪽을 보는 프레임의 가까운(오른쪽) 허리에 주머니를 다시 찍는다.
+    AI가 그린 주머니는 한지색이 살색으로 바뀌어(색표 맞춤) 손처럼 보이고 프레임마다 크기가 달라서,
+    허리 띠(band)의 살색 덩어리 가운데에 같은 모양·같은 높이(top)로 덮어 그린다."""
+    skin = {rgb(c) for c in ['#F7D7BA', '#E9B794', '#C98D6E', '#EDE6D6']}
+    ys, xs = [], []
+    for y in range(*band):
+        for x in range(cell.shape[1]):
+            if cell[y, x, 3] and tuple(int(v) for v in cell[y, x, :3]) in skin:
+                ys.append(y); xs.append(x)
+    cx = int(round(sum(xs) / len(xs))) if xs else body_cx(cell)
+    x0 = int(cx) - len(POUCH[0]) // 2
+    for dy, row in enumerate(POUCH):
+        for dx, ch in enumerate(row):
+            if ch != '.':
+                cell[top + dy, x0 + dx] = (*rgb(POUCH_COL[ch]), 255)
+    return cell
+
+
+def erase_back(cell, x0, y0, y1, outline='#33201A'):
+    """왼쪽을 보는 프레임에서 등 뒤로 삐져나온 주머니(x0 오른쪽, y0..y1)를 지우고, 새 가장자리에 윤곽을 찍는다."""
+    cell[y0:y1 + 1, x0:, 3] = 0
+    cell[y0:y1 + 1, x0:, :3] = 0
+    for y in range(y0, y1 + 1):
+        xs = np.nonzero(cell[y, :x0, 3])[0]
+        if len(xs):
+            cell[y, xs.max()] = (*rgb(outline), 255)
+    return cell
+
+
+# 남자 왼쪽 보기 줄: 걷는 두 프레임에만 주머니가 등 뒤로 삐져나와서(서기에는 없음) 지운다. (칸, x0, y0, y1)
+M_LEFT_ERASE = [(1, 32, 71, 78), (2, 31, 72, 78)]
+
+
+def hero(sex, raw, target_h=70, pouch_right=False):
     img = load(raw)
     alpha = np.array(img)[..., 3]
     boxes = split_grid(alpha, 3, 4)
@@ -209,19 +256,28 @@ def hero(sex, raw, target_h=70):
         r, c = divmod(i, 3)
         c = order.index(c)
         cell = place(f, 48, 96, cx=body_cx(f))
+        if pouch_right and r == 1:
+            for col, x0, y0, y1 in M_LEFT_ERASE:
+                if col == c:
+                    cell = erase_back(cell, x0, y0, y1)
+        if pouch_right and r == 2:
+            # 남자 시트는 오른쪽 보기 줄의 주머니가 프레임마다 들쭉날쭉해서, 세 프레임 모두 같은 모양·높이로 다시 찍는다.
+            cell = stamp_pouch(cell)
         sheet[r * 96:(r + 1) * 96, c * 48:(c + 1) * 48] = cell
     save_png(sheet, os.path.join(OUT, f'walk_hero_{sex}.png'))
     print(f'  row scales {scales}, heights', [f.shape[0] for f in frames])
 
 
 NPC_IDS = ['dodam', 'daon', 'gardener', 'baker', 'laundry', 'gate']
-NPC_H = {'dodam': 76, 'daon': 60, 'gardener': 74, 'baker': 78, 'laundry': 70, 'gate': 70}
+NPC_H = {'dodam': 76, 'daon': 60, 'gardener': 72, 'baker': 72, 'laundry': 70, 'gate': 70}
 
 
-def npcs(raw):
+def npcs(raw, ids=NPC_IDS, grid=(3, 2)):
     img = load(raw)
-    boxes = split_grid(np.array(img)[..., 3], 3, 2)
-    for nid, box in zip(NPC_IDS, boxes):
+    boxes = split_grid(np.array(img)[..., 3], *grid)
+    for nid, box in zip(ids, boxes):
+        if nid is None:
+            continue
         h, w = box[3] - box[1], box[2] - box[0]
         scale = min(NPC_H[nid] / h, 48 / w)
         if nid == 'dodam':
@@ -315,8 +371,10 @@ def icons(raw):
 
 JOBS = {
     'hero_f': lambda src: hero('f', src or 'walk_hero_f_a1_cut.png', 74),
-    'hero_m': lambda src: hero('m', src or 'walk_hero_m_a1_cut.png', 71),
-    'npcs': lambda src: npcs(src or 'npcs_a1_cut.png'),
+    'hero_m': lambda src: hero('m', src or 'walk_hero_m_a1_cut.png', 71, pouch_right=True),
+    # 텃밭·빵집 아저씨는 마을 사람 규칙(머리 장식 없음, 아트 바이블 3·5절)에 맞춰 다시 그린 그림(npcs_bare)을 쓴다.
+    'npcs': lambda src: (npcs(src or 'npcs_a1_cut.png', ['dodam', 'daon', None, None, 'laundry', 'gate']),
+                         npcs('npcs_bare_a1_cut.png', ['gardener', 'baker'], (2, 1))),
     'monsters': lambda src: monsters(src or 'monsters_a2_cut.png'),
     'icons': lambda src: icons(src or 'icons_a1_cut.png'),
 }

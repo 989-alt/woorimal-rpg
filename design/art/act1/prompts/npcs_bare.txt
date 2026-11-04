@@ -1,0 +1,7 @@
+Pixel art character sprites for a top-down 3/4 view RPG, detailed pixel art, 48 pixels per tile. The reference image shows two villagers: keep their faces, bodies, clothes, colours, proportions and pixel style exactly, but draw both with bare heads (no hat, no cap, no bandana, nothing on the head).
+Two figures standing still facing the viewer (front view), side by side with a wide gap, feet on the same baseline:
+Left: the gardener man, short tousled brown hair and moustache, brown (#7A5C48) work clothes with rolled sleeves, holding a small garden hoe upright: a long wooden handle with a small flat rectangular metal blade fixed at a right angle at the bottom end, resting on the ground beside his foot (a hoe, not a sickle, not a scythe).
+Right: the plump baker man, short neat brown hair and moustache, cream (#EDE6D6) apron over a light brown shirt, nothing on his head.
+Simple shapes, low-saturation colours, no blue, no orange, no purple, child-friendly.
+Style: crisp hard-edged pixels, no blur, no anti-aliasing, limited palette, 1px darker-hue outlines (never black), soft cel shading, light from the upper left.
+Solid flat magenta (#FF00FF) background everywhere, no ground shadows, no text, no labels.
