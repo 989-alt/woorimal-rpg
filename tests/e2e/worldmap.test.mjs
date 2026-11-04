@@ -5,7 +5,6 @@ import { startServer } from './server.mjs';
 import { launchBrowser } from './browser.mjs';
 import { openGame, state, playDialogue, continueAs } from './play.mjs';
 import { walkToExit, KEYS } from './helpers.mjs';
-import { parseMap, isWalkable } from '../../js/explore/grid.js';
 import { ACTS } from '../../data/acts/index.js';
 import { WORLD } from '../../data/world.js';
 import { actWords, exitOpen } from '../../js/rules/game.js';
@@ -128,15 +127,11 @@ test('세계 지도에서 새로 고침 → 이어하기: 1-2 출구가 열린 �
   await page.waitForTimeout(300);
   assert.equal(await page.locator('[data-scene="clear"], [data-scene="worldmap"]').count(), 0, '저절로 넘어가지 않는다');
 
-  // 저장은 출구 칸에서 했으므로 한 칸 물러났다가 다시 들어선다
+  // 출구 칸이 아니라 그 안쪽 한 칸에서 출구를 보고 선다: 비켜 섰다 다시 들어설 필요 없이 한 걸음이면 막 클리어
   const chapter = ACTS[0].chapters[1];
-  const map = parseMap(chapter.map.rows);
-  const opts = { fogOpen: true, smallMonsterGone: true, bossGone: true };
-  const back = Object.entries({ up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] })
-    .find(([, [dx, dy]]) => isWalkable(map, s.pos.x + dx, s.pos.y + dy, opts));
-  assert.ok(back, '출구 옆에 걸을 수 있는 칸이 있다');
-  await page.keyboard.press(KEYS[back[0]]);
-  await walkToExit(page);
+  assert.deepEqual(s.pos, { x: chapter.exit.x, y: chapter.exit.y + 1 });
+  assert.equal(s.facing, chapter.exit.dir);
+  await page.keyboard.press(KEYS[chapter.exit.dir]);
   await page.waitForSelector('[data-scene="clear"]');
   await page.getByRole('button', { name: '세계 지도로' }).click();
   await page.waitForSelector('[data-scene="worldmap"]');
@@ -246,16 +241,7 @@ test('지도 그림(ASSETS.worldmap)이 있으면 그림을 깔고 임시 지도
 });
 
 async function toWorldMapAgain(page) {
-  await walkToExit(page).catch(async () => {
-    // 이미 출구 칸이면 한 칸 물러났다가 다시 들어선다
-    const s = await state(page);
-    const chapter = ACTS[0].chapters[1];
-    const map = parseMap(chapter.map.rows);
-    const opts = { fogOpen: true, smallMonsterGone: true, bossGone: true };
-    const back = Object.entries({ up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }).find(([, [dx, dy]]) => isWalkable(map, s.pos.x + dx, s.pos.y + dy, opts));
-    await page.keyboard.press(KEYS[back[0]]);
-    await walkToExit(page);
-  });
+  await walkToExit(page); // 출구에 들어서며 저장된 자리는 출구 안쪽 한 칸이다
   await page.waitForSelector('[data-scene="clear"]');
   await page.getByRole('button', { name: '세계 지도로' }).click();
   await page.waitForSelector('[data-scene="worldmap"]');

@@ -188,5 +188,17 @@ test('1막을 마친 옛 저장은 1-2에서 출구가 열린 채 불러온다',
   const r = createStore(st).load('가');
   assert.equal(r.ok, true);
   assert.equal(exitOpen(r.state, ch), true);
+  // 열린 출구 칸에 선 채 저장됐으면(세계 지도·엔딩에서 새로 고침) 한 칸 물러서 출구를 본다: 한 걸음이면 다시 출구
+  assert.deepEqual(r.state.pos, { x: ch.exit.x, y: ch.exit.y + 1 });
+  assert.equal(r.state.facing, 'up');
+});
+
+test('닫힌 출구 칸에 선 저장은 그 자리 그대로 불러온다', () => {
+  const st = fakeStorage();
+  const g = fastForward(newGame({ nickname: '가', avatar: 'f' }), '1-2');
+  const ch = ACT1.chapters[1];
+  st.setItem('malbit:save:가', JSON.stringify({ ...g, pos: { x: ch.exit.x, y: ch.exit.y }, facing: 'up' }));
+  const r = createStore(st).load('가');
+  assert.equal(exitOpen(r.state, ch), false);
   assert.deepEqual(r.state.pos, { x: ch.exit.x, y: ch.exit.y });
 });

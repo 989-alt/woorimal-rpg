@@ -97,6 +97,16 @@ export function exitOpen(state, chapter) {
   return last ? actCleared(state, act) : chapterComplete(state, chapter);
 }
 
+// 열린 출구 칸에 서 있으면 출구 안쪽으로 한 칸 물러선 자리(출구를 봄)로 옮긴다. 아니면 받은 상태 그대로.
+// 출구에 들어서며 클리어로 넘어갈 때 저장되는 자리이고, 불러오기도 이것으로 맞춘다: 이어 하면 한 걸음에 다시 출구로 들어선다.
+const BACK = { up: [0, 1], down: [0, -1], left: [1, 0], right: [-1, 0] };
+export function stepOffOpenExit(state, chapter) {
+  const e = chapter.exit;
+  if (!e || state.pos?.x !== e.x || state.pos?.y !== e.y || !exitOpen(state, chapter)) return state;
+  const [dx, dy] = BACK[e.dir];
+  return setPos(state, { x: e.x + dx, y: e.y + dy }, e.dir);
+}
+
 export const EXIT_CLOSED_TEXT = '길을 막은 그림자를 먼저 물리치자';
 
 // 닫힌 출구 칸에 들어섰을 때 띄울 한 줄. 열려 있거나 출구가 없으면 null.

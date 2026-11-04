@@ -1,7 +1,7 @@
 // 저장소: 닉네임별 localStorage 저장. storage는 주입한다.
 import { ACTS, actOfChapter } from '../data/acts/index.js';
 import { parseMap, isWalkable } from './explore/grid.js';
-import { fogOpen, bossGone } from './rules/game.js';
+import { fogOpen, bossGone, stepOffOpenExit } from './rules/game.js';
 const SAVE = 'malbit:save:';
 const NAMES = 'malbit:names';
 const PROBE = 'malbit:probe';
@@ -45,6 +45,9 @@ function repair(saved) {
   if (state.act !== actOfChapter(chapter.id).id) state = { ...state, act: actOfChapter(chapter.id).id };
   if (!typeOk(state.seenScenes, 'array')) state = { ...state, seenScenes: [] };
   if (!typeOk(state.revealed, 'object')) state = { ...state, revealed: {} };
+  // 열린 출구 칸에 선 채 저장된 때(클리어·세계 지도·엔딩 도중 새로 고침, 이전 판의 저장): 한 칸 물러서 출구를 본다.
+  // 출구 칸에 선 채로 이어 하면 비켰다가 다시 들어서야 넘어갈 수 있었다.
+  state = stepOffOpenExit(state, chapter);
   const map = parseMap(chapter.map.rows);
   const { x, y } = state.pos;
   const opts = { fogOpen: fogOpen(state, chapter), smallMonsterGone: !!state.smallGone[chapter.id], bossGone: bossGone(state, chapter) };

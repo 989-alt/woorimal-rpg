@@ -7,8 +7,9 @@ import {
   newGame, chapterOf, chapterWords, actWords, acquireWords, takeWords, acquiredCount,
   fogOpen, chapterComplete, enterNextChapter, finishAct, setPos, markTip, extractWords, wordMark,
   exitOpen, exitBlockedText, bossGone, enterNextAct, nextChapterOf, fastForward,
-  afterBossKey, afterBossDue, markSceneSeen,
+  afterBossKey, afterBossDue, markSceneSeen, stepOffOpenExit,
 } from '../js/rules/game.js';
+import { isWalkable } from '../js/explore/grid.js';
 
 const deepFreeze = (o) => {
   if (o && typeof o === 'object' && !Object.isFrozen(o)) {
@@ -151,6 +152,36 @@ test('exitOpen: 앞 장은 낱말을 다 모았을 때, 뒷 장은 막 보스를
   const bare = { ...ch1 };
   delete bare.exit;
   assert.equal(exitOpen(s, bare), false);
+});
+
+test('stepOffOpenExit: 열린 출구 칸이면 안쪽으로 한 칸 물러서 출구를 보고, 아니면 그대로', () => {
+  const ch1 = chapterOf(ACT, '1-1');
+  const e = ch1.exit;
+  const open = deepFreeze({ ...acquireWords(fresh(), chapterWords(ch1), 'x'), pos: { x: e.x, y: e.y }, facing: 'up' });
+  const off = stepOffOpenExit(open, ch1);
+  assert.deepEqual(off.pos, { x: e.x, y: e.y + 1 });
+  assert.equal(off.facing, e.dir);
+  // 닫힌 출구 칸·출구가 아닌 칸은 그대로(같은 상태)
+  const closed = { ...fresh(), pos: { x: e.x, y: e.y } };
+  assert.equal(stepOffOpenExit(closed, ch1), closed);
+  const elsewhere = { ...open, pos: { x: e.x, y: e.y + 2 } };
+  assert.equal(stepOffOpenExit(elsewhere, ch1), elsewhere);
+});
+
+test('모든 장: 출구 안쪽 한 칸은 걸을 수 있는 칸이고, 거기서 출구 쪽으로 한 걸음이면 출구다', () => {
+  const STEP = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  for (const act of ACTS) {
+    for (const ch of act.chapters) {
+      const s = { ...fastForward(fresh(), ch.id), clearedActs: ACTS.map((a) => a.id), pos: { x: ch.exit.x, y: ch.exit.y } };
+      const all = acquireWords(s, actWords(act), 'x');
+      const off = stepOffOpenExit(all, ch);
+      assert.notDeepEqual(off.pos, all.pos, `${ch.id} 출구가 열려 있어야 한다`);
+      const map = parseMap(ch.map.rows);
+      assert.ok(isWalkable(map, off.pos.x, off.pos.y, { fogOpen: true, smallMonsterGone: true, bossGone: true }), `${ch.id} ${JSON.stringify(off.pos)}`);
+      const [dx, dy] = STEP[off.facing];
+      assert.deepEqual({ x: off.pos.x + dx, y: off.pos.y + dy }, { x: ch.exit.x, y: ch.exit.y }, ch.id);
+    }
+  }
 });
 
 test('exitBlockedText: 앞 장은 남은 낱말 수, 뒷 장은 그림자 글, 열렸으면 null', () => {

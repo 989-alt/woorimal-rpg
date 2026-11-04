@@ -7,7 +7,7 @@ import { drawExplore, cameraFor, animKey, inViewWorld } from '../explore/render.
 import { nextGlide, drawnPos, glideEnd } from '../explore/motion.js';
 import { onImageLoaded, preloadChapter } from '../ui/images.js';
 import { createHud, createToast, fogMessage, HUD_INSET } from '../explore/hud.js';
-import { chapterOf, fogOpen, bossGone, exitOpen, exitBlockedText, setPos, markTip, takeWords, afterBossKey, afterBossDue, markSceneSeen } from '../rules/game.js';
+import { chapterOf, fogOpen, bossGone, exitOpen, exitBlockedText, stepOffOpenExit, setPos, markTip, takeWords, afterBossKey, afterBossDue, markSceneSeen } from '../rules/game.js';
 import { talkTo, inspect, fightGate, visibleNpcs } from '../rules/quests.js';
 import { openCodex } from './codex.js';
 import { openTasks } from './quests.js';
@@ -310,7 +310,8 @@ export const explore = {
       // 출구 칸에 들어섰을 때: 열려 있으면 클리어 화면(앞 장은 장 클리어, 보스 장은 막 클리어), 닫혀 있으면 막지 않고 알림만.
       const entersExit = moved && chapter.exit && r.pos.x === chapter.exit.x && r.pos.y === chapter.exit.y;
       if (entersExit && exitOpen(next, chapter)) {
-        update(next, false); // 떠나는 장면에서는 안내를 띄우지 않는다
+        // 저장되는 자리는 출구 안쪽 한 칸(출구를 봄): 클리어·세계 지도·엔딩에서 새로 고침하고 이어 해도 한 걸음이면 다시 출구다.
+        update(stepOffOpenExit(next, chapter), false); // 떠나는 장면에서는 안내를 띄우지 않는다
         go('clear', { kind: isLast ? 'act' : 'chapter' });
         return;
       }
