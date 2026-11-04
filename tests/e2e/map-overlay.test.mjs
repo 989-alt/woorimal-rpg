@@ -42,7 +42,8 @@ for (const ch of chapters) {
       g.drawImage(img, 0, 0);
       const px = g.getImageData(0, 0, c.width, c.height).data;
       const at = (x, y) => { const i = (y * c.width + x) * 4; return (px[i] << 16) | (px[i + 1] << 8) | px[i + 2]; };
-      const tile = (tx, ty, fn) => { for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) fn(at(tx * 16 + x, ty * 16 + y)); };
+      const T = Math.floor(c.width / rows[0].length); // 칸 하나의 그림 픽셀 수
+      const tile = (tx, ty, fn) => { for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) fn(at(tx * T + x, ty * T + y)); };
       const count = new Map();
       rows.forEach((r, ty) => [...r].forEach((ch, tx) => {
         if (ch === '.' || ch === 'S') tile(tx, ty, (v) => count.set(v, (count.get(v) || 0) + 1));
@@ -52,12 +53,12 @@ for (const ch of chapters) {
       rows.forEach((r, ty) => [...r].forEach((ch, tx) => {
         let n = 0;
         tile(tx, ty, (v) => { if (v === path) n++; });
-        out.push({ x: tx, y: ty, ch, share: n / 256 });
+        out.push({ x: tx, y: ty, ch, share: n / (T * T) });
       }));
       return { w: img.width, h: img.height, tiles: out };
     }, { src: ASSETS.maps[ch.id], rows: ch.map.rows });
-    assert.equal(shares.w, ch.map.rows[0].length * 16, '그림 너비');
-    assert.equal(shares.h, ch.map.rows.length * 16, '그림 높이');
+    assert.equal(shares.w, ch.map.rows[0].length * 48, '그림 너비 (칸당 48픽셀)');
+    assert.equal(shares.h, ch.map.rows.length * 48, '그림 높이 (칸당 48픽셀)');
     const bad = shares.tiles.filter((t) => WALK.test(t.ch) && t.share < MIN_PATH_SHARE)
       .map((t) => `(${t.x},${t.y}) '${t.ch}' ${t.share.toFixed(2)}`);
     assert.deepEqual(bad, [], '걸을 수 있는데 그림에서 길이 아닌 칸');
