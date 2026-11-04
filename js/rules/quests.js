@@ -1,6 +1,7 @@
 // 부탁 규칙: 말 걸기, 물건 조사, 가방, 숨은 낱말, 인물 표시, 현재 할 일. 모두 순수 함수.
 // 낱말 습득 자체는 화면이 acquireWords로 한다. 여기서는 바뀐 상태와 줄 낱말만 돌려준다.
-import ACT1 from '../../data/acts/act1.js';
+import { actOfChapter } from '../../data/acts/index.js';
+import { chapterComplete } from './game.js';
 import { attachJosa } from './josa.js';
 
 const BAG_SIZE = 3;
@@ -30,9 +31,9 @@ function completeQuest(state, chapter, quest) {
   return next;
 }
 
-// 숨은 낱말은 막의 첫 부탁을 받은 뒤(말빛 주머니를 찬 뒤)에야 찾을 수 있다.
-function holdsPouch(state) {
-  const first = ACT1.chapters[0].quests[0];
+// 숨은 낱말은 그 막의 첫 부탁을 받은 뒤(말빛 주머니를 찬 뒤)에야 찾을 수 있다.
+function holdsPouch(state, chapter) {
+  const first = actOfChapter(chapter.id).chapters[0].quests[0];
   const stage = state.quests[first.id]?.stage ?? 'locked';
   return stage !== 'locked' && stage !== 'open';
 }
@@ -102,7 +103,7 @@ export function inspect(state, chapter, objectSlot) {
     return { state: next, script: note(`${getsItem} 가방에 넣었다.`), event: 'item', words: [] };
   }
 
-  if (objectSlot === chapter.hidden.object && !hiddenFound(state, chapter) && holdsPouch(state)) {
+  if (objectSlot === chapter.hidden.object && !hiddenFound(state, chapter) && holdsPouch(state, chapter)) {
     return {
       state: { ...state, hiddenFound: { ...state.hiddenFound, [chapter.id]: true } },
       script: chapter.hidden.lines,
@@ -137,12 +138,14 @@ export function currentTask(state, chapter) {
   const doing = chapter.quests.find((q) => ['active', 'open', 'ready'].includes(stageOf(state, q)));
   if (doing) return doing.title;
   if (!hiddenFound(state, chapter)) return '숨은 낱말을 찾아라';
-  const last = ACT1.chapters[ACT1.chapters.length - 1];
-  return chapter.id === last.id ? '그림자를 물리쳐라' : '다음 장으로';
+  // 낱말 5개가 다 모이기 전(화면이 낱말을 등록하는 사이)에는 마지막 부탁 제목을 그대로 둔다.
+  if (!chapterComplete(state, chapter)) return chapter.quests[chapter.quests.length - 1].title;
+  const { chapters } = actOfChapter(chapter.id);
+  return chapter.id === chapters[chapters.length - 1].id ? '그림자를 물리쳐라' : '다음 장으로';
 }
 
 export function hiddenGlow(state, chapter) {
-  if (hiddenFound(state, chapter) || !holdsPouch(state)) return 'none';
+  if (hiddenFound(state, chapter) || !holdsPouch(state, chapter)) return 'none';
   return questsDone(state, chapter) ? 'bright' : 'dim';
 }
 

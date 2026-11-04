@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import ACT from '../data/acts/act1.js';
 import { newGame, chapterOf, chapterWords, acquireWords } from '../js/rules/game.js';
+import { ACTS, actOfChapter } from '../data/acts/index.js';
 import {
   talkTo, inspect, winSmall, npcMarker, currentTask, hiddenGlow, questList,
 } from '../js/rules/quests.js';
@@ -262,6 +263,9 @@ test('currentTask 순서', () => {
   s = afterChapter1Quests();
   assert.equal(currentTask(s, ch1), '숨은 낱말을 찾아라');
   s = inspect(s, ch1, '1').state;
+  // 낱말이 아직 등록되기 전에는 다음 장 안내를 하지 않는다
+  assert.equal(currentTask(s, ch1), '꼬마 안개 쫓아내기');
+  s = acquireWords(s, chapterWords(ch1), 'x');
   assert.equal(currentTask(s, ch1), '다음 장으로');
   // 뒷 장
   let t = inChapter2();
@@ -271,6 +275,7 @@ test('currentTask 순서', () => {
   t = talkTo(talkTo(t, ch2, 'laundry').state, ch2, 'gate').state;
   assert.equal(currentTask(t, ch2), '숨은 낱말을 찾아라');
   t = inspect(t, ch2, '3').state;
+  t = acquireWords(t, chapterWords(ch2), 'x');
   assert.equal(currentTask(t, ch2), '그림자를 물리쳐라');
 });
 
@@ -290,4 +295,53 @@ test('규칙 함수는 받은 상태를 바꾸지 않는다', () => {
     talkTo(s, c, 'daon'); talkTo(s, c, 'dodam'); inspect(s, c, '1'); inspect(s, c, '0');
     winSmall(s, c); npcMarker(s, c, 'daon'); currentTask(s, c); hiddenGlow(s, c); questList(s, c);
   });
+});
+
+test('막은 넘겨 받은 장에서 찾는다 (1막 하드코딩 금지)', () => {
+  assert.equal(actOfChapter('1-2'), ACT);
+  assert.throws(() => actOfChapter('9-9'));
+  // 시험용 2막: ACTS에 잠깐 넣었다가 빼낸다
+  const rename = (c, id, prefix) => {
+    const k = structuredClone(c);
+    k.id = id;
+    k.quests.forEach((q) => { q.id = prefix + q.id; });
+    k.hidden.word = prefix + k.hidden.word;
+    k.quests.forEach((q) => { q.words = q.words.map((w) => prefix + w); });
+    return k;
+  };
+  const a = rename(ch1, '2-1', 'x');
+  const b = rename(ch2, '2-2', 'y');
+  const act2 = { id: 2, chapters: [a, b] };
+  ACTS.push(act2);
+  try {
+    assert.equal(actOfChapter('2-2'), act2);
+    const base = fresh(); // 1막 첫 부탁(q1)은 open
+    const quests = { ...base.quests };
+    for (const q of [...a.quests, ...b.quests]) quests[q.id] = { stage: 'locked', gathered: [] };
+    quests.xq1 = { stage: 'open', gathered: [] };
+    // 주머니: 2막 첫 부탁을 받기 전에는 숨은 낱말이 없다 (1막은 이미 받았어도)
+    quests.q1 = { stage: 'done', gathered: [] };
+    let s = { ...base, quests };
+    assert.equal(hiddenGlow(s, a), 'none');
+    assert.equal(inspect(s, a, '1').event, 'nothing');
+    s = talkTo(s, a, 'dodam').state;
+    assert.equal(s.quests.xq1.stage, 'active');
+    assert.equal(hiddenGlow(s, a), 'dim');
+    assert.equal(inspect(s, a, '1').event, 'hidden');
+    // 2막의 마지막 장이므로 "그림자를 물리쳐라", 첫 장은 "다음 장으로"
+    const done = (c, st) => {
+      let t = { ...st, quests: { ...st.quests } };
+      for (const q of c.quests) t.quests[q.id] = { stage: 'done', gathered: [] };
+      t = { ...t, hiddenFound: { ...t.hiddenFound, [c.id]: true } };
+      return acquireWords(t, chapterWords(c), 'x');
+    };
+    assert.equal(currentTask(done(a, s), a), '다음 장으로');
+    assert.equal(currentTask(done(b, s), b), '그림자를 물리쳐라');
+    // 낱말이 다 모이지 않았으면 안내하지 않는다
+    const partial = { ...done(b, s), acquired: {} };
+    assert.notEqual(currentTask(partial, b), '그림자를 물리쳐라');
+  } finally {
+    ACTS.pop();
+  }
+  assert.throws(() => actOfChapter('2-2'));
 });
