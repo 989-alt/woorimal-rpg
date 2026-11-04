@@ -66,20 +66,20 @@ test('다룬 키는 기본 동작을 막고, 모르는 키·조합 키·입력 �
   unbind();
 });
 
-test('누르고 있으면 150ms마다 한 칸씩, 떼면 멈춘다', () => {
+test('누르고 있으면 250ms마다 한 칸씩, 떼면 멈춘다', () => {
   mock.timers.enable({ apis: ['setInterval'] });
   try {
     const { target, log, unbind } = setup();
-    assert.equal(HOLD_MS, 150);
+    assert.equal(HOLD_MS, 250);
     target.dispatchEvent(key('keydown', 'ArrowRight'));
     assert.deepEqual(log, ['move:right']);
     // 브라우저가 보내는 자동 반복 keydown은 칸 수를 늘리지 않는다.
     target.dispatchEvent(key('keydown', 'ArrowRight', { repeat: true }));
-    mock.timers.tick(149);
+    mock.timers.tick(249);
     assert.equal(log.length, 1);
     mock.timers.tick(1);
     assert.equal(log.length, 2);
-    mock.timers.tick(150);
+    mock.timers.tick(250);
     assert.deepEqual(log, ['move:right', 'move:right', 'move:right']);
     target.dispatchEvent(key('keyup', 'ArrowRight'));
     mock.timers.tick(600);
@@ -96,10 +96,10 @@ test('다른 방향을 누르면 그 방향으로 바뀌고, 그 키를 떼면 �
     const { target, log, unbind } = setup();
     target.dispatchEvent(key('keydown', 'ArrowUp'));
     target.dispatchEvent(key('keydown', 'ArrowLeft'));
-    mock.timers.tick(150);
+    mock.timers.tick(250);
     assert.deepEqual(log, ['move:up', 'move:left', 'move:left']);
     target.dispatchEvent(key('keyup', 'ArrowLeft'));
-    mock.timers.tick(150);
+    mock.timers.tick(250);
     assert.deepEqual(log.slice(3), ['move:up']);
     target.dispatchEvent(key('keyup', 'ArrowUp'));
     mock.timers.tick(450);

@@ -41,10 +41,10 @@ test('glidePos: 그림 픽셀(세계 1/3 = 칸의 1/48)에 맞춘다', () => {
 test('drawnPos: 미끄러짐이 없거나 끝났거나 순간이동이면 상태 자리 그대로', () => {
   const g = nextGlide(null, A, B, 1000);
   assert.deepEqual(drawnPos(null, B, 1000), B);
-  assert.deepEqual(drawnPos(g, B, 1075), { x: 3.5, y: 5 });
+  assert.deepEqual(drawnPos(g, B, 1000 + MOVE_MS / 2), { x: 3.5, y: 5 });
   assert.deepEqual(drawnPos(g, B, 1000 + MOVE_MS), B);
   // 상태 자리가 목적지와 다르면(순간이동·불러오기) 미끄러지지 않는다
-  assert.deepEqual(drawnPos(g, { x: 10, y: 10 }, 1075), { x: 10, y: 10 });
+  assert.deepEqual(drawnPos(g, { x: 10, y: 10 }, 1000 + MOVE_MS / 2), { x: 10, y: 10 });
 });
 
 test('nextGlide: 처음 걸음, 이어 걷기(일찍·조금 늦게), 오래 쉬고 걷기', () => {
@@ -54,9 +54,9 @@ test('nextGlide: 처음 걸음, 이어 걷기(일찍·조금 늦게), 오래 쉬
   // 끝나고 조금 늦게 다음 걸음: 끊김 없이 앞 걸음이 끝난 때부터
   assert.equal(nextGlide(g1, B, C, 1000 + MOVE_MS + 10).startedAt, 1000 + MOVE_MS);
   // 일찍 옴: 지금 보이는 자리에서 이어 간다
-  const early = nextGlide(g1, B, C, 1075);
+  const early = nextGlide(g1, B, C, 1000 + MOVE_MS / 2);
   assert.deepEqual(early.from, { x: 3.5, y: 5 });
-  assert.equal(early.startedAt, 1075);
+  assert.equal(early.startedAt, 1000 + MOVE_MS / 2);
   // 오래 쉬었다 걷기: 칸에서 새로 시작
   const late = nextGlide(g1, B, C, 3000);
   assert.deepEqual(late.from, B);

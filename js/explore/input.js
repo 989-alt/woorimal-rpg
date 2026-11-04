@@ -1,5 +1,5 @@
 // 탐험 조작: 키보드와 (터치 기기에서만) 화면 버튼.
-export const HOLD_MS = 150;
+export const HOLD_MS = 250; // 한 칸 걷는 시간(선생님: 150ms는 너무 빨랐다)
 
 // code를 먼저 본다: 한글 자판에서는 W가 'ㅈ'으로 들어오기 때문이다.
 const BY_CODE = {
