@@ -77,7 +77,7 @@ test('저장 없음 → 이어하기 disabled', async () => {
   await page.close();
 });
 
-test('처음부터 → 모습 고르기: 이름 칸은 화면 위 절반, 카드 아래 "여자"·"남자" 글자가 보인다, 뒤로 → 타이틀', async () => {
+test('처음부터 → 모습 고르기: 이름 칸은 화면 위 절반, 카드 안 리본에 "여자"·"남자" 글자가 보인다, 뒤로 → 타이틀', async () => {
   const page = await browser.newPage({ viewport: { width: 1366, height: 768 } });
   const errors = collectErrors(page);
   await page.goto(server.url + '/');
@@ -87,8 +87,8 @@ test('처음부터 → 모습 고르기: 이름 칸은 화면 위 절반, 카드
   assert.equal(await page.locator('.avatar-card.selected').getAttribute('data-avatar'), 'f');
   const input = await page.locator('#nickname').boundingBox();
   assert.ok(input.y + input.height < 384, '이름 칸은 위 절반');
-  assert.ok(await page.locator('.avatar-plate', { hasText: '여자' }).isVisible());
-  assert.ok(await page.locator('.avatar-plate', { hasText: '남자' }).isVisible());
+  assert.ok(await page.locator('.avatar-card .ribbon', { hasText: '여자' }).isVisible());
+  assert.ok(await page.locator('.avatar-card .ribbon', { hasText: '남자' }).isVisible());
   await page.locator('.avatar-card[data-avatar="m"]').click();
   assert.equal(await page.locator('.avatar-card.selected').getAttribute('data-avatar'), 'm');
   await page.getByRole('button', { name: '뒤로' }).click();
@@ -174,6 +174,34 @@ test('이미 있는 이름 확인 창: 이름을 고치면 닫히고, 열릴 때
   assert.equal(await page.locator('[data-scene="select"]').count(), 1);
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('malbit:save:하늘')));
   assert.ok('어스름' in saved.acquired, '하늘의 저장이 덮어써졌다');
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('이어하기에서 저장이 깨졌으면: 처음부터 → 모습 고르기(이름 그대로)로 가서 모습을 고른다', async () => {
+  const page = await browser.newPage();
+  const errors = collectErrors(page);
+  await page.goto(server.url + '/?test=1');
+  await page.waitForFunction(() => window.__test);
+  await page.evaluate(() => { localStorage.setItem('malbit:save:바다', '{깨짐'); localStorage.setItem('malbit:names', JSON.stringify(['바다'])); });
+  await page.reload();
+  await startFromTitle(page, { name: '바다', mode: 'continue' });
+  const confirm = page.locator('.title-confirm');
+  await confirm.waitFor({ state: 'visible' });
+  assert.match(await confirm.innerText(), /저장을 불러오지 못했어요/);
+  await confirm.getByRole('button', { name: '처음부터' }).click();
+  // 바로 새 게임을 시작하지 않고 모습 고르기로 간다
+  await page.waitForSelector('[data-scene="select"][data-mode="new"]');
+  assert.equal(await page.locator('#nickname').inputValue(), '바다');
+  assert.equal(await page.locator('[data-scene="dialogue"]').count(), 0);
+  await page.locator('.avatar-card[data-avatar="m"]').click();
+  await page.locator('.select-go').click();
+  await confirm.waitFor({ state: 'visible' }); // 깨진 저장이 남아 있으니 덮어쓸지 묻는다
+  await confirm.getByRole('button', { name: '처음부터' }).click();
+  await page.waitForSelector('[data-scene="dialogue"]');
+  const s = await page.evaluate(() => window.__test.state());
+  assert.equal(s.nickname, '바다');
+  assert.equal(s.avatar, 'm');
   assert.deepEqual(errors, []);
   await page.close();
 });

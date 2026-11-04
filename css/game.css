@@ -64,39 +64,102 @@ canvas, img {
 /* ── 이름·모습 고르기 ───────────────────── */
 .select-scene {
   position: fixed; inset: 0; overflow-y: auto; isolation: isolate; background: var(--wood-dark);
-  display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 24px 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 20px 16px;
+  --card-h: clamp(300px, calc(100dvh - 388px), 400px);
 }
 .select-scene > * { flex: none; }
-.select-title { width: 360px; max-width: 100%; height: 64px; margin: 0; display: grid; place-items: center; font-family: var(--font-title); font-size: 32px; font-weight: normal; line-height: 32px; text-align: center; }
-.select-name { width: 680px; max-width: 100%; min-height: 130px; display: grid; align-content: center; justify-items: center; gap: 4px; }
-.select-name-row { display: flex; align-items: center; gap: 24px; width: 100%; justify-content: center; }
-.title-label { font-family: var(--font-title); font-size: 28px; white-space: nowrap; }
+/* 배경: 마을은 남기되 살짝 흐리고 어둡게 + 가장자리 어둠(비네트)으로 부품이 살게 한다 */
+.select-scene .title-bg { filter: blur(3px) brightness(.8) saturate(.9); transform: scale(1.04); }
+.select-scene::after {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 45%, rgba(20, 14, 8, .1) 35%, rgba(20, 14, 8, .5) 100%),
+    rgba(20, 14, 8, .18);
+}
+/* 제목 명판: 나무판(놋쇠 테·잎 모서리는 틀 그림) + 크림색 주아 글자 */
+.select-title {
+  width: 420px; max-width: 100%; height: 84px; margin: 0; display: grid; place-items: center;
+  font-family: var(--font-title); font-size: 40px; font-weight: normal; line-height: 52px; text-align: center;
+  color: #FFF4DC; -webkit-text-stroke: 6px #3A1B08; paint-order: stroke fill;
+  text-shadow: 0 3px 6px rgba(30, 12, 2, .55);
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .45));
+  animation: drop-in 300ms cubic-bezier(.2, .9, .3, 1.1) both;
+}
+:root .select-scene .select-title.frame-plate { background: linear-gradient(#A15A24, #7A3E14 55%, #6E3211); }
+:root.ui-panel .select-scene .select-title.frame-plate { background: linear-gradient(#A15A24, #7A3E14 55%, #6E3211) center / calc(100% - 6px) calc(100% - 6px) no-repeat border-box; }
+.select-name {
+  width: 640px; max-width: 100%; min-height: 130px; display: grid; align-content: center; justify-items: center;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .35));
+  animation: rise-in 300ms 60ms ease-out both;
+}
+.select-name-inner { display: grid; justify-items: center; gap: 4px; width: 100%; padding: 4px 16px; }
+.select-name-row { display: flex; align-items: center; gap: 20px; width: 100%; justify-content: center; }
+.title-label { font-family: var(--font-title); font-size: 28px; white-space: nowrap; color: var(--wood-dark); }
 .title-input {
-  flex: 1; min-width: 0; max-width: 400px; min-height: 48px; padding: 0 16px;
-  border: 3px solid var(--wood); border-radius: 12px;
-  background: #fff; color: var(--ink); font: inherit; font-size: 26px; text-align: left;
+  flex: 1; min-width: 0; max-width: 400px; min-height: 52px; padding: 0 16px;
+  border: 2px solid #4A2A12; border-radius: 12px;
+  background: #FFFDF6; box-shadow: inset 0 3px 6px rgba(60, 30, 10, .35), inset 0 0 0 1px rgba(60, 30, 10, .15);
+  color: var(--ink); font: inherit; font-size: 28px; text-align: left;
 }
 .title-help { margin: 0; font-size: 18px; color: var(--hp); }
 .title-error { margin: 0; font-size: 20px; color: var(--ink); }
 .title-error .err-icon { display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center; border-radius: 50%; background: var(--heart); color: var(--parchment); font-weight: bold; }
-.avatar-cards { display: flex; gap: 40px; justify-content: center; }
-.avatar-col { position: relative; display: grid; justify-items: center; gap: 8px; width: 220px; }
-.avatar-card { width: 220px; height: 280px; padding: 0; cursor: pointer; font: inherit; overflow: hidden; transition: filter 120ms ease-out; filter: brightness(.75); }
-.avatar-card.selected { filter: none; box-shadow: 0 0 0 4px var(--brass-light); } /* 밝은 놋쇠 테, 빛 번짐 없음 */
-.avatar-block { display: grid; place-items: center; width: 100%; height: 100%; font-size: 64px; }
-.avatar-img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
-.avatar-card.has-art .avatar-block { display: none; }
-.avatar-card:focus-visible { outline: 3px solid var(--hero); outline-offset: 6px; }
-.avatar-badge { position: absolute; top: -14px; right: -14px; display: none; place-items: center; width: 48px; height: 48px; border: 3px solid var(--brass); border-radius: 50%; background: var(--parchment); }
+
+/* 모습 카드: 아치 모양 안쪽에 따뜻한 한지색 바탕 + 어깨 위 인물, 이름 리본은 카드 안 아래쪽 */
+.avatar-cards { display: flex; gap: 48px; justify-content: center; margin-top: 8px; }
+.avatar-col {
+  position: relative; width: calc(var(--card-h) * .75); height: var(--card-h);
+  transition: transform 160ms ease-out;
+  animation: rise-in 300ms 120ms ease-out both;
+}
+.avatar-col:nth-child(2) { animation-delay: 200ms; }
+.avatar-card {
+  display: block; width: 100%; height: 100%; padding: 0; cursor: pointer; font: inherit; overflow: hidden;
+  filter: saturate(.7) brightness(.8); transition: filter 160ms ease-out, box-shadow 160ms ease-out;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, .35);
+}
+.avatar-art {
+  position: absolute; inset: 0; overflow: hidden; border-radius: 124px 124px 12px 12px;
+  background: radial-gradient(ellipse at 50% 38%, #FFF6DC 0%, #F6E4C0 55%, #E3C48B 100%);
+}
+.avatar-block { display: grid; place-items: center; width: 100%; height: 100%; font-size: 72px; background: none !important; }
+.avatar-img { position: absolute; left: -12%; top: 3%; width: 124%; height: auto; max-width: none; }
+.avatar-art.has-art .avatar-block { display: none; }
+.avatar-ribbon { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); min-width: 150px; font-size: 24px; color: #fff; -webkit-text-stroke: 4px #2B1A0C; paint-order: stroke fill; }
+.avatar-col:hover, .avatar-col:focus-within { transform: translateY(-4px) scale(1.02); }
+.avatar-col:hover .avatar-card, .avatar-col:focus-within .avatar-card { filter: saturate(.85) brightness(.92); }
+.avatar-col.picked, .avatar-col.picked:hover, .avatar-col.picked:focus-within { transform: translateY(-8px) scale(1.04); z-index: 1; }
+.avatar-col.picked .avatar-card { filter: none; box-shadow: 0 0 0 4px var(--brass-light), 0 18px 24px rgba(0, 0, 0, .5); } /* 놋쇠 테 + 깊은 그림자, 금빛 번짐 없음 */
+.avatar-card:focus-visible { outline: 3px solid var(--hero); outline-offset: 6px; border-radius: 16px; }
+.avatar-badge { position: absolute; top: -16px; right: -16px; z-index: 2; display: none; place-items: center; width: 52px; height: 52px; border: 3px solid var(--brass); border-radius: 50%; background: var(--parchment); box-shadow: 0 3px 6px rgba(0, 0, 0, .4); }
 .avatar-col.picked .avatar-badge { display: grid; }
-.avatar-plate { width: 160px; height: 56px; margin: 0; display: grid; place-items: center; font-family: var(--font-title); font-size: 24px; line-height: 24px; }
 .saved-names { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; max-width: 680px; }
 .select-notfound, .title-confirm { width: 560px; max-width: 100%; display: grid; justify-items: center; gap: 8px; text-align: center; font-size: 22px; }
 .select-notfound p, .title-confirm p { margin: 0; }
 .title-actions { display: flex; gap: 12px; justify-content: center; }
-.select-actions { display: flex; justify-content: center; align-items: center; gap: 72px; margin-top: auto; padding-top: 8px; }
+.select-actions { display: flex; justify-content: center; align-items: center; gap: 72px; margin-top: auto; padding-top: 4px; animation: rise-in 300ms 260ms ease-out both; }
 .select-back { width: 200px; }
-.select-go { width: 260px; min-height: 72px; }
+.select-go { width: 260px; }
+
+/* 큰 단추 글자(타이틀·모습 고르기): 주아 30 크림색 + 짙은 윤곽. 그림 단추일 때만 크림색(그림이 없으면 한지 바탕이라 먹색 그대로) */
+.title-menu .btn, .select-actions .btn { font-size: 30px; }
+:root.ui-btn-green .title-menu .btn-green, :root.ui-btn-green .select-actions .btn-green,
+:root.ui-btn-wood .title-menu .btn-wood, :root.ui-btn-wood .select-actions .btn-wood {
+  color: #FFF4DC; -webkit-text-stroke: 5px #2B1A0C; text-shadow: 0 2px 3px rgba(0, 0, 0, .4);
+}
+/* 초점 테두리는 단추 모양(둥근 알약)을 따라간다. 쪽빛 3px, 그림 단추도 같다. */
+:root[class] .btn.btn:focus-visible { border-radius: 999px; outline: 3px solid var(--hero); outline-offset: 2px; }
+.title-menu { animation: rise-in 300ms 150ms ease-out both; }
+.title-logo { animation: drop-in 300ms ease-out both; }
+
+/* translate 속성을 써서 장면의 transform(가운데 맞춤·들어 올림)과 부딪치지 않게 한다 */
+@keyframes drop-in { from { opacity: 0; translate: 0 -24px; } to { opacity: 1; translate: 0 0; } }
+@keyframes rise-in { from { opacity: 0; translate: 0 24px; } to { opacity: 1; translate: 0 0; } }
+@media (prefers-reduced-motion: reduce) {
+  @keyframes drop-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes rise-in { from { opacity: 0; } to { opacity: 1; } }
+  .avatar-col, .avatar-card { transition: none; }
+}
 [hidden] { display: none !important; }
 
 

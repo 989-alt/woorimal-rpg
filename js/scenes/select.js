@@ -34,8 +34,8 @@ export function stillSameName(captured, current) {
 }
 
 const AVATARS = [
-  { id: 'f', label: '여', name: '여자 주인공', plate: '여자' },
-  { id: 'm', label: '남', name: '남자 주인공', plate: '남자' },
+  { id: 'f', label: '여', name: '여자 주인공', plate: '여자', color: '#B5486B' },
+  { id: 'm', label: '남', name: '남자 주인공', plate: '남자', color: '#3B5BA5' },
 ];
 
 function el(tag, props = {}, ...kids) {
@@ -69,7 +69,7 @@ export const select = {
     error.setAttribute('role', 'alert');
     error.hidden = true;
     const panel = el('div', { className: 'select-name frame-panel' },
-      el('div', { className: 'select-name-row' }, label, input), help, error);
+      el('div', { className: 'select-name-inner' }, el('div', { className: 'select-name-row' }, label, input), help, error));
 
     // ── 모습 카드(처음부터만) ──
     let cardsWrap = null;
@@ -91,14 +91,18 @@ export const select = {
         b.dataset.avatar = a.id;
         b.setAttribute('role', 'radio');
         b.setAttribute('aria-label', a.name); // 그림이 글자 블록을 가려도 이름이 남게
-        b.append(labelBlockEl(a.label, blockColor(a.id === 'f' ? '여' : '남'), 'avatar-block'));
+        // 그림(또는 임시 글자 블록)은 아치 모양 안쪽 상자에 넣고, 이름은 카드 아래쪽 리본에 둔다.
+        const art = el('span', { className: 'avatar-art' });
+        art.append(labelBlockEl(a.label, blockColor(a.id === 'f' ? '여' : '남'), 'avatar-block'));
+        setArt(art, bustFor(`hero_${a.id}`, 'base'), 'avatar-img art');
+        const ribbon = el('span', { className: 'ribbon avatar-ribbon', textContent: a.plate });
+        ribbon.style.setProperty('--speaker-color', a.color);
+        b.append(art, ribbon);
         b.addEventListener('click', () => pick(a.id));
-        setArt(b, bustFor(`hero_${a.id}`, 'base'), 'avatar-img art');
         const badge = el('span', { className: 'avatar-badge' }, el('span', { className: 'icon icon-check' }));
         badge.setAttribute('aria-hidden', 'true');
-        const plate = el('div', { className: 'avatar-plate frame-plate', textContent: a.plate });
         cardEls.push(b);
-        cardsWrap.append(el('div', { className: 'avatar-col' }, b, badge, plate));
+        cardsWrap.append(el('div', { className: 'avatar-col' }, b, badge));
       }
       pick('f');
     }
@@ -121,8 +125,8 @@ export const select = {
     confirmBox.setAttribute('role', 'alertdialog');
     confirmBox.hidden = true;
 
-    const backBtn = el('button', { type: 'button', className: 'btn btn-wood select-back', textContent: '뒤로' });
-    const goBtn = el('button', { type: 'button', className: 'btn btn-green select-go', textContent: mode === 'new' ? '시작하기' : '이어하기' });
+    const backBtn = el('button', { type: 'button', className: 'btn btn-wood btn-lg select-back', textContent: '뒤로' });
+    const goBtn = el('button', { type: 'button', className: 'btn btn-green btn-lg select-go', textContent: mode === 'new' ? '시작하기' : '이어하기' });
     const actions = el('div', { className: 'select-actions' }, backBtn, goBtn);
 
     function showError(msg) {
@@ -162,7 +166,8 @@ export const select = {
       const r = store.load(name);
       if (r.ok) { begin(r.state, false); return; }
       ask('저장을 불러오지 못했어요. 처음부터 할까요?',
-        '처음부터', () => startFresh(name), '아니요', () => input.focus());
+        '처음부터', () => (mode === 'new' ? startFresh(name) : router.show('select', { mode: 'new', name })),
+        '아니요', () => input.focus());
     }
     const startFresh = (name) => begin(newGame({ nickname: name, avatar }), true);
 
@@ -182,8 +187,9 @@ export const select = {
         return;
       }
       if (d.action === 'load-error') {
+        // 모습을 고르지 않고 새 게임을 시작하지 않는다: 모습 고르기로 보낸다(이름은 그대로).
         ask('저장을 불러오지 못했어요. 처음부터 할까요?',
-          '처음부터', guard(() => startFresh(name)), '아니요', () => input.focus());
+          '처음부터', guard(() => router.show('select', { mode: 'new', name })), '아니요', () => input.focus());
         return;
       }
       if (d.action === 'not-found') {

@@ -120,6 +120,7 @@ test('타이틀: 로고 상자 폭 600, 이름은 h1 글자, 메뉴 단추 340×
   await page.goto(server.url + '/?test=1');
   await page.waitForSelector('.title-scene .title-bg');
   await page.waitForSelector('.title-logo.has-art img.logo-img');
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running')); // 들어오는 움직임이 끝난 뒤 잰다
   const logo = await box(page, '.title-logo');
   near(logo.width, 600, 20, '로고 폭');
   near(logo.y, 40, 4, '로고 위');
@@ -132,24 +133,26 @@ test('타이틀: 로고 상자 폭 600, 이름은 h1 글자, 메뉴 단추 340×
   await page.close();
 });
 
-test('모습 고르기: 글자는 패널·명판 위, 카드 220×280, 카드 아래 명판 글자, 이름 칸은 위 절반', async () => {
+test('모습 고르기: 글자는 패널·명판 위, 카드 약 300×400(3:4), 이름은 카드 안 리본, 이름 칸은 위 절반', async () => {
   const page = await browser.newPage({ viewport: { width: 1366, height: 768 } });
   const errors = collectErrors(page);
   await page.goto(server.url + '/?test=1');
   await page.waitForSelector('[data-scene="title"]');
   await page.getByRole('button', { name: '처음부터' }).click();
   await page.waitForSelector('.select-scene .title-bg');
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'));
   for (const sel of ['.select-name .title-label', '.select-name .title-help', '.select-name .title-error']) {
     assert.equal(await page.locator(sel).count(), 1, `${sel}는 이름 패널 안`);
   }
   assert.equal(await page.locator('.select-title.frame-plate').count(), 1, '제목은 명판');
-  assert.equal(await page.locator('.avatar-col > .avatar-plate.frame-plate').count(), 2, '카드 아래 명판');
+  assert.equal(await page.locator('.avatar-plate').count(), 0, '따로 떨어진 이름 상자는 없다');
+  assert.equal(await page.locator('.avatar-card .ribbon').count(), 2, '이름은 카드 안 리본');
   const card = await box(page, '.avatar-card');
-  near(card.width, 220, 2, '카드 폭');
-  near(card.height, 280, 2, '카드 높이');
+  assert.ok(card.height >= 370 && card.height <= 400, `카드 높이 ${card.height}`);
+  near(card.width, card.height * 0.75, 2, '카드는 3:4');
   const bg = await page.evaluate(() => { const c = getComputedStyle(document.querySelector('.select-name')); return c.backgroundColor + c.backgroundImage; });
   assert.ok(bg !== 'rgba(0, 0, 0, 0)none', '이름 패널은 한지 바탕');
-  await page.waitForSelector('.avatar-card.has-art img');
+  await page.waitForSelector('.avatar-art.has-art img');
   assert.ok(await page.getByRole('radio', { name: '여자 주인공' }).isVisible());
   assert.ok(await page.getByRole('radio', { name: '남자 주인공' }).isVisible());
   const input = await box(page, '#nickname');
