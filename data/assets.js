@@ -46,7 +46,7 @@ export const ASSETS = {
     fruit: { base: 'assets/illust/bust_fruit_base.webp', joy: 'assets/illust/bust_fruit_joy.webp' },
     guard: { base: 'assets/illust/bust_guard_base.webp', joy: 'assets/illust/bust_guard_joy.webp' },
     shopper: { base: 'assets/illust/bust_shopper_base.webp' },
-    chestnut: { base: null, joy: null },
+    chestnut: { base: 'assets/illust/bust_chestnut_base.webp', joy: 'assets/illust/bust_chestnut_joy.webp' },
     flower: { base: null, joy: null },
     northgate: { base: null },
     // 3막
