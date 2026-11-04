@@ -114,9 +114,12 @@ test('앞 장의 낱말 5개를 다 얻으면 장 클리어로 간다', async ()
 
 test('?test=1이 없으면 __test가 없다', async () => {
   const { page, errors } = await openGame('');
-  await page.waitForSelector('[data-scene="boot"]');
+  await page.waitForSelector('[data-scene="title"]');
   assert.equal(await page.evaluate(() => typeof window.__test), 'undefined');
-  await page.locator('[data-scene="boot"] button').click();
+  await page.fill('#nickname', '하늘');
+  await page.getByRole('button', { name: '처음부터' }).click();
+  await page.waitForSelector('[data-scene="dialogue"]');
+  await page.getByRole('button', { name: '탐험으로 돌아가기' }).click();
   await page.waitForSelector('[data-scene="explore"] canvas');
   assert.deepEqual(errors, []);
   await page.close();

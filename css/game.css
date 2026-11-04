@@ -37,11 +37,6 @@ canvas, img {
   image-rendering: pixelated;
 }
 
-[data-scene='boot'] {
-  font-family: var(--font-title);
-  font-size: 32px;
-}
-
 :focus-visible {
   outline: 3px solid var(--blue);
   outline-offset: 2px;
@@ -59,12 +54,44 @@ canvas, img {
   cursor: pointer;
 }
 
-[data-scene='boot'] {
+/* ── 시작 화면 ────────────────────────── */
+.title-scene {
   display: grid;
   justify-items: center;
-  gap: 24px;
+  align-content: start;
+  gap: 16px;
+  width: min(640px, 100%);
+  min-height: 100vh;
+  padding: 24px 16px;
 }
-[data-scene='boot'] h1 { margin: 0; font-size: 72px; font-weight: normal; }
+.title-logo { margin: 0; font-family: var(--font-title); font-size: 72px; font-weight: normal; line-height: 1.1; }
+.title-form { display: grid; gap: 6px; justify-items: center; width: 100%; }
+.title-label { font-size: 20px; }
+.title-input {
+  width: min(320px, 100%); min-height: 48px; padding: 0 12px;
+  border: 2px solid var(--meok-gal); border-radius: 12px;
+  background: #fff; color: var(--meok); font: inherit; font-size: 24px; text-align: center;
+}
+.title-help { margin: 0; font-size: 18px; color: var(--gray-3); }
+.title-error { margin: 0; font-size: 20px; color: var(--meok); }
+.title-error .err-icon { display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center; border-radius: 50%; background: var(--red); color: var(--hanji); font-weight: bold; }
+.avatar-cards { display: flex; gap: 16px; }
+.avatar-card {
+  width: 96px; height: 96px; padding: 4px; border: 3px solid var(--meok-gal);
+  border-radius: 12px; background: var(--hanji); cursor: pointer; font: inherit;
+}
+.avatar-card.selected { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-light); }
+.avatar-block { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 8px; font-size: 40px; }
+.saved-names { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.saved-name {
+  min-height: 48px; padding: 0 20px; border: 2px solid var(--meok-gal); border-radius: 12px;
+  background: var(--hanji); color: var(--meok); font: inherit; font-size: 20px; cursor: pointer;
+}
+.title-actions { display: flex; gap: 12px; justify-content: center; }
+.title-confirm { padding: 16px; border: 2px solid var(--meok-gal); border-radius: 12px; background: #fff; text-align: center; font-size: 22px; }
+.title-confirm p { margin: 0 0 12px; }
+.title-notice { margin: 0; font-size: 18px; color: var(--gray-3); }
+[hidden] { display: none !important; }
 
 /* 임시 장면(대화·전투·클리어): 뒤 Task가 바꾼다 */
 .stub-scene { display: grid; gap: 12px; max-width: 900px; padding: 16px; }

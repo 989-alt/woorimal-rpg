@@ -2,6 +2,7 @@ import { createRouter } from './router.js';
 import { createStore } from './save.js';
 import { newGame, acquireWords } from './rules/game.js';
 import { explore } from './scenes/explore.js';
+import { title } from './scenes/title.js';
 
 function safeLocalStorage() {
   try { return window.localStorage; } catch { return null; }
@@ -30,24 +31,6 @@ function startNew(nickname, avatar) {
   router.show('explore');
 }
 
-// 임시 시작 화면: Task 11의 진짜 시작 화면이 들어오면 바뀐다.
-const boot = {
-  mount(root) {
-    const el = document.createElement('main');
-    el.dataset.scene = 'boot';
-    const h = document.createElement('h1');
-    h.textContent = '말빛 한울';
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'big-button';
-    b.textContent = '시작';
-    b.addEventListener('click', () => startNew('하늘', 'f'));
-    el.append(h, b);
-    root.appendChild(el);
-    return () => el.remove();
-  },
-};
-
 // 임시 장면: 받은 값을 글로 보여 주고 탐험으로 돌아간다. 뒤 Task가 진짜 장면으로 바꾼다.
 function stub(name) {
   return {
@@ -71,7 +54,7 @@ function stub(name) {
   };
 }
 
-router.register('boot', boot);
+router.register('title', title);
 router.register('explore', explore);
 for (const name of ['dialogue', 'battle', 'clear']) router.register(name, stub(name));
 
@@ -87,4 +70,4 @@ if (new URLSearchParams(location.search).get('test') === '1') {
   };
 }
 
-router.show('boot');
+router.show('title');
