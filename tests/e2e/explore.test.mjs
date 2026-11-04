@@ -50,14 +50,14 @@ async function openGame(query = '?test=1') {
   return { page, errors };
 }
 
-test('새 게임을 열면 1366×768에서 캔버스가 1152×648이고 HUD에 낱말 수와 첫 부탁이 보인다', async () => {
+test('새 게임을 열면 1366×768에서 캔버스가 화면을 꽉 채우고 HUD에 낱말 수와 첫 부탁이 보인다', async () => {
   const { page, errors } = await openGame();
   await page.waitForFunction(() => window.__test);
   await page.evaluate(() => window.__test.newGame('하늘', 'f'));
   await page.waitForSelector('[data-scene="explore"] canvas');
   const box = await page.locator('[data-scene="explore"] canvas').boundingBox();
-  assert.equal(box.width, 1152);
-  assert.equal(box.height, 648);
+  assert.equal(box.width, 1366);
+  assert.equal(box.height, 768);
   const hud = page.locator('[data-scene="explore"] .hud');
   assert.match(await hud.innerText(), /이 장의 낱말 0\/5/);
   assert.match(await hud.innerText(), /우물에서 물 길어 오기/);
@@ -77,7 +77,7 @@ test('새 게임을 열면 1366×768에서 캔버스가 1152×648이고 HUD에 �
   await page.close();
 });
 
-test('캔버스 안쪽은 늘 1152×648(칸당 48픽셀): 1366×768에선 1:1 또렷하게, 1024×768에선 줄여 부드럽게', async () => {
+test('캔버스는 창을 꽉 채운다: 1366×768에선 1:1 또렷하게, 1024×768에선 1152×864 안쪽을 줄여 부드럽게', async () => {
   const look = async (width, height) => {
     const page = await browser.newPage({ viewport: { width, height } });
     const errors = collectErrors(page);
@@ -94,13 +94,93 @@ test('캔버스 안쪽은 늘 1152×648(칸당 48픽셀): 1366×768에선 1:1 �
     await page.close();
     return r;
   };
-  assert.deepEqual(await look(1366, 768), { w: 1152, h: 648, cssW: 1152, cssH: 648, rendering: 'pixelated' });
-  const small = await look(1024, 768);
-  assert.equal(small.w, 1152);
-  assert.equal(small.h, 648);
-  assert.equal(small.cssW, 1024);
-  assert.equal(small.cssH, 576);
-  assert.equal(small.rendering, 'auto');
+  assert.deepEqual(await look(1366, 768), { w: 1366, h: 768, cssW: 1366, cssH: 768, rendering: 'pixelated' });
+  assert.deepEqual(await look(1024, 768), { w: 1152, h: 864, cssW: 1024, cssH: 768, rendering: 'auto' });
+});
+
+// 주인공 칸 위끝의 화면 y(CSS px)와 가로 스크롤 여부 등 "꽉 참" 검사에 쓰는 값
+const fitProbe = (page) => page.evaluate(() => {
+  const c = document.querySelector('[data-scene="explore"] canvas');
+  const b = c.getBoundingClientRect();
+  const v = window.__test.view;
+  const h = window.__test.heroAt;
+  return {
+    cssW: b.width, cssH: b.height, innerW: innerWidth, innerH: innerHeight,
+    scrollW: document.documentElement.scrollWidth, scrollH: document.documentElement.scrollHeight,
+    heroTop: (h.y * 16 - v.camera.y) * 3 * v.factor, // 주인공 칸 위끝
+    heroBottom: (h.y * 16 + 16 - v.camera.y) * 3 * v.factor,
+  };
+});
+
+async function expectFilled(page, label) {
+  // 크기를 바꾼 뒤 다시 그려져 __test.view가 새 크기가 될 때까지 기다린다
+  await page.waitForFunction(() => {
+    const v = window.__test.view;
+    const c = document.querySelector('[data-scene="explore"] canvas');
+    return v && Math.abs(c.getBoundingClientRect().width - innerWidth) < 1 && Math.abs(v.viewW * 3 * v.factor - innerWidth) < 3;
+  });
+  const p = await fitProbe(page);
+  assert.equal(p.cssW, p.innerW, `${label}: 캔버스 폭`);
+  assert.equal(p.cssH, p.innerH, `${label}: 캔버스 높이`);
+  assert.ok(p.scrollW <= p.innerW, `${label}: 가로 스크롤이 생겼다 ${p.scrollW}>${p.innerW}`);
+  assert.ok(p.scrollH <= p.innerH, `${label}: 세로 스크롤이 생겼다`);
+  assert.ok(p.heroTop >= 88 - 1e-6, `${label}: 주인공이 HUD 밑에 있다(위끝 ${p.heroTop})`);
+  assert.ok(p.heroBottom <= p.innerH, `${label}: 주인공이 화면 아래로 나갔다`);
+}
+
+test('창 크기: 1366×768 → 1280×800 → 1366×650 → 1024×768로 바꿔도 캔버스가 화면을 꽉 채우고 주인공이 HUD 밑에 숨지 않는다', async () => {
+  const { page, errors } = await openGame();
+  await page.waitForFunction(() => window.__test);
+  await page.evaluate(() => window.__test.newGame('하늘', 'f'));
+  await page.waitForSelector('[data-scene="explore"] canvas');
+  await page.waitForFunction(() => window.__test.view);
+  for (const [w, h] of [[1366, 768], [1280, 800], [1366, 650], [1024, 768]]) {
+    await page.setViewportSize({ width: w, height: h });
+    await expectFilled(page, `${w}×${h}`);
+    // 맵 위쪽(도담 할머니 집 앞)으로 옮겨도 같다
+    await page.evaluate(() => window.__test.teleportTo('dodam'));
+    await page.waitForSelector('[data-scene="explore"] canvas');
+    await page.waitForFunction(() => window.__test.view);
+    await expectFilled(page, `${w}×${h} 도담 앞`);
+    await page.evaluate(() => window.__test.newGame('하늘', 'f'));
+    await page.waitForFunction(() => window.__test.view);
+  }
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('HUD 겹침: 1024×768, 닉네임 6글자, 1-2장 긴 할 일에서도 두루마리와 낱말 상자가 겹치지 않고 단추는 72×80', async () => {
+  const page = await browser.newPage({ viewport: { width: 1024, height: 768 } });
+  const errors = collectErrors(page);
+  await page.goto(server.url + '/?test=1');
+  await page.waitForFunction(() => window.__test);
+  await page.evaluate(() => window.__test.newGame('가나다라마바', 'f'));
+  await page.evaluate(() => window.__test.nextChapter());
+  await page.waitForSelector('[data-scene="explore"] canvas');
+  await page.waitForFunction(() => document.querySelector('.hud-task').innerText.includes('마른 나무에서 장작 모으기'));
+  const boxes = await page.evaluate(() => {
+    const r = (sel) => { const b = document.querySelector(sel).getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom, w: b.width, h: b.height }; };
+    const t = document.querySelector('.hud-task-text');
+    return {
+      task: r('.hud-task'), words: r('.hud-words'), medal: r('.hud-medallion'), codex: r('.hud-button:nth-of-type(1)'),
+      tasks: r('.hud-button:nth-of-type(2)'), clipped: t.scrollWidth > t.clientWidth,
+      hudH: document.querySelector('.hud').getBoundingClientRect().height, innerW: innerWidth,
+    };
+  });
+  assert.ok(boxes.task.r <= boxes.words.l - 4, `두루마리(오른쪽 ${boxes.task.r})와 낱말 상자(왼쪽 ${boxes.words.l})가 겹친다`);
+  assert.ok(boxes.words.r <= boxes.codex.l, '낱말 상자와 도감 단추가 겹친다');
+  assert.ok(boxes.codex.r <= boxes.tasks.l, '도감과 할 일 단추가 겹친다');
+  assert.ok(boxes.tasks.r <= boxes.innerW - 12 + 1e-6, '할 일 단추가 오른쪽 여백을 넘는다');
+  for (const k of ['codex', 'tasks']) {
+    assert.equal(boxes[k].w, 72, `${k} 폭`);
+    assert.equal(boxes[k].h, 80, `${k} 높이`);
+  }
+  assert.equal(boxes.hudH, 88);
+  assert.ok(boxes.words.b <= 88 && boxes.task.b <= 88 && boxes.codex.b <= 88, "상자는 위 88px 안");
+  assert.equal(boxes.medal.b, 104, "메달은 (12,8)에서 지름 96");
+  assert.equal(boxes.clipped, false, '이 길이의 할 일은 말줄임 없이 다 보여야 한다');
+  assert.deepEqual(errors, []);
+  await page.close();
 });
 
 test('할머니에게 걸어가 말을 걸면 대화 장면으로 가고, 저장된다', async () => {

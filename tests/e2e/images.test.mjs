@@ -1,7 +1,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
-import { launchBrowser, collectErrors } from './browser.mjs';
+import { launchBrowser, collectErrors, finishDialogue } from './browser.mjs';
 import ACT1 from '../../data/acts/act1.js';
 
 let server, browser;
@@ -35,7 +35,7 @@ const unexpected = (errors) => errors.filter((e) => !e.includes('missing_404'));
 // 탐험 캔버스에서 월드 좌표(도트) 한 점의 색. 도트 한 칸 = 캔버스 scale 픽셀.
 // who: 'dodam' 도담 할머니 칸, 'hero' 주인공 칸, 'left' 주인공 왼쪽 칸 — 각각 칸 왼쪽 위에서 (3,3).
 const sample = (page, who) => page.evaluate(async (w) => {
-  const { cameraFor, TILE } = await import('/js/explore/render.js');
+  const { TILE } = await import('/js/explore/render.js');
   const { parseMap } = await import('/js/explore/grid.js');
   const { actOfChapter } = await import('/data/acts/index.js');
   const s = window.__test.state();
@@ -43,11 +43,11 @@ const sample = (page, who) => page.evaluate(async (w) => {
   const map = parseMap(chapter.map.rows);
   const p = w === 'dodam' ? map.slots[chapter.npcs.find((n) => n.id === 'dodam').slot]
     : w === 'hero' ? s.pos : { x: s.pos.x - 1, y: s.pos.y };
-  const cam = cameraFor(map, s.pos);
+  const { camera } = window.__test.view; // 마지막으로 그린 때의 카메라(세계 좌표)
   const canvas = document.querySelector('[data-scene="explore"] canvas');
-  const scale = canvas.width / 384;
-  const x = Math.round((p.x * TILE + 3 - Math.round(cam.x)) * scale + scale / 2);
-  const y = Math.round((p.y * TILE + 3 - Math.round(cam.y)) * scale + scale / 2);
+  const scale = 3; // 세계 1 = 캔버스 픽셀 3 (factor는 CSS로 줄일 때만 쓰이고 캔버스 안쪽 좌표에는 들어가지 않는다)
+  const x = Math.round((p.x * TILE + 3) * scale - Math.round(camera.x * scale) + scale / 2);
+  const y = Math.round((p.y * TILE + 3) * scale - Math.round(camera.y * scale) + scale / 2);
   return [...canvas.getContext('2d').getImageData(x, y, 1, 1).data].slice(0, 3);
 }, who);
 
@@ -116,6 +116,57 @@ test('탐험: 맵 그림이 있으면 길·벽 타일 색 대신 맵 그림을 �
   await expectColor(page, 'left', PATH_RGB);
   assert.deepEqual(unexpected(errors), []);
   await page.close();
+});
+
+// 첫 부탁을 받고 우물에서 물동이를 가방에 넣는다.
+async function getWater(page) {
+  await page.evaluate(() => window.__test.teleportTo('dodam'));
+  await page.keyboard.press('Space');
+  await finishDialogue(page);
+  await page.evaluate(() => window.__test.teleportTo('우물'));
+  await page.keyboard.press('Space');
+  await page.waitForFunction(() => window.__test.state().bag.includes('water'));
+}
+
+test('HUD 가방 칸: 물건 그림이 있으면 그 그림을, 그림이 404면 이름 첫 글자 블록을 보인다', async () => {
+  const { page, errors } = await openNewGame();
+  assert.equal(await page.locator('.hud-bag img').count(), 0);
+  await getWater(page);
+  await page.waitForSelector('.hud-bag img');
+  assert.match(await page.locator('.hud-bag img').getAttribute('src'), /icon_water\.png$/);
+  assert.equal(await page.locator('.hud-bag .bag-item').innerText(), '물');
+  const box = await page.locator('.hud-bag img').boundingBox();
+  assert.equal(box.width, 32);
+  assert.equal(box.height, 32);
+  await page.close();
+
+  const again = await openNewGame();
+  await again.page.evaluate((u) => window.__test.setAsset('items.water', u), MISSING);
+  await getWater(again.page);
+  await again.page.waitForSelector('.hud-bag .bag-item');
+  await again.page.waitForTimeout(300);
+  assert.equal(await again.page.locator('.hud-bag img').count(), 0);
+  assert.equal(await again.page.locator('.hud-bag .bag-item').innerText(), '물');
+  assert.deepEqual(unexpected(errors), []);
+  assert.deepEqual(unexpected(again.errors), []);
+  await again.page.close();
+});
+
+test('HUD 메달: 주인공 얼굴 그림이 있으면 <img>, 없는 주소면 이름 첫 글자', async () => {
+  const { page, errors } = await openNewGame();
+  await page.waitForSelector('.hud-medallion img');
+  assert.match(await page.locator('.hud-medallion img').getAttribute('src'), /bust_hero_f_base/);
+  await page.close();
+  const again = await openNewGame('m');
+  await again.page.evaluate((u) => window.__test.setAsset('busts.hero_m.base', u), MISSING);
+  await again.page.evaluate(() => window.__test.newGame('하늘', 'm'));
+  await again.page.waitForSelector('.hud-medallion .hud-initial');
+  await again.page.waitForTimeout(300);
+  assert.equal(await again.page.locator('.hud-medallion img').count(), 0);
+  assert.equal(await again.page.locator('.hud-medallion .hud-initial').innerText(), '하');
+  assert.deepEqual(unexpected(errors), []);
+  assert.deepEqual(unexpected(again.errors), []);
+  await again.page.close();
 });
 
 const dialogueScript = [

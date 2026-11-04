@@ -1,12 +1,12 @@
 // 탐험 장면: 칸 맵을 걷고, 인물에게 말을 걸고, 물건을 조사한다.
 import { actOfChapter } from '../../data/acts/index.js';
 import { parseMap, step, facingTarget } from '../explore/grid.js';
-import { computeScale, ART, CANVAS_W, CANVAS_H } from '../explore/scale.js';
+import { computeView, ART } from '../explore/scale.js';
 import { bindInput, createTouchControls, isCoarsePointer } from '../explore/input.js';
 import { drawExplore, cameraFor, animKey } from '../explore/render.js';
 import { nextGlide, drawnPos, glideEnd } from '../explore/motion.js';
 import { onImageLoaded, preloadChapter } from '../ui/images.js';
-import { createHud, createToast, fogMessage, HUD_HEIGHT } from '../explore/hud.js';
+import { createHud, createToast, fogMessage, HUD_INSET } from '../explore/hud.js';
 import { chapterOf, chapterComplete, fogOpen, setPos, markTip, takeWords } from '../rules/game.js';
 import { talkTo, inspect, fightGate } from '../rules/quests.js';
 import { openCodex } from './codex.js';
@@ -15,7 +15,6 @@ import { formatLine } from '../rules/josa.js';
 
 export const TIP_MOVE = 'move';
 export const TIP_FIRST_NPC = 'first-npc';
-const TOP_SPACE = HUD_HEIGHT + 8; // HUD 띠 + 캔버스와의 간격
 
 const reducedMotion = () =>
   typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -68,7 +67,7 @@ export const explore = {
     const showCodex = () => toggle('codex', (onClose) => openCodex(el, state, { actTab: state.act, onClose, focusAfter }));
     const showTasks = () => toggle('tasks', (onClose) => openTasks(el, state, chapter, { onClose, focusAfter }));
 
-    const hud = createHud({ onCodex: showCodex, onTasks: showTasks });
+    const hud = createHud({ onCodex: showCodex, onTasks: showTasks, avatar: state.avatar });
     const stage = document.createElement('div');
     stage.className = 'explore-stage';
     stage.tabIndex = -1; // 겹침 창을 닫은 뒤 초점을 받을 자리
@@ -95,17 +94,20 @@ export const explore = {
 
     const g = canvas.getContext('2d');
     let size = 0; // 캔버스 크기를 바꿀 때마다 늘린다(크기를 바꾸면 그림이 지워진다)
+    let box = { w: 0, h: 0, insetTop: 0 }; // 보이는 세계 크기와 HUD가 덮는 세계 높이
+    let scale = 1; // CSS 크기 / 캔버스 안쪽 크기 (1이면 1:1)
     const fit = () => {
       size++;
-      const { factor, cssWidth, cssHeight } = computeScale(window.innerWidth, Math.max(1, window.innerHeight - TOP_SPACE));
-      canvas.width = CANVAS_W;
-      canvas.height = CANVAS_H;
-      canvas.style.width = `${cssWidth}px`;
-      canvas.style.height = `${cssHeight}px`;
+      const v = computeView(window.innerWidth, window.innerHeight);
+      canvas.width = v.canvasW;
+      canvas.height = v.canvasH;
+      canvas.style.width = `${v.cssW}px`;
+      canvas.style.height = `${v.cssH}px`;
       // 1:1이면 도트를 또렷하게, 줄여 보일 때는 부드럽게(최근접으로 줄이면 선이 끊긴다)
-      canvas.style.imageRendering = factor === 1 ? 'pixelated' : 'auto';
-      el.style.width = `${cssWidth}px`;
-      // 그리는 코드는 세계 좌표(384×216, 칸 16)를 그대로 쓴다
+      canvas.style.imageRendering = v.factor === 1 ? 'pixelated' : 'auto';
+      scale = v.factor;
+      box = { w: v.viewW, h: v.viewH, insetTop: HUD_INSET / (v.factor * ART) };
+      // 그리는 코드는 세계 좌표(칸 16)를 그대로 쓴다
       g.setTransform(ART, 0, 0, ART, 0, 0);
       g.imageSmoothingEnabled = false;
     };
@@ -130,7 +132,8 @@ export const explore = {
       if (overlay && drawn?.size === size) return;
       const heroAt = drawnPos(glide, state.pos, time); // 상태 자리와 다른 곳으로 옮겨진 때(순간이동·불러오기)는 미끄러지지 않는다
       const moving = !!glide && glide.to.x === state.pos.x && glide.to.y === state.pos.y && time < glideEnd(glide) + WALK_TAIL_MS;
-      const view = { map, state, chapter, camera: cameraFor(map, heroAt), time, tipTarget: tipTarget(), still, moving, heroAt };
+      const camera = cameraFor(map, heroAt, box, box.insetTop);
+      const view = { map, state, chapter, camera, view: box, time, tipTarget: tipTarget(), still, moving, heroAt };
       const anim = animKey(view);
       if (drawn && drawn.state === state && drawn.size === size && drawn.anim === anim) return;
       if (window.__test) {
@@ -138,7 +141,10 @@ export const explore = {
         (window.__test.draws ??= []).push([Math.round(time), why]);
       }
       drawExplore(g, view);
-      if (window.__test) window.__test.heroAt = heroAt; // 검사용: 마지막으로 그려진 주인공 자리
+      if (window.__test) { // 검사용: 마지막으로 그려진 주인공 자리와 카메라·배율
+        window.__test.heroAt = heroAt;
+        window.__test.view = { camera, factor: scale, viewW: box.w, viewH: box.h, insetTop: box.insetTop };
+      }
       drawn = { state, size, anim };
     };
     raf = requestAnimationFrame(frame);

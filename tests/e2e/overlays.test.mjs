@@ -54,7 +54,7 @@ test('도감: 1막 탭에 어스름 카드 1장과 ? 9칸, 닫기와 초점', as
   await page.waitForSelector('.codex');
   await page.locator('.codex-close').click();
   assert.equal(await page.locator('.codex').count(), 0);
-  assert.equal(await page.evaluate(() => !!document.activeElement.closest('.explore-top')), false);
+  assert.equal(await page.evaluate(() => !!document.activeElement.closest('.hud')), false);
   assert.deepEqual(errors, []);
   await page.close();
 });
