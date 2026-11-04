@@ -1,5 +1,6 @@
 // 장면 전환기. 장면은 { mount(root, params, ctx) -> unmount? } 모양이다.
-export function createRouter(root) {
+// services({ store, getState, setState })는 main.js가 넣어 ctx에 그대로 실린다.
+export function createRouter(root, services = {}) {
   const scenes = new Map();
   let current = null;
   let unmount = null;
@@ -17,8 +18,7 @@ export function createRouter(root) {
         current = null;
         done();
       }
-      // store와 state는 뒤 작업(Task 5·7)에서 채운다.
-      const ctx = { router, store: null, getState: () => null, setState: () => {} };
+      const ctx = { store: null, getState: () => null, setState: () => {}, ...services, router };
       current = name;
       const result = scene.mount(root, params, ctx);
       unmount = typeof result === 'function' ? result : null;

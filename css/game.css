@@ -41,3 +41,195 @@ canvas, img {
   font-family: var(--font-title);
   font-size: 32px;
 }
+
+:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.big-button {
+  min-height: 48px;
+  padding: 0 24px;
+  border: 2px solid var(--meok-gal);
+  border-radius: 12px;
+  background: var(--hanji);
+  color: var(--meok);
+  font: inherit;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+[data-scene='boot'] {
+  display: grid;
+  justify-items: center;
+  gap: 24px;
+}
+[data-scene='boot'] h1 { margin: 0; font-size: 72px; font-weight: normal; }
+
+/* 임시 장면(대화·전투·클리어): 뒤 Task가 바꾼다 */
+.stub-scene { display: grid; gap: 12px; max-width: 900px; padding: 16px; }
+.stub-scene pre { max-height: 60vh; overflow: auto; font-size: 18px; white-space: pre-wrap; }
+
+/* ── 탐험 ─────────────────────────────── */
+[data-scene='explore'] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.explore-top {
+  display: flex;
+  gap: 8px;
+  height: 48px;
+}
+
+.hud {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
+  border: 2px solid var(--meok-gal);
+  border-radius: 12px;
+  background: var(--hanji);
+  font-size: 20px;
+}
+.hud p { margin: 0; }
+.hud-task {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hud-task > span:last-child { overflow: hidden; text-overflow: ellipsis; }
+.hud-dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--green);
+}
+.hud-count { white-space: nowrap; }
+.hud-bag {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hud-bag li {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+}
+.hud-bag li.empty { border: 2px dashed var(--gray-2); }
+.bag-item {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--meok-gal);
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+}
+.hud-button {
+  flex: none;
+  min-height: 48px;
+  min-width: 48px;
+  padding: 0 14px;
+  border: 2px solid var(--meok-gal);
+  border-radius: 12px;
+  background: var(--hanji);
+  color: var(--meok);
+  font: inherit;
+  font-size: 20px;
+  cursor: pointer;
+}
+.hud-button kbd {
+  font: inherit;
+  font-size: 18px;
+  color: var(--gray-3);
+}
+
+.explore-stage { position: relative; }
+.explore-stage canvas {
+  display: block;
+  border-radius: 6px;
+}
+
+.explore-tip,
+.toast {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 10px 20px;
+  border: 2px solid var(--meok-gal);
+  border-radius: 12px;
+  background: var(--hanji);
+  font-size: 20px;
+  white-space: nowrap;
+  animation: panel-in 180ms ease-out;
+}
+.explore-tip { top: 16px; }
+.toast { bottom: 24px; }
+.toast[hidden] { display: none; }
+
+@keyframes panel-in {
+  from { opacity: 0; translate: 0 8px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes panel-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+/* 터치 기기에서만 붙는 조작 버튼 */
+.touch-controls {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.touch-controls button {
+  pointer-events: auto;
+  border: 2px solid var(--meok-gal);
+  background: var(--hanji);
+  color: var(--meok);
+  opacity: 0.7;
+  font: inherit;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.touch-controls button.pressed,
+.touch-controls button:active { opacity: 1; }
+.touch-pad {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  display: grid;
+  grid-template: repeat(3, 56px) / repeat(3, 56px);
+}
+.touch-dir { border-radius: 10px; font-size: 22px; }
+.touch-up { grid-area: 1 / 2; }
+.touch-left { grid-area: 2 / 1; }
+.touch-right { grid-area: 2 / 3; }
+.touch-down { grid-area: 3 / 2; }
+.touch-act {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  font-size: 22px;
+}
