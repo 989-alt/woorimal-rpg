@@ -61,11 +61,13 @@ async function expectColor(page, who, want) {
   assert.deepEqual(await sample(page, who), want);
 }
 
-test('탐험: 도담 그림이 있으면 그림을, 없는 주소면 오류 없이 임시 블록을 그린다', async () => {
+test('탐험: 도담 그림이 없는 주소면 오류 없이 임시 블록을, 그림이 있으면 그림을 그린다', async () => {
   const { page, errors } = await openNewGame();
   await page.evaluate(() => window.__test.teleportTo('dodam')); // 도담 할머니가 화면 안에 오게
   await page.waitForSelector('[data-scene="explore"] canvas');
-  await expectColor(page, 'dodam', DODAM_RGB); // 처음엔 그림 경로가 null → 임시 블록
+  // 없는 주소면 임시 블록
+  assert.equal(await page.evaluate((u) => window.__test.setAsset('npcs.dodam', u), MISSING), false);
+  await expectColor(page, 'dodam', DODAM_RGB);
   // 그림을 끼우면 불러온 뒤 다시 그려져 그림 색이 나온다
   assert.equal(await page.evaluate((u) => window.__test.setAsset('npcs.dodam', u), FIXTURE), true);
   await expectColor(page, 'dodam', FIXTURE_RGB);

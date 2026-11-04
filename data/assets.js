@@ -6,8 +6,15 @@ export const ASSETS = {
   maps: { '1-1': 'assets/pixel/map_ch1-1_saebyeokgol.png', '1-2': 'assets/pixel/map_ch1-2_maeul-eogwi.png' },
   // 주인공 걷기 시트 144×384: 48×96칸 × 3프레임(왼발·서기·오른발) × 4방향(아래·왼·오·위) (f 여 · m 남)
   walk: { f: 'assets/pixel/walk_hero_f.png', m: 'assets/pixel/walk_hero_m.png' },
-  // 인물 도트 16×32 (인물 id)
-  npcs: { dodam: null, daon: null, gardener: null, baker: null, laundry: null, gate: null },
+  // 인물 도트 48×96(그림 48×72쯤, 발이 맨 아래 줄 가운데) (인물 id)
+  npcs: {
+    dodam: 'assets/pixel/npc_dodam.png',
+    daon: 'assets/pixel/npc_daon.png',
+    gardener: 'assets/pixel/npc_gardener.png',
+    baker: 'assets/pixel/npc_baker.png',
+    laundry: 'assets/pixel/npc_laundry.png',
+    gate: 'assets/pixel/npc_gate.png',
+  },
   // 물건 아이콘 (물건 id)
   items: { water: null, firewood: null, letter: null },
   // 꼬마 몬스터·보스 도트 (막 번호)
