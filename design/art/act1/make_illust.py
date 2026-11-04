@@ -223,13 +223,13 @@ def battlebg(src):
     im = cover(Image.open(raw(f'{src}.png')).convert('RGB'), BG)
     a = np.asarray(im).astype(np.float32)
     lum = (a @ np.array([0.299, 0.587, 0.114], np.float32))[..., None]
-    a = lum + (a - lum) * 0.15
+    a = (lum + (a - lum) * 0.15) * 0.8  # 채도 15%, 조금 어둡게(밝은 흙길이 하얗게 뜨지 않게)
     H = a.shape[0]
     y = np.linspace(0, 1, H, dtype=np.float32)[:, None, None]
-    fog = np.array([185, 187, 190], np.float32)  # 잿빛 밝은 단
-    t = np.clip(1 - y / 0.55, 0, 1) ** 1.5 * 0.55  # 위쪽일수록 안개
+    fog = np.array([138, 141, 145], np.float32)  # 잿빛 가운데 단
+    t = np.clip(1 - y / 0.6, 0, 1) ** 1.3 * 0.5  # 위쪽일수록 안개
     a = a * (1 - t) + fog * t
-    warm = np.clip((y - 0.6) / 0.4, 0, 1) * 0.10  # 아래쪽(주인공 쪽)은 살짝 따뜻하게
+    warm = np.clip((y - 0.6) / 0.4, 0, 1) * 0.12  # 아래쪽(주인공 쪽)은 살짝 따뜻하게
     a = a * (1 - warm) + np.array([217, 165, 91], np.float32) * warm
     out = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(5))
     save_webp(out, os.path.join(OUT, 'battle_bg_act1.webp'), LIMITS['bg'])

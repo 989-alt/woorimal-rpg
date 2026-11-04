@@ -31,8 +31,8 @@ export const ASSETS = {
     laundry: { base: 'assets/illust/bust_laundry_base.webp', joy: 'assets/illust/bust_laundry_joy.webp' },
     gate: { base: 'assets/illust/bust_gate_base.webp', joy: 'assets/illust/bust_gate_joy.webp' },
   },
-  dialogueBg: { '1-1': null, '1-2': null }, // 장 id
-  battleBg: { 1: null }, // 막 번호
+  dialogueBg: { '1-1': 'assets/illust/bg_ch1-1.webp', '1-2': 'assets/illust/bg_ch1-2.webp' }, // 장 id (2560×1440)
+  battleBg: { 1: 'assets/illust/battle_bg_act1.webp' }, // 막 번호 (2560×1440, 잿빛)
   battleHero: { f: null, m: null },
   monster: { 1: null }, // 보스(막 번호)
   title: null,
