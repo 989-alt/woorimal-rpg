@@ -823,7 +823,7 @@ canvas, img {
   font-size: 24px;
   line-height: 1;
   white-space: nowrap;
-  box-shadow: 0 0 0 3px var(--gold), 0 0 22px 4px rgba(242, 193, 78, .6);
+  box-shadow: 0 0 0 3px var(--brass-light), 0 4px 10px rgba(43, 26, 12, .35); /* 금빛은 낱말과 정답에만 */
   animation: panel-in 180ms ease-out;
 }
 .battle-combo[hidden] { display: none; }

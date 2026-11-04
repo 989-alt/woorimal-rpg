@@ -65,7 +65,7 @@ export const explore = {
       clearGuide();
       hints.clear(); // 겹침 창이 열리면 안내는 걷어 낸다(닫은 뒤 다시 띄우지 않는다: 이미 본 것으로 기록했다)
       const entry = { kind };
-      entry.close = open(() => { if (overlay === entry) overlay = null; });
+      entry.close = open(() => { if (overlay === entry) overlay = null; progressed(); }); // 창을 읽는 동안은 헤맨 시간으로 치지 않는다
       overlay = entry;
     };
     // 겹침 창을 닫을 때 HUD 단추로는 초점을 돌려주지 않는다(Space·Enter가 말하기로 쓰이도록). 지도 쪽으로 준다.
