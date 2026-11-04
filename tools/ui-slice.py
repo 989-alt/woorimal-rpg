@@ -13,6 +13,10 @@
       연결된 덩어리를 위→아래, 왼→오 순서로 나눠 OUTDIR/<name>.png로 쓴다(각각 fit).
   mask IN OUT --size WxH --slice T,R,B,L --src-corner PX
       리본 가면: frame --fill과 같되 RGB는 모두 흰색, 알파만 모양. 좌우 대칭.
+  bar IN OUT --size WxH --slice T,R,B,L
+      버튼(가로 3조각, 가운데 채움): 알파 상자로 자른 원본을 높이 H에 맞춰 비율대로 줄이고, 왼쪽 L열을 왼 끝,
+      가운데 W-L-R열을 가운데 띠로 쓴다. 오른쪽은 왼쪽의 거울이다. 위아래는 뒤집지 않는다(윤기 띠·아랫단 유지).
+      T·B는 CSS 조각 값이라 그림에는 쓰지 않는다. 줄인 원본의 너비가 W보다 좁으면 멈춘다.
 """
 import argparse
 import os
@@ -165,11 +169,31 @@ def reading_order(boxes):
     return [b for row in rows for b in sorted(row, key=lambda b: b[0])]
 
 
+def build_bar(src, size, sl):
+    w, h = size
+    _, r, _, l = sl
+    sw = round(src.width * h / src.height)
+    if sw < w:
+        sys.exit(f"높이 {h}에 맞춘 원본 너비 {sw}가 --size 너비 {w}보다 좁습니다")
+    scaled = src.resize((sw, h), Image.Resampling.LANCZOS)
+    mid = w - l - r
+    out = Image.new("RGBA", size, (0, 0, 0, 0))
+    out.alpha_composite(scaled.crop((0, 0, l, h)), (0, 0))
+    if mid > 0:
+        x0 = (sw - mid) // 2
+        out.alpha_composite(scaled.crop((x0, 0, x0 + mid, h)), (l, 0))
+    return mirror_left_to_right(out)
+
+
 def cmd_frame(a, white=False):
     src = load_cropped(a.src)
     size = parse_size(a.size)
     out = build_frame(src, size, parse_slice(a.slice), a.src_corner, getattr(a, "asym_right", False), a.fill or white)
     save_palette_png(out, a.dst, white=white)
+
+
+def cmd_bar(a):
+    save_palette_png(build_bar(load_cropped(a.src), parse_size(a.size), parse_slice(a.slice)), a.dst)
 
 
 def cmd_fit(a):
@@ -209,6 +233,11 @@ def main():
     m.add_argument("--slice", required=True)
     m.add_argument("--src-corner", type=int, required=True)
 
+    b = sub.add_parser("bar")
+    b.add_argument("src"); b.add_argument("dst")
+    b.add_argument("--size", required=True)
+    b.add_argument("--slice", required=True)
+
     t = sub.add_parser("fit")
     t.add_argument("src"); t.add_argument("dst")
     t.add_argument("--size", required=True)
@@ -224,6 +253,8 @@ def main():
     elif a.cmd == "mask":
         a.fill = True
         cmd_frame(a, white=True)
+    elif a.cmd == "bar":
+        cmd_bar(a)
     elif a.cmd == "fit":
         cmd_fit(a)
     else:

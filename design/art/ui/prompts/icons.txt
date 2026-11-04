@@ -1,0 +1,11 @@
+A clean icon sheet of exactly seven separate small game UI icons on a transparent background, arranged in two rows (four on top, three below) with wide empty gaps between them so no two icons touch. Each icon is centred in its own space, straight-on front view, with rounded chunky shapes and a dark brown outline. In order, left to right, top row then bottom row:
+1. an open book (cream pages, honey-wood cover, brass corners),
+2. a rolled parchment checklist scroll with a few check marks and wooden rod ends,
+3. a full heart filled in warm vermilion red (#E0584F) with a soft highlight,
+4. an empty heart: the same heart shape as only a dark brown outline with a pale cream inside,
+5. one single rounded rectangular health-bar cell in flat slate grey (#5E6266) with a small top highlight, wider than tall,
+6. a round antique-brass coin with a raised rim and a blank centre (no number, no symbol),
+7. a bold leaf-green (#5FAE5A) check mark with a dark green outline.
+No other objects, no labels, no text, no letters, no numbers, no keycap badges, no frames around the icons. The reference images show the approved style only: copy materials and colours, ignore the words and frames in them. Brass parts are muted, matte, dull ochre antique brass (#C9963F with #8A5E2A shadows), never shiny yellow gold.
+
+UI KIT (use the same kit on every element): an original, cheerful, chunky 2D fantasy RPG interface for 12-year-old children. Panels are framed in rounded, carved honey-brown wood (#A8714A with #6B4426 shadows) with a thin polished antique-brass trim line (#C9963F) and small leaf-shaped brass corner ornaments; tiny round gem studs at the corners in leaf green (#5FAE5A) and clear water blue (#3FA7C9). Panel interiors are smooth warm cream parchment (#FBF5E6) with dark brown ink text (#2B2622). Buttons are glossy and bevelled: rounded shape, soft white highlight along the top, darker lip along the bottom, a thin brass rim. Small square keycap badges are cream with a dark brown letter and a darker bottom edge, like a physical keyboard key. No text, no letters, no numbers. Soft drop shadows fall down-right because the warm morning light comes from the upper left. Bright, warm, light colours; friendly and polished like a finished commercial game. No sound, settings, chat, currency, level, experience or map icons. No real brand logos, no watermark.

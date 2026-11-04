@@ -175,6 +175,32 @@ print(px[4, 4][0] > 150, px[139, 4][2] > 150)
   assert.equal(r, 'True True');
 });
 
+test('ui-slice bar: 높이에 맞춰 줄이고 왼 끝을 거울로, 위아래는 뒤집지 않는다(버튼 윤기·아랫단)', (t) => {
+  if (!existsSync(VENV_PY)) { t.skip(`sprite-gen venv python missing (${VENV_PY})`); return; }
+  const dir = mkdtempSync(join(tmpdir(), 'ui-'));
+  const src = join(dir, 'pill.png');
+  // 600x200 알약(여백 10, 네 귀퉁이 투명): 왼 끝 60px 빨강, 오른 끝 60px 파랑, 가운데는 위 밝은 초록 → 아래 짙은 초록
+  pyRun(`
+from PIL import Image
+im = Image.new('RGBA', (620, 220), (0, 0, 0, 0))
+for y in range(200):
+    g = 230 - y
+    for x in range(600):
+        if (x < 20 or x >= 580) and (y < 20 or y >= 180): continue  # 둥근 끝 흉내: 네 귀퉁이는 투명
+        c = (230, 20, 20, 255) if x < 60 else (20, 30, 230, 255) if x >= 540 else (40, g, 60, 255)
+        im.putpixel((x + 10, y + 10), c)
+im.save(${JSON.stringify(src)})
+`);
+  const out = join(dir, 'bar.png');
+  execFileSync(VENV_PY, ['-I', 'tools/ui-slice.py', 'bar', src, out, '--size', '192x144', '--slice', '48,64,32,64']);
+  const r = inspectFrame(out, `
+px = im.convert('RGBA').load()
+sym = all(px[x, y] == px[191 - x, y] for y in range(144) for x in range(192))
+print(im.size, im.mode, 'transparency' in im.info, sym, px[4, 72][0] > 150, px[96, 4][1] > px[96, 139][1] + 60)
+`);
+  assert.equal(r, '(192, 144) P True True True True');
+});
+
 test('ui-slice sheet: 덩어리 셋을 이름 순서대로', (t) => {
   const s = uiSliceSetup(t); if (!s) return;
   const sheet = join(s.dir, 'sheet.png');

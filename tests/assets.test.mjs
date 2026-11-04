@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { ASSETS, bustFor } from '../data/assets.js';
+import { ASSETS, UI_KIT, bustFor } from '../data/assets.js';
 import { loadImage, getLoaded, preloadChapter, onImageLoaded } from '../js/ui/images.js';
 import ACT1 from '../data/acts/act1.js';
 
-const NAME_RULE = /^assets\/(pixel|illust)\/[a-z0-9_.\-]+\.(png|webp)$/;
+const NAME_RULE = /^assets\/(pixel|illust|ui)\/[a-z0-9_.\-]+\.(png|webp)$/;
 
 function* paths(node, trail = '') {
   if (typeof node === 'string') yield [trail, node];
@@ -43,6 +43,16 @@ test('틀: 장·인물·물건·표정이 데이터와 맞는다', () => {
   assert.deepEqual(Object.keys(ASSETS.busts.hero_m).sort(), ['base', 'joy', 'surprise']);
   assert.ok('1' in ASSETS.small && '1' in ASSETS.bossPixel && '1' in ASSETS.battleBg && '1' in ASSETS.monster);
   assert.ok('title' in ASSETS);
+});
+
+test('UI 키트: ASSETS.ui는 assets/ui/<이름>.v1.png이고 UI_KIT과 키가 같다', () => {
+  assert.ok(ASSETS.ui && UI_KIT, 'ASSETS.ui·UI_KIT 없음');
+  assert.deepEqual(Object.keys(ASSETS.ui).sort(), Object.keys(UI_KIT).sort());
+  for (const [key, path] of Object.entries(ASSETS.ui)) assert.match(path, /^assets\/ui\/[a-z0-9_]+\.v1\.png$/, `ui.${key}`);
+  for (const [key, kit] of Object.entries(UI_KIT)) {
+    assert.ok(Number.isInteger(kit.w) && Number.isInteger(kit.h), `${key} 크기`);
+    for (const f of ['slice', 'border']) if (kit[f]) assert.equal(kit[f].length, 4, `${key}.${f}`);
+  }
 });
 
 test('대본의 인물·표정이 상반신 틀에 있다', () => {
