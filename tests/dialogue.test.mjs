@@ -81,3 +81,17 @@ test('타자 효과 0ms: 처음부터 다 보이고, 다 나온 뒤 200ms 동안
   t.tick(150); assert.equal(t.press(), 'ignored');
   t.tick(60); assert.equal(t.press(), 'next');
 });
+
+test('타자 효과 settled: 다 보이고 200ms가 지나야 참(그때 고리를 멈춘다), count는 보인 글자 수', () => {
+  const t = createTypewriter({ full: '가나', msPerChar: 30 });
+  assert.equal(t.count(), 0);
+  t.tick(30); assert.equal(t.count(), 1); assert.equal(t.settled(), false);
+  t.tick(30); assert.equal(t.done(), true); assert.equal(t.settled(), false);
+  t.tick(199); assert.equal(t.settled(), false);
+  t.tick(1); assert.equal(t.settled(), true);
+  const r = createTypewriter({ full: '가나다라', msPerChar: 30 });
+  r.press(); // 다 보이기: 기다림은 그때부터
+  assert.equal(r.count(), 4);
+  assert.equal(r.settled(), false);
+  r.tick(200); assert.equal(r.settled(), true);
+});

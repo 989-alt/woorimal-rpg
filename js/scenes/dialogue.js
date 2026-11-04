@@ -39,7 +39,10 @@ export function createTypewriter({ full, msPerChar = MS_PER_CHAR }) {
   const count = () => (msPerChar > 0 ? Math.floor(Math.min(elapsed, total) / msPerChar) : chars.length);
   return {
     shown: () => chars.slice(0, count()).join(''),
+    count,
     done,
+    // 다 보였고 200ms 기다림도 지났다: 더 흘려보낼 시간이 없다.
+    settled: () => done() && sinceDone >= GUARD_MS,
     press() {
       if (!done()) { elapsed = total; sinceDone = 0; return 'reveal'; }
       return sinceDone < GUARD_MS ? 'ignored' : 'next';
@@ -106,8 +109,10 @@ export const dialogue = {
     let busy = false; // 이 줄의 낱말 카드를 다 보여 주는 동안
     let leaving = false;
     let raf = 0;
+    let running = false; // 타자 효과 고리가 도는 중
     let last = 0;
     let spans = [];
+    let renderedCount = -1; // 마지막으로 그린 글자 수
     let tipEl = null;
     let lastNpc = null;
     const shownCards = new Set(); // 이 대화에서 이미 카드를 보인 낱말
@@ -119,7 +124,8 @@ export const dialogue = {
     };
 
     function render() {
-      const shown = Array.from(tw.shown()).length;
+      const shown = tw.count();
+      renderedCount = shown;
       let used = 0;
       for (const s of spans) {
         const n = Math.max(0, Math.min(s.len, shown - used));
@@ -180,6 +186,7 @@ export const dialogue = {
       maybeTip();
       render();
       if (tw.done()) sentenceShown(); // 타자 효과 없이 바로 다 나온 줄
+      kick();
     }
 
     // 처음 보는 새 낱말이 나오면 한 번만 안내한다.
@@ -208,6 +215,7 @@ export const dialogue = {
         if (!w) { busy = false; arrow.hidden = false; return; }
         card = openMeaningCard(scene, w, () => {
           card = null;
+          kick(); // 카드가 열린 동안 멈췄던 시간(다음 줄로 넘어가기 전 기다림)을 다시 흘린다
           shownCards.add(w);
           spans.find((x) => x.hl?.dataset.word === w)?.hl.classList.remove('new');
           const st = ctx.getState();
@@ -221,7 +229,7 @@ export const dialogue = {
     function press() {
       if (card || leaving || !tw) return;
       const r = tw.press();
-      if (r === 'reveal') { render(); sentenceShown(); }
+      if (r === 'reveal') { render(); sentenceShown(); kick(); }
       else if (r === 'next') advance();
     }
 
@@ -247,17 +255,27 @@ export const dialogue = {
       tw.press();
       render();
       sentenceShown();
+      kick();
     });
 
-    const frame = (now) => {
+    // 타자 효과 고리: 글자 수가 바뀔 때만 글을 고치고, 줄이 다 보이고 기다림이 끝나면(또는 카드가 열리면) 멈춘다.
+    // 다음 줄·카드 닫힘·누름이 kick()으로 다시 돌린다.
+    function kick() {
+      if (running || leaving || !tw || card || tw.settled()) return;
+      running = true;
+      last = performance.now();
       raf = requestAnimationFrame(frame);
+    }
+    const frame = (now) => {
       const dt = Math.min(100, now - last);
       last = now;
-      if (!tw || card) return;
+      if (!tw || card || leaving) { running = false; return; }
       const was = tw.done();
       tw.tick(dt);
-      render();
+      if (tw.count() !== renderedCount) render();
       if (!was && tw.done()) sentenceShown();
+      if (card || tw.settled()) { running = false; return; }
+      raf = requestAnimationFrame(frame);
     };
 
     if (script.length === 0) {
@@ -265,8 +283,6 @@ export const dialogue = {
       queueMicrotask(() => { if (scene.isConnected) ctx.router.show(params.next || 'explore'); });
     } else {
       showLine(0);
-      last = performance.now();
-      raf = requestAnimationFrame(frame);
     }
 
     return () => {

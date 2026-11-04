@@ -116,21 +116,28 @@ function drawMarker(ctx, cx, top, mark) {
   ctx.fillText(mark, cx, y + h / 2 + 0.5);
 }
 
+const bobAt = (time, still) => (still ? 0 : Math.round(Math.sin(time / 250)));
+const glowOn = (glow, time) => glow !== 'none' && time % (glow === 'bright' ? 1000 : 2000) <= 300;
+
 function drawGlow(ctx, px, py, glow, time) {
-  if (glow === 'none') return;
-  const period = glow === 'bright' ? 1000 : 2000;
-  if (time % period > 300) return;
+  if (!glowOn(glow, time)) return;
   ctx.fillStyle = WHITE;
   ctx.fillRect(px + 4, py + 3, 1, 1);
   if (glow === 'bright') ctx.fillRect(px + 11, py + 10, 1, 1);
+}
+
+// 첫 부탁 인물 머리 위 화살표가 화면 안에 그려지는지(그렇지 않으면 가장자리에 멈춘 화살표)
+function tipInView(camera, target) {
+  const tx = target.x * TILE + TILE / 2;
+  const ty = target.y * TILE - 8;
+  return tx >= camera.x + 8 && tx <= camera.x + BASE_W - 8 && ty - 20 >= camera.y && ty <= camera.y + BASE_H - 8;
 }
 
 // 첫 부탁 인물 쪽 화살표: 화면 안이면 머리 위에서, 밖이면 화면 가장자리에서 그쪽을 가리킨다.
 function drawTipArrow(ctx, camera, target, hero, bob) {
   const tx = target.x * TILE + TILE / 2;
   const ty = target.y * TILE - 8;
-  const inView = tx >= camera.x + 8 && tx <= camera.x + BASE_W - 8 && ty - 20 >= camera.y && ty <= camera.y + BASE_H - 8;
-  if (inView) {
+  if (tipInView(camera, target)) {
     drawArrow(ctx, tx, ty - 20 + bob, Math.PI / 2, 8);
     return;
   }
@@ -149,7 +156,7 @@ export function drawExplore(ctx, { map, state, chapter, camera, time = 0, tipTar
   ctx.translate(-Math.round(camera.x), -Math.round(camera.y));
   drawTiles(ctx, map, camera, fogOpen(state, chapter));
 
-  const bob = still ? 0 : Math.round(Math.sin(time / 250));
+  const bob = bobAt(time, still);
   const arrows = questObjectSlots(state, chapter);
   const glow = hiddenGlow(state, chapter);
 
@@ -195,4 +202,21 @@ export function drawExplore(ctx, { map, state, chapter, camera, time = 0, tipTar
 
   if (tipTarget) drawTipArrow(ctx, camera, tipTarget, state.pos, bob);
   ctx.restore();
+}
+
+// 시간에 따라 바뀌는 그림(발밑·머리 위 화살표 흔들림, 숨은 낱말 반짝임) 중 화면 안에 있는 것만의 지금 모습.
+// 이 값과 상태·카메라가 그대로면 같은 그림이므로 다시 그리지 않아도 된다.
+export function animKey({ map, state, chapter, camera, time = 0, tipTarget = null, still = false }) {
+  // 칸(위로 8px 솟은 인물·화살표 여유 포함)이 화면에 조금이라도 걸치는지
+  const inView = (p) => p.x * TILE + TILE > camera.x && p.x * TILE < camera.x + BASE_W
+    && p.y * TILE + TILE + 8 > camera.y && p.y * TILE - 8 < camera.y + BASE_H;
+  const parts = [];
+  if (!still) {
+    const arrowSeen = questObjectSlots(state, chapter).some((slot) => map.objects[slot] && inView(map.objects[slot]));
+    if (arrowSeen || (tipTarget && tipInView(camera, tipTarget))) parts.push(`b${bobAt(time, still)}`);
+  }
+  const glow = hiddenGlow(state, chapter);
+  const spot = map.objects[chapter.hidden.object];
+  if (glow !== 'none' && spot && inView(spot)) parts.push(`g${glowOn(glow, time) ? 1 : 0}`);
+  return parts.join('|');
 }

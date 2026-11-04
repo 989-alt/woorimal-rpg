@@ -123,3 +123,36 @@ test('?test=1이 없으면 __test가 없다', async () => {
   assert.deepEqual(errors, []);
   await page.close();
 });
+
+test('탐험 캔버스는 바뀐 것이 없으면 다시 그리지 않고, 겹침 창이 열린 동안에도 그리지 않는다', async () => {
+  const page = await browser.newPage({ viewport: { width: 1366, height: 768 } });
+  const errors = collectErrors(page);
+  await page.addInitScript(() => {
+    window.__fills = 0;
+    const orig = CanvasRenderingContext2D.prototype.fillRect;
+    CanvasRenderingContext2D.prototype.fillRect = function (...a) { window.__fills++; return orig.apply(this, a); };
+  });
+  await page.goto(server.url + '/?test=1');
+  await page.waitForFunction(() => window.__test);
+  await page.evaluate(() => window.__test.newGame('하늘', 'f'));
+  await page.waitForSelector('[data-scene="explore"] canvas');
+  const fills = () => page.evaluate(() => window.__fills);
+  await page.waitForTimeout(200);
+  // 처음 자리: 화면 안에 움직이는 그림이 없다
+  let n = await fills();
+  assert.ok(n > 0, '한 번은 그렸다');
+  await page.waitForTimeout(500);
+  assert.equal(await fills(), n, '바뀐 것이 없는데 다시 그렸다');
+  // 걸으면 다시 그린다
+  await page.keyboard.press('ArrowRight');
+  await page.waitForFunction((k) => window.__fills > k, n);
+  // 겹침 창이 열린 동안은 그리지 않는다
+  await page.keyboard.press('KeyE');
+  await page.waitForSelector('.codex');
+  await page.waitForTimeout(100);
+  n = await fills();
+  await page.waitForTimeout(400);
+  assert.equal(await fills(), n);
+  assert.deepEqual(errors, []);
+  await page.close();
+});

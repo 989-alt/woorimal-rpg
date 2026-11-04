@@ -36,3 +36,25 @@ test('안개 문 안내는 남은 낱말 수를 센다', async () => {
   const s = { ...newGame({ nickname: '하늘', avatar: 'f' }), chapter: '1-2', acquired: { 부리나케: { from: 'x' }, 짬: { from: 'x' } } };
   assert.equal(fogMessage(s, ch), '아직 찾지 못한 낱말이 3개 있어.');
 });
+
+test('animKey: 화면 안에 움직이는 그림이 없으면 시간이 흘러도 같고, 있으면 그 모습에 따라 바뀐다', async () => {
+  const { animKey } = await import('../js/explore/render.js');
+  const ch = chapterOf(ACT1, '1-1');
+  const map = parseMap(ch.map.rows);
+  let s = newGame({ nickname: '하늘', avatar: 'f' });
+  const at = (state, time, extra = {}) => animKey({ map, state, chapter: ch, camera: cameraFor(map, state.pos), time, ...extra });
+  // 처음: 화살표도 반짝임도 없다
+  assert.equal(at(s, 0), at(s, 600));
+  assert.equal(at(s, 0), '');
+  // 우물 부탁을 받으면 우물 발밑 화살표가 흔들린다(우물이 화면 안일 때)
+  s = talkTo(s, ch, 'dodam').state;
+  const well = map.objects['0'];
+  const near = { ...s, pos: { x: well.x, y: well.y + 1 } };
+  assert.notEqual(at(near, 0), at(near, 400)); // sin(0)=0, sin(1.6)≈1
+  // 움직임 줄이기: 흔들리지 않는다
+  assert.equal(at(near, 0, { still: true }), at(near, 400, { still: true }));
+  // 숨은 낱말 반짝임: 첫 부탁을 받은 뒤, 장독대가 화면 안이면 켜짐/꺼짐이 바뀐다
+  const jar = map.objects[ch.hidden.object];
+  const byJar = { ...s, pos: { x: jar.x, y: jar.y + 1 } };
+  assert.notEqual(at(byJar, 100, { still: true }), at(byJar, 500, { still: true }));
+});

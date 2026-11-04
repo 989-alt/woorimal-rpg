@@ -3,7 +3,7 @@ import { actOfChapter } from '../../data/acts/index.js';
 import { parseMap, step, facingTarget } from '../explore/grid.js';
 import { computeScale, BASE_W, BASE_H } from '../explore/scale.js';
 import { bindInput, createTouchControls, isCoarsePointer } from '../explore/input.js';
-import { drawExplore, cameraFor } from '../explore/render.js';
+import { drawExplore, cameraFor, animKey } from '../explore/render.js';
 import { createHud, createToast, fogMessage, HUD_HEIGHT } from '../explore/hud.js';
 import { chapterOf, chapterComplete, fogOpen, setPos, markTip, takeWords } from '../rules/game.js';
 import { talkTo, inspect, fightGate } from '../rules/quests.js';
@@ -92,7 +92,9 @@ export const explore = {
         : null;
 
     const g = canvas.getContext('2d');
+    let size = 0; // 캔버스 크기를 바꿀 때마다 늘린다(크기를 바꾸면 그림이 지워진다)
     const fit = () => {
+      size++;
       const dpr = window.devicePixelRatio || 1;
       const { scale, cssWidth, cssHeight } = computeScale(window.innerWidth, Math.max(BASE_H, window.innerHeight - TOP_SPACE), dpr);
       canvas.width = BASE_W * scale;
@@ -108,9 +110,17 @@ export const explore = {
 
     const still = reducedMotion();
     let raf = 0;
+    let drawn = null; // 마지막으로 그린 때의 { state, size, anim }
+    // 상태(자리·부탁 등)가 바뀌었거나, 화면 안의 움직이는 그림이 바뀌었거나, 캔버스가 지워졌을 때만 다시 그린다.
+    // 겹침 창이 열려 있는 동안은 (캔버스가 지워진 때가 아니면) 그리지 않는다.
     const frame = (time) => {
-      drawExplore(g, { map, state, chapter, camera: cameraFor(map, state.pos), time, tipTarget: tipTarget(), still });
       raf = requestAnimationFrame(frame);
+      if (overlay && drawn?.size === size) return;
+      const view = { map, state, chapter, camera: cameraFor(map, state.pos), time, tipTarget: tipTarget(), still };
+      const anim = animKey(view);
+      if (drawn && drawn.state === state && drawn.size === size && drawn.anim === anim) return;
+      drawExplore(g, view);
+      drawn = { state, size, anim };
     };
     raf = requestAnimationFrame(frame);
 

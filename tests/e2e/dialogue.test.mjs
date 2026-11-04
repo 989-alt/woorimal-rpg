@@ -133,3 +133,29 @@ test('낱말 카드를 연 채 스크린샷', async () => {
   if (process.env.DIALOGUE_SHOT) await page.screenshot({ path: process.env.DIALOGUE_SHOT });
   await page.close();
 });
+
+test('대화: 줄이 다 보이고 기다림이 끝나면 화면 고리(requestAnimationFrame)가 멈추고, 다음 줄에서 다시 돈다', async () => {
+  const page = await browser.newPage({ viewport: { width: 1366, height: 768 } });
+  await page.addInitScript(() => {
+    window.__rafs = 0;
+    const orig = window.requestAnimationFrame.bind(window);
+    window.requestAnimationFrame = (cb) => { window.__rafs++; return orig(cb); };
+  });
+  const errors = collectErrors(page);
+  await page.goto(server.url + '/?test=1');
+  await page.waitForFunction(() => window.__test);
+  await page.evaluate(() => window.__test.dialogue([
+    { who: 'narration', text: '첫 줄이다.' }, { who: 'narration', text: '둘째 줄이다.' }]));
+  await page.waitForSelector('[data-scene="dialogue"] .dialogue-arrow:not([hidden])');
+  await page.waitForTimeout(300); // 200ms 기다림이 끝난다
+  const n = await page.evaluate(() => window.__rafs);
+  await page.waitForTimeout(400);
+  assert.equal(await page.evaluate(() => window.__rafs), n, '다 보인 줄에서 고리가 돌고 있다');
+  await page.keyboard.press('Space');
+  await page.waitForFunction(() => document.querySelector('.dialogue-text')?.textContent.includes('둘째'));
+  await page.waitForSelector('.dialogue-arrow:not([hidden])');
+  assert.ok(await page.evaluate(() => window.__rafs) > n, '다음 줄에서 다시 돌지 않았다');
+  assert.equal(await page.locator('.dialogue-text').innerText(), '둘째 줄이다.');
+  assert.deepEqual(errors, []);
+  await page.close();
+});
