@@ -68,6 +68,8 @@ export function bindInput(target, handlers) {
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
     const action = actionOf(e);
     if (!action) return;
+    // 단추에 초점이 있으면 Space·Enter는 단추를 누르는 데 쓴다.
+    if (action === 'act' && tag === 'BUTTON') return;
     e.preventDefault();
     if (DIRS.has(action)) {
       if (!e.repeat) hold.press(action);

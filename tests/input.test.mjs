@@ -127,3 +127,15 @@ test('창이 초점을 잃거나 unbind하면 반복이 멈추고 더는 듣지 
     mock.timers.reset();
   }
 });
+
+test('버튼에 초점이 있을 때 Space·Enter는 가로채지 않는다', () => {
+  const { log, target, unbind } = setup();
+  for (const k of [' ', 'Enter']) {
+    const e = key('keydown', k, { code: k === ' ' ? 'Space' : 'Enter' });
+    Object.defineProperty(e, 'target', { value: { tagName: 'BUTTON' } });
+    target.dispatchEvent(e);
+    assert.equal(e.defaultPrevented, false);
+  }
+  assert.deepEqual(log, []);
+  unbind();
+});

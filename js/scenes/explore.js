@@ -7,6 +7,8 @@ import { drawExplore, cameraFor } from '../explore/render.js';
 import { createHud, createToast, fogMessage, HUD_HEIGHT } from '../explore/hud.js';
 import { chapterOf, chapterComplete, fogOpen, setPos, markTip } from '../rules/game.js';
 import { talkTo, inspect } from '../rules/quests.js';
+import { openCodex } from './codex.js';
+import { openTasks } from './quests.js';
 import { formatLine } from '../rules/josa.js';
 
 export const TIP_MOVE = 'move';
@@ -48,11 +50,21 @@ export const explore = {
       hud.update(state, chapter);
     };
 
-    // 도감·할 일 겹침 창은 Task 13에서 붙인다.
-    const openCodex = () => {};
-    const openTasks = () => {};
+    // 도감·할 일 겹침 창: 하나만 열리고, 열려 있는 동안은 걷기·말하기를 멈춘다.
+    let overlay = null; // { kind, close }
+    const closeOverlay = () => { overlay?.close(); };
+    const toggle = (kind, open) => {
+      if (leaving) return;
+      if (overlay?.kind === kind) { closeOverlay(); return; }
+      closeOverlay();
+      const entry = { kind };
+      entry.close = open(() => { if (overlay === entry) overlay = null; });
+      overlay = entry;
+    };
+    const showCodex = () => toggle('codex', (onClose) => openCodex(el, state, { actTab: state.act, onClose }));
+    const showTasks = () => toggle('tasks', (onClose) => openTasks(el, state, chapter, { onClose }));
 
-    const hud = createHud({ onCodex: () => openCodex(), onTasks: () => openTasks() });
+    const hud = createHud({ onCodex: showCodex, onTasks: showTasks });
     const stage = document.createElement('div');
     stage.className = 'explore-stage';
     const canvas = document.createElement('canvas');
@@ -102,7 +114,7 @@ export const explore = {
     const opts = () => ({ fogOpen: fogOpen(state, chapter), smallMonsterGone: !!state.smallGone?.[chapter.id] });
 
     function move(dir) {
-      if (leaving) return;
+      if (leaving || overlay) return;
       const r = step(map, state.pos, dir, opts());
       let next = setPos(state, r.pos, r.facing);
       if (tip) {
@@ -114,7 +126,7 @@ export const explore = {
     }
 
     function act() {
-      if (leaving) return;
+      if (leaving || overlay) return;
       const target = facingTarget(map, state.pos, state.facing, opts());
       if (!target) return;
       if (target.kind === 'npc') {
@@ -143,11 +155,12 @@ export const explore = {
       }
     }
 
-    const unbind = bindInput(window, { move, act, codex: () => openCodex(), tasks: () => openTasks() });
+    const unbind = bindInput(window, { move, act, codex: showCodex, tasks: showTasks });
     const removeTouch = isCoarsePointer() ? createTouchControls(stage, { move, act }) : () => {};
 
     return () => {
       leaving = true;
+      closeOverlay();
       cancelAnimationFrame(raf);
       unbind();
       removeTouch();
