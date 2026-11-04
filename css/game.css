@@ -99,6 +99,7 @@ canvas, img {
 
 /* ── 탐험 ─────────────────────────────── */
 [data-scene='explore'] {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -387,29 +388,35 @@ canvas, img {
 }
 .overlay-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .overlay-head h2 { margin: 0; font-family: var(--font-title); font-size: 28px; }
-.overlay-head .big-button { min-width: 96px; min-height: 44px; }
+.overlay-head .big-button { min-width: 96px; min-height: 48px; }
 .codex-tabs { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
 .codex-tab {
-  min-width: 72px; min-height: 44px; padding: 4px 16px;
+  min-width: 72px; min-height: 48px; padding: 4px 16px;
   border: 2px solid var(--meok-gal); border-radius: 10px;
   background: var(--hanji); color: var(--meok);
   font: inherit; font-family: var(--font-title); font-size: 20px; cursor: pointer;
 }
 .codex-tab.on { background: var(--gold); }
+.codex-body { display: grid; gap: 12px; }
 .codex-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
 .codex-card {
-  min-height: 120px; padding: 8px 10px;
+  min-height: 64px; padding: 6px 10px; align-items: center; justify-content: center; text-align: center; cursor: pointer;
   border: 2px solid var(--meok-gal); border-radius: 10px;
   display: flex; flex-direction: column; gap: 4px;
 }
 .codex-card p { margin: 0; }
 .codex-card.found { background: #fff; }
 .codex-card.unknown { align-items: center; justify-content: center; border-style: dashed; color: var(--gray-3); }
-.codex-q { font-family: var(--font-title); font-size: 36px; }
-.codex-word { font-family: var(--font-title); font-size: 22px; }
-.codex-meaning { font-size: 15px; line-height: 1.35; }
-.codex-example { font-size: 14px; color: var(--gray-3); }
-.codex-from { font-size: 13px; color: var(--meok-gal); margin-top: auto !important; }
+.codex-q { font-family: var(--font-title); font-size: 28px; }
+.codex-word { font-family: var(--font-title); font-size: 24px; }
+.codex-meaning { font-size: 18px; line-height: 1.35; }
+.codex-card.selected { outline: 3px solid var(--gold); background: var(--gold-light); }
+.codex-detail { min-height: 150px; padding: 12px 16px; border: 2px solid var(--meok-gal); border-radius: 10px; background: #fff; }
+.codex-detail p { margin: 0 0 6px; }
+.detail-word { font-family: var(--font-title); font-size: 32px; }
+.detail-meaning { font-size: 22px; line-height: 1.4; }
+.detail-example { font-size: 20px; color: var(--gray-3); }
+.detail-from { font-size: 18px; color: var(--meok-gal); }
 .task-list { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 10px; }
 .task-row {
   display: flex; justify-content: space-between; align-items: center; gap: 12px;
@@ -419,4 +426,4 @@ canvas, img {
 .task-row.done { border-color: var(--green); background: #EAF5E8; }
 .task-check { color: #2F7A2B; font-weight: 700; }
 .codex-tab:focus-visible, .codex-card:focus-visible, .task-row:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
-@media (max-width: 760px) { .codex-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 599px) { .codex-grid { grid-template-columns: repeat(2, 1fr); } }

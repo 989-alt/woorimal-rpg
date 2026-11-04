@@ -47,13 +47,9 @@ export function openTasks(root, state, chapter, { onClose } = {}) {
     list.appendChild(row(q.stage === 'locked' ? '?' : q.title, LABEL[q.stage], q.stage === 'done'));
   }
   const found = !!state.hiddenFound?.[chapter.id];
-  list.appendChild(row('숨은 낱말', found ? '찾음' : '못 찾음', false));
+  list.appendChild(row(`숨은 낱말: ${found ? '찾음' : '못 찾음'}`, '', false));
   const { chapters } = actOfChapter(chapter.id);
   if (chapters[chapters.length - 1].id === chapter.id) list.appendChild(row('그림자를 물리쳐라', '', false));
-  // 이름과 상태를 한 줄로 읽히게: "숨은 낱말: 찾음"
-  const hiddenRow = list.children[list.children.length - (chapters[chapters.length - 1].id === chapter.id ? 2 : 1)];
-  hiddenRow.querySelector('.task-title').textContent = `숨은 낱말: ${found ? '찾음' : '못 찾음'}`;
-  hiddenRow.querySelector('.task-stage').textContent = '';
 
   panel.append(head, list);
   el.appendChild(panel);

@@ -22,14 +22,37 @@ export function openCodex(root, state, { actTab = state.act, onClose } = {}) {
   const tabs = document.createElement('div');
   tabs.className = 'codex-tabs';
   tabs.setAttribute('role', 'tablist');
+  const body = document.createElement('div');
+  body.className = 'codex-body';
   const grid = document.createElement('div');
   grid.className = 'codex-grid';
   grid.setAttribute('role', 'tabpanel');
-  panel.append(head, tabs, grid);
+  const detail = document.createElement('div');
+  detail.className = 'codex-detail';
+  detail.setAttribute('aria-live', 'polite');
+  body.append(grid, detail);
+  panel.append(head, tabs, body);
   el.appendChild(panel);
 
   let current = actTab;
   const tabBtns = [];
+  function showDetail(w, got) {
+    detail.replaceChildren();
+    const add = (cls, text) => {
+      const p = document.createElement('p');
+      p.className = cls;
+      p.textContent = text;
+      detail.appendChild(p);
+    };
+    if (got) {
+      add('detail-word', w.word);
+      add('detail-meaning', w.meaning);
+      add('detail-example', w.example);
+      add('detail-from', `만난 곳: ${got.from}`);
+    } else {
+      add('detail-meaning', '아직 못 찾은 낱말이에요.');
+    }
+  }
   function show(act) {
     current = act;
     tabBtns.forEach((b, i) => {
@@ -38,26 +61,24 @@ export function openCodex(root, state, { actTab = state.act, onClose } = {}) {
     });
     grid.replaceChildren();
     const words = WORDS.filter((w) => w.act === act);
+    const cells = [];
+    const select = (i) => {
+      cells.forEach((c, j) => c.classList.toggle('selected', i === j));
+      const w = words[i];
+      showDetail(w, w && state.acquired[w.id]);
+    };
     for (let i = 0; i < 10; i++) {
       const w = words[i];
       const got = w && state.acquired[w.id];
       const card = document.createElement('div');
       card.tabIndex = 0;
+      card.setAttribute('role', 'button');
       if (got) {
         card.className = 'codex-card found';
         const name = document.createElement('p');
         name.className = 'codex-word';
         name.textContent = w.word;
-        const meaning = document.createElement('p');
-        meaning.className = 'codex-meaning';
-        meaning.textContent = w.meaning;
-        const ex = document.createElement('p');
-        ex.className = 'codex-example';
-        ex.textContent = w.example;
-        const from = document.createElement('p');
-        from.className = 'codex-from';
-        from.textContent = `만난 곳: ${got.from}`;
-        card.append(name, meaning, ex, from);
+        card.append(name);
       } else {
         card.className = 'codex-card unknown';
         const q = document.createElement('p');
@@ -69,8 +90,17 @@ export function openCodex(root, state, { actTab = state.act, onClose } = {}) {
         t.textContent = '아직 못 찾음';
         card.append(q, t);
       }
+      card.addEventListener('click', () => select(i));
+      card.addEventListener('focus', () => select(i));
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(i); }
+      });
+      cells.push(card);
       grid.appendChild(card);
     }
+    const first = words.findIndex((w) => state.acquired[w.id]);
+    if (first >= 0) select(first);
+    else showDetail(null, null);
   }
   for (let a = 1; a <= ACT_COUNT; a++) {
     const b = document.createElement('button');

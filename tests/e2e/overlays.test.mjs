@@ -26,11 +26,11 @@ test('도감: 1막 탭에 어스름 카드 1장과 ? 9칸, 닫기와 초점', as
   assert.equal(await page.locator('.codex-tab').count(), 5);
   assert.equal(await page.locator('.codex-card.found').count(), 1);
   assert.equal(await page.locator('.codex-card.unknown').count(), 9);
-  const card = await page.locator('.codex-card.found').innerText();
-  assert.match(card, /어스름/);
-  assert.match(card, /해 뜨기 전이나 해 진 뒤의 조금 어둑한 때/);
-  assert.match(card, /새벽 어스름에 닭이 울었다\./);
-  assert.match(card, /만난 곳: 도담 할머니/);
+  assert.match(await page.locator('.codex-card.found').innerText(), /어스름/);
+  const detail = await page.locator('.codex-detail').innerText();
+  assert.match(detail, /해 뜨기 전이나 해 진 뒤의 조금 어둑한 때/);
+  assert.match(detail, /새벽 어스름에 닭이 울었다\./);
+  assert.match(detail, /만난 곳: 도담 할머니/);
   assert.match(await page.locator('.codex-card.unknown').first().innerText(), /\?[\s\S]*아직 못 찾음/);
   await page.locator('.codex-tab', { hasText: '3막' }).click();
   assert.equal(await page.locator('.codex-card.unknown').count(), 10);
@@ -71,5 +71,84 @@ test('할 일: 받기 전 / ? / 숨은 낱말 못 찾음', async () => {
   await page.locator('.tasks-close').click();
   assert.equal(await page.locator('.tasks').count(), 0);
   assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('할 일: 모든 단계 이름, 완료 체크, 찾음, 그림자 줄(1-2에만)', async () => {
+  const { page, errors } = await start();
+  const texts = await page.evaluate(async () => {
+    const { openTasks } = await import('/js/scenes/quests.js');
+    const { ACTS } = await import('/data/acts/index.js');
+    const [c1, c2] = ACTS[0].chapters;
+    const mk = (chapter, stages, found) => {
+      const quests = {};
+      chapter.quests.forEach((q, i) => { quests[q.id] = { stage: stages[i], gathered: [] }; });
+      return { quests, hiddenFound: found ? { [chapter.id]: true } : {} };
+    };
+    const out = [];
+    const run = (chapter, st) => {
+      const host = document.createElement('div');
+      document.body.appendChild(host);
+      const close = openTasks(host, st, chapter);
+      out.push({
+        text: host.innerText,
+        checks: host.querySelectorAll('.task-row.done .task-check').length,
+      });
+      close();
+      host.remove();
+    };
+    run(c1, mk(c1, ['active', 'ready'], false));
+    run(c1, mk(c1, ['done', 'done'], true));
+    run(c2, mk(c2, ['locked', 'locked'], false));
+    return out;
+  });
+  assert.match(texts[0].text, /하는 중/);
+  assert.match(texts[0].text, /돌아가서 알리기/);
+  assert.match(texts[1].text, /완료/);
+  assert.equal(texts[1].checks, 2);
+  assert.match(texts[1].text, /숨은 낱말: 찾음/);
+  assert.doesNotMatch(texts[1].text, /그림자를 물리쳐라/);
+  assert.match(texts[2].text, /그림자를 물리쳐라/);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('도감: 칸을 고르면 상세, 단추 크기 48px 이상', async () => {
+  const { page } = await start();
+  await page.keyboard.press('KeyE');
+  await page.waitForSelector('.codex');
+  assert.match(await page.locator('.codex-detail').innerText(), /어스름[\s\S]*해 뜨기 전[\s\S]*만난 곳: 도담 할머니/);
+  await page.locator('.codex-card.unknown').first().click();
+  assert.match(await page.locator('.codex-detail').innerText(), /아직 못 찾은 낱말이에요\./);
+  for (const sel of ['.codex-tab', '.codex-close']) {
+    for (const b of await page.locator(sel).all()) assert.ok((await b.boundingBox()).height >= 48, sel);
+  }
+  assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.codex-grid')).gridTemplateColumns.split(' ').length), 5);
+  await page.screenshot({ path: '.superpowers/sdd/2026-11-04-act1-playable/task-13-codex.png' });
+  await page.keyboard.press('KeyQ');
+  await page.waitForSelector('.tasks');
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: '.superpowers/sdd/2026-11-04-act1-playable/task-13-tasks.png' });
+  await page.close();
+});
+
+test('겹침 창이 열려 있으면 Space로 말을 걸지 않는다', async () => {
+  const { page } = await start();
+  await page.evaluate(async () => {
+    const { parseMap } = await import('/js/explore/grid.js');
+    const { ACTS } = await import('/data/acts/index.js');
+    const s = window.__test.state();
+    const p = parseMap(ACTS[0].chapters[0].map.rows).slots.a;
+    s.pos = { x: p.x, y: p.y + 1 };
+    s.facing = 'up';
+  });
+  await page.keyboard.press('KeyQ');
+  await page.waitForSelector('.tasks');
+  await page.keyboard.press('Space');
+  await page.waitForTimeout(300);
+  assert.equal(await page.locator('[data-scene="dialogue"]').count(), 0);
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Space');
+  await page.waitForSelector('[data-scene="dialogue"]');
   await page.close();
 });
