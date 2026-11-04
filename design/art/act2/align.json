@@ -67,6 +67,10 @@
   "dx": 0,
   "dy": 0
  },
+ "northgate_base": {
+  "src": "bust_northgate_base_a1",
+  "quality": 85
+ },
  "shopper_base": {
   "src": "bust_shopper_base_a2",
   "quality": 85
