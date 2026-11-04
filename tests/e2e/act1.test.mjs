@@ -131,12 +131,14 @@ test('1막 끝까지: 시작 화면 → 부탁 4개 → 숨은 낱말 2개 → �
 
   // ── q1: 도담 할머니 → 우물 → 할머니 ──
   assert.equal(await marker(page, 'dodam'), '!');
-  assert.match(await hudTask(page), /우물에서 물 길어 오기/);
+  assert.equal(await hudTask(page), '도담 할머니에게 말을 걸어 보자');
   await talkThrough(page, 'dodam');
+  assert.equal(await hudTask(page), '우물에서 물을 길어 오자');
   assert.equal(await marker(page, 'dodam'), '…');
   await interact(page, '우물');
   assert.equal(await toast(page), '물동이를 가방에 넣었다.');
   assert.equal(await marker(page, 'dodam'), '?');
+  assert.match(await hudTask(page), /도담 할머니에게 돌아가/);
   assert.deepEqual((await state(page)).bag, ['water']);
   const q1Cards = await talkThrough(page, 'dodam');
   assert.deepEqual(q1Cards, ['어스름', '아침나절']);
@@ -165,7 +167,7 @@ test('1막 끝까지: 시작 화면 → 부탁 4개 → 숨은 낱말 2개 → �
   assert.equal(await marker(page, 'daon'), '?');
   assert.deepEqual(await talkThrough(page, 'daon'), ['매무새', '손사래']);
   assert.match(await hudCount(page), /4\/5/);
-  assert.match(await hudTask(page), /숨은 낱말을 찾아라/);
+  assert.equal(await hudTask(page), '반짝이는 곳을 찾아 조사해 보자');
 
   // ── 숨은 낱말: 장독대 → 1장 클리어 → 2장 ──
   assert.deepEqual(await talkThrough(page, '장독대', 'clear'), ['오롯이']);
@@ -215,7 +217,7 @@ test('1막 끝까지: 시작 화면 → 부탁 4개 → 숨은 낱말 2개 → �
   // ── 숨은 낱말: 빨랫줄 → 5/5, 할 일 "그림자를 물리쳐라" ──
   assert.deepEqual(await talkThrough(page, '빨랫줄'), ['해거름']);
   assert.match(await hudCount(page), /5\/5/);
-  assert.equal(await hudTask(page), '그림자를 물리쳐라');
+  assert.equal(await hudTask(page), '안개 덩이와 맞서자');
 
   // ── 보스전: 2문제 푼 뒤 새로 고침 → 이어하기 → 탐험, 출제 기록 없음 ──
   await enterBattle(page, 'boss');

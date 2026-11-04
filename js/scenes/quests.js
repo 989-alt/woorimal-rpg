@@ -1,6 +1,7 @@
 // 할 일: 이 장의 부탁, 숨은 낱말, (막의 마지막 장이면) 그림자.
 import { actOfChapter } from '../../data/acts/index.js';
 import { questList, actCleared, actDoneText } from '../rules/quests.js';
+import { nextGoal } from '../rules/guide.js';
 import { mountOverlay } from '../ui/overlay.js';
 
 const LABEL = { locked: '?', open: '받기 전', active: '하는 중', ready: '돌아가서 알리기', done: '완료' };
@@ -41,6 +42,13 @@ export function openTasks(root, state, chapter, { onClose, focusAfter } = {}) {
   closeBtn.textContent = '닫기';
   head.append(title, closeBtn);
 
+  const goal = document.createElement('p'); // 늘 맨 위: 지금 할 일 한 가지(HUD 두루마리와 같은 글)
+  goal.className = 'task-goal';
+  const goalLabel = document.createElement('span');
+  goalLabel.className = 'task-goal-label';
+  goalLabel.textContent = '지금 할 일';
+  goal.append(goalLabel, nextGoal(state, chapter).text);
+
   const list = document.createElement('ul');
   list.className = 'task-list';
   for (const q of questList(state, chapter)) {
@@ -55,7 +63,7 @@ export function openTasks(root, state, chapter, { onClose, focusAfter } = {}) {
     list.appendChild(row(cleared ? actDoneText(act) : '그림자를 물리쳐라', cleared ? '완료' : '', cleared));
   }
 
-  panel.append(head, list);
+  panel.append(head, goal, list);
   el.appendChild(panel);
   const close = mountOverlay(root, el, { label: '할 일', onClose, focusAfter });
   closeBtn.addEventListener('click', close);

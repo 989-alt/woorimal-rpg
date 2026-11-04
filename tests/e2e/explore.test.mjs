@@ -60,7 +60,7 @@ test('새 게임을 열면 1366×768에서 캔버스가 화면을 꽉 채우고 
   assert.equal(box.height, 768);
   const hud = page.locator('[data-scene="explore"] .hud');
   assert.match(await hud.innerText(), /이 장의 낱말 0\/5/);
-  assert.match(await hud.innerText(), /우물에서 물 길어 오기/);
+  assert.match(await hud.innerText(), /도담 할머니에게 말을 걸어 보자/);
   // 처음 하는 학생 안내는 움직이면 사라진다.
   const tip = page.locator('.hint[data-tip="move"]');
   assert.match(await tip.innerText(), /방향키로 걸어 보세요/);
@@ -157,8 +157,8 @@ test('HUD 겹침: 1024×768, 닉네임 6글자, 1-2장 긴 할 일에서도 두�
   await page.evaluate(() => window.__test.newGame('가나다라마바', 'f'));
   await page.evaluate(() => window.__test.nextChapter());
   await page.waitForSelector('[data-scene="explore"] canvas');
-  await page.waitForFunction(() => document.querySelector('.hud-task').innerText.includes('마른 나무에서 장작 모으기'));
-  const boxes = await page.evaluate(() => {
+  await page.waitForFunction(() => document.querySelector('.hud-task').innerText.includes('빵집 아저씨에게 말을 걸어 보자'));
+  const measure = () => page.evaluate(() => {
     const r = (sel) => { const b = document.querySelector(sel).getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom, w: b.width, h: b.height }; };
     const t = document.querySelector('.hud-task-text');
     return {
@@ -167,6 +167,7 @@ test('HUD 겹침: 1024×768, 닉네임 6글자, 1-2장 긴 할 일에서도 두�
       hudH: document.querySelector('.hud').getBoundingClientRect().height, innerW: innerWidth,
     };
   });
+  let boxes = await measure();
   assert.ok(boxes.task.r <= boxes.words.l - 4, `두루마리(오른쪽 ${boxes.task.r})와 낱말 상자(왼쪽 ${boxes.words.l})가 겹친다`);
   assert.ok(boxes.words.r <= boxes.codex.l, '낱말 상자와 도감 단추가 겹친다');
   assert.ok(boxes.codex.r <= boxes.tasks.l, '도감과 할 일 단추가 겹친다');
@@ -179,6 +180,14 @@ test('HUD 겹침: 1024×768, 닉네임 6글자, 1-2장 긴 할 일에서도 두�
   assert.ok(boxes.words.b <= 88 && boxes.task.b <= 88 && boxes.codex.b <= 88, "상자는 위 88px 안");
   assert.equal(boxes.medal.b, 104, "메달은 (12,8)에서 지름 96");
   assert.equal(boxes.clipped, false, '이 길이의 할 일은 말줄임 없이 다 보여야 한다');
+  // 가장 긴 글(모으기 + 개수)도 말줄임 없이 보인다
+  await page.evaluate(() => window.__test.teleportTo('baker'));
+  await page.keyboard.press('Space');
+  await finishDialogue(page);
+  await page.waitForFunction(() => document.querySelector('.hud-task').innerText.includes('마른 나무에서 장작을 모으자 (0/3)'));
+  boxes = await measure();
+  assert.equal(boxes.clipped, false, '장작 모으기 글이 잘린다');
+  assert.ok(boxes.task.r <= boxes.words.l - 4, '긴 글에서 두루마리와 낱말 상자가 겹친다');
   assert.deepEqual(errors, []);
   await page.close();
 });

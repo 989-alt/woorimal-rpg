@@ -83,7 +83,7 @@ test('할 일: 모든 단계 이름, 완료 체크, 찾음, 그림자 줄(1-2에
     const mk = (chapter, stages, found) => {
       const quests = {};
       chapter.quests.forEach((q, i) => { quests[q.id] = { stage: stages[i], gathered: [] }; });
-      return { quests, hiddenFound: found ? { [chapter.id]: true } : {}, clearedActs: [] };
+      return { quests, hiddenFound: found ? { [chapter.id]: true } : {}, clearedActs: [], bag: [], acquired: {} };
     };
     const out = [];
     const run = (chapter, st) => {
@@ -103,6 +103,7 @@ test('할 일: 모든 단계 이름, 완료 체크, 찾음, 그림자 줄(1-2에
     run(c2, { ...mk(c2, ['done', 'done'], true), clearedActs: [1] });
     return out;
   });
+  assert.match(texts[0].text, /지금 할 일\s*다온에게 돌아가 알려 주자/);
   assert.match(texts[0].text, /하는 중/);
   assert.match(texts[0].text, /돌아가서 알리기/);
   assert.match(texts[1].text, /완료/);

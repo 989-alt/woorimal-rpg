@@ -217,7 +217,7 @@ export const battle = {
       const msg = el('div', 'battle-win frame-panel', `${attachJosa(act.small.name, '을')} 쫓아냈다!`);
       msg.setAttribute('role', 'status');
       scene.appendChild(msg);
-      later(() => go('explore'), WIN_MSG_MS);
+      later(() => go('explore', { guide: 'won' }), WIN_MSG_MS); // 탐험에서 "돌아가 알리자" 길잡이를 띄운다
     }
 
     function onKey(e) {

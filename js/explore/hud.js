@@ -1,7 +1,7 @@
 // 탐험 HUD: 메달·할 일 두루마리, 낱말 n/5와 가방 3칸 명판, 도감·할 일 아이콘 단추, 토스트.
 import { ACTS } from '../../data/acts/index.js';
 import { acquiredCount, chapterWords } from '../rules/game.js';
-import { currentTask } from '../rules/quests.js';
+import { nextGoal } from '../rules/guide.js';
 import { ASSETS, bustFor } from '../../data/assets.js';
 import { setArt } from '../ui/images.js';
 import { blockColor, initial, labelBlockEl, textOn } from '../ui/placeholder.js';
@@ -69,7 +69,7 @@ function bagSlot(id) {
 }
 
 // 위쪽 HUD(캔버스 위의 HTML 층): 왼쪽 메달 + 지금 할 일 두루마리, 오른쪽 낱말·가방 명판과 도감·할 일 단추.
-// 두루마리 글은 setTaskText 한 곳에서만 바꾼다(길잡이가 "다음 목표" 글을 넣을 때도 이 함수를 쓴다).
+// 두루마리 글은 setTaskText 한 곳에서만 바꾸고, 늘 지금 할 일(nextGoal)을 보여 준다.
 export function createHud({ onCodex, onTasks, avatar = 'f' }) {
   const el = document.createElement('div');
   el.className = 'hud';
@@ -115,7 +115,7 @@ export function createHud({ onCodex, onTasks, avatar = 'f' }) {
     tasksButton,
     setTaskText,
     update(state, chapter) {
-      setTaskText(currentTask(state, chapter));
+      setTaskText(nextGoal(state, chapter).text);
       face.textContent = initial(state.nickname);
       face.style.background = blockColor(state.nickname);
       face.style.color = textOn(blockColor(state.nickname));

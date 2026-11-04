@@ -6,6 +6,17 @@ import { chapterComplete, fogOpen } from './game.js';
 import { actCleared, actDoneText, hiddenGlow } from './quests.js';
 import { attachJosa } from './josa.js';
 
+// 길잡이 말풍선 id(안내 말풍선과 같은 층을 쓰지만 seenTips에는 넣지 않는다: 언제든 다시 뜰 수 있는 도움말)
+export const GUIDE = { WON: 'guide-won', LEAVE: 'guide-leave', IDLE: 'guide-idle' };
+export const isGuideId = (id) => typeof id === 'string' && id.startsWith('guide-');
+export const GUIDE_MS = {
+  IDLE: 30000, // 할 일이 이만큼 진전되지 않으면 길을 알려 준다
+  REPEAT: 20000, // 같은 말은 이 안에 다시 띄우지 않는다
+  WON: 3000, // 이긴 직후 한마디
+  SAY: 4000, // 떠나려 할 때 한마디
+  FLASH: 6000, // 돌아갈 인물 머리 위 표시가 깜박이는 시간
+};
+
 const stageOf = (state, quest) => state.quests[quest.id]?.stage ?? 'locked';
 const nameOf = (chapter, npcId) => chapter.npcs.find((n) => n.id === npcId)?.name ?? '마을 사람';
 

@@ -13,6 +13,7 @@ import { openCodex } from './codex.js';
 import { openTasks } from './quests.js';
 import { formatLine } from '../rules/josa.js';
 import { TIP, dueHint } from '../rules/tutorial.js';
+import { nextGoal, leavingTooSoon, GUIDE, GUIDE_MS, isGuideId } from '../rules/guide.js';
 import { createHintLayer } from '../ui/hint.js';
 
 const reducedMotion = () =>
@@ -50,6 +51,7 @@ export const explore = {
       state = next;
       ctx.setState(next);
       hud.update(state, chapter);
+      trackGoal();
       if (check) checkHint();
     };
 
@@ -60,6 +62,7 @@ export const explore = {
       if (leaving) return;
       if (overlay?.kind === kind) { closeOverlay(); return; }
       closeOverlay();
+      clearGuide();
       hints.clear(); // 겹침 창이 열리면 안내는 걷어 낸다(닫은 뒤 다시 띄우지 않는다: 이미 본 것으로 기록했다)
       const entry = { kind };
       entry.close = open(() => { if (overlay === entry) overlay = null; });
@@ -82,6 +85,89 @@ export const explore = {
     const toast = createToast(stage);
 
     const hints = createHintLayer(stage);
+
+    // ── 길잡이: 지금 할 일(nextGoal)을 말풍선·화살표로 알려 준다. 안내(tutorial)와 같은 층을 쓰되 안내가 먼저이고 seenTips에는 넣지 않는다. ──
+    // 시계는 검사에서 window.__test.clockSkew(ms)를 올려 앞당길 수 있다.
+    const clock = () => performance.now() + (window.__test?.clockSkew ?? 0);
+    let goal = nextGoal(state, chapter);
+    const goalKey = (g) => `${g.kind}|${g.npcId ?? ''}|${g.objectSlot ?? ''}|${g.text}`;
+    let lastProgressAt = clock(); // 마지막으로 할 일이 나아가거나 말 걸기·조사·전투를 한 때
+    let guideArrow = null; // 오래 헤맬 때 가리킬 칸 { x, y }
+    let guideShownAt = 0;
+    let flash = null; // { npcId, until }: 돌아갈 인물 머리 위 표시를 깜박인다(performance.now 기준)
+    const saidAt = new Map(); // 말 -> 띄운 때(같은 말은 20초 안에 다시 띄우지 않는다)
+
+    function setGuideArrow(tile) {
+      guideArrow = tile;
+      if (window.__test) window.__test.guideArrow = tile && { x: tile.x, y: tile.y }; // 검사용: 길잡이 화살표가 가리키는 칸
+    }
+    function progressed() { lastProgressAt = clock(); }
+    function clearGuide() { // 길잡이를 걷어 내고 30초를 다시 센다
+      setGuideArrow(null);
+      if (hints.current && isGuideId(hints.current.id)) hints.clear();
+      progressed();
+    }
+    // 할 일이 바뀌었으면(부탁을 받음·물건을 얻음 등) 헤매던 때의 길잡이는 걷어 내고 다시 센다.
+    function trackGoal() {
+      const g = nextGoal(state, chapter);
+      if (goalKey(g) === goalKey(goal)) return;
+      goal = g;
+      clearGuide();
+    }
+    // 안내(tutorial)가 떠 있으면 길잡이는 띄우지 않는다.
+    const guideFree = () => !leaving && !overlay && !(hints.current && !isGuideId(hints.current.id));
+    function sayGuide(id, text, ms, until = null) {
+      if (!guideFree()) return false;
+      hints.show({ id, text, until, ms }, anchorOf.hero, { place: 'below' }); // 아래: 위에 있는 인물 머리 위 표시와 화살표를 가리지 않는다
+      return true;
+    }
+    const flashGiver = () => { // 돌아갈 인물 머리 위 표시를 잠깐 깜박인다
+      if (goal.kind === 'talk' && goal.npcId) flash = { npcId: goal.npcId, until: performance.now() + GUIDE_MS.FLASH };
+    };
+    // 목표가 있는 칸. 모으기처럼 여럿이면 가장 가까운 곳.
+    function goalTile() {
+      if (goal.kind === 'talk') { const n = chapter.npcs.find((x) => x.id === goal.npcId); return n ? map.slots[n.slot] ?? null : null; }
+      if (goal.kind === 'find' || goal.kind === 'hidden') {
+        const spots = (goal.objectSlots?.length ? goal.objectSlots : [goal.objectSlot]).map((k) => map.objects[k]).filter(Boolean);
+        spots.sort((a, b) => Math.abs(a.x - state.pos.x) + Math.abs(a.y - state.pos.y) - Math.abs(b.x - state.pos.x) - Math.abs(b.y - state.pos.y));
+        return spots[0] ?? null;
+      }
+      if (goal.kind === 'fight') return state.smallGone?.[chapter.id] ? null : map.smallMonster;
+      if (goal.kind === 'boss') return map.boss;
+      return null;
+    }
+    // 이긴 직후: 돌아가 알리라는 한마디와 깜박이는 표시
+    function wonGuide() {
+      if (goal.kind !== 'talk') return;
+      flashGiver();
+      sayGuide(GUIDE.WON, goal.text, GUIDE_MS.WON);
+    }
+    // 돌아갈 부탁이 있는데 멀어지는 걸음: 막지는 않고 말풍선만(같은 말은 20초에 한 번)
+    function leaveGuide() {
+      const now = clock();
+      if (now - (saidAt.get(goal.text) ?? -Infinity) < GUIDE_MS.REPEAT) return;
+      if (!sayGuide(GUIDE.LEAVE, goal.text, GUIDE_MS.SAY)) return;
+      saidAt.set(goal.text, now);
+      flashGiver();
+    }
+    // 30초 동안 나아가지 못했으면: 말풍선과 가장자리 화살표
+    function idleGuide() {
+      const tile = goalTile();
+      if (!tile) { progressed(); return; }
+      if (!sayGuide(GUIDE.IDLE, goal.text, 8000, 'guide-move')) { progressed(); return; } // 안내가 떠 있으면 비켜 주고 30초를 다시 센다
+      setGuideArrow(tile);
+      guideShownAt = clock();
+    }
+    // 움직이면 길잡이는 사라지고 다시 센다. 방금 뜬 것은 꾹 누른 걸음에 바로 지워지지 않게 잠깐 둔다.
+    function guideOnMove() {
+      if (!guideArrow) return;
+      if (clock() - guideShownAt < 600) return;
+      clearGuide();
+    }
+    function guideReached() { // 목표 칸 바로 곁에 닿았으면 사라진다
+      if (!guideArrow) return;
+      if (Math.abs(guideArrow.x - state.pos.x) + Math.abs(guideArrow.y - state.pos.y) <= 1) clearGuide();
+    }
     const firstQuest = chapter.quests[0];
     const firstGiver = chapter.npcs.find((n) => n.id === firstQuest.giver);
     const tipTarget = () =>
@@ -166,13 +252,16 @@ export const explore = {
     // 겹침 창이 열려 있는 동안은 (캔버스가 지워진 때가 아니면) 그리지 않는다.
     const frame = (time) => {
       raf = requestAnimationFrame(frame);
+      if (!leaving && !overlay && !guideArrow && clock() - lastProgressAt >= GUIDE_MS.IDLE) idleGuide();
       if (overlay && drawn?.size === size) return;
       const heroAt = drawnPos(glide, state.pos, time); // 상태 자리와 다른 곳으로 옮겨진 때(순간이동·불러오기)는 미끄러지지 않는다
       const moving = !!glide && glide.to.x === state.pos.x && glide.to.y === state.pos.y && time < glideEnd(glide) + WALK_TAIL_MS;
       const camera = cameraFor(map, heroAt, box, box.insetTop);
-      const view = { map, state, chapter, camera, view: box, time, tipTarget: tipTarget(), still, moving, heroAt };
+      const arrow = tipTarget() ?? guideArrow; // 첫 인물 화살표와 길잡이 화살표는 같은 화살표다
+      const flashNpc = !still && flash && time < flash.until ? flash.npcId : null; // 움직임 줄이기에서는 깜박이지 않는다
+      const view = { map, state, chapter, camera, view: box, time, tipTarget: arrow, flashNpc, still, moving, heroAt };
       const anim = animKey(view);
-      if (drawn && drawn.state === state && drawn.size === size && drawn.anim === anim) return;
+      if (drawn && drawn.state === state && drawn.size === size && drawn.anim === anim && drawn.arrow === arrow) return;
       if (window.__test) {
         const why = !drawn ? resetBy : drawn.state !== state ? 'state' : drawn.size !== size ? 'size' : `anim ${drawn.anim}→${anim}`;
         (window.__test.draws ??= []).push([Math.round(time), why]);
@@ -183,8 +272,12 @@ export const explore = {
         window.__test.heroAt = heroAt;
         window.__test.view = { camera, factor: scale, viewW: box.w, viewH: box.h, insetTop: box.insetTop };
       }
-      drawn = { state, size, anim };
-      if (first) { first = false; checkHint(); } // 첫 그림이 나온 뒤에야 앵커가 정해진다
+      drawn = { state, size, anim, arrow };
+      if (first) { // 첫 그림이 나온 뒤에야 앵커가 정해진다
+        first = false;
+        checkHint();
+        if (params?.guide === 'won') wonGuide(); // 안내가 먼저 떠 있으면 길잡이는 말풍선만 건너뛴다
+      }
       hints.reposition();
     };
     let first = true;
@@ -195,9 +288,14 @@ export const explore = {
     function move(dir) {
       if (leaving || overlay) return;
       const r = step(map, state.pos, dir, opts());
-      if (!still && (r.pos.x !== state.pos.x || r.pos.y !== state.pos.y)) glide = nextGlide(glide, state.pos, r.pos, performance.now());
+      const moved = r.pos.x !== state.pos.x || r.pos.y !== state.pos.y;
+      if (!still && moved) glide = nextGlide(glide, state.pos, r.pos, performance.now());
+      const tooSoon = moved && leavingTooSoon(state, chapter, state.pos, r.pos, map);
       hints.done('move');
+      guideOnMove();
       update(setPos(state, r.pos, r.facing));
+      if (tooSoon) leaveGuide();
+      guideReached();
     }
 
     function act() {
@@ -208,6 +306,7 @@ export const explore = {
         const npc = chapter.npcs.find((n) => n.slot === target.slot);
         if (!npc) return;
         hints.done('talk');
+        progressed();
         const r = talkTo(state, chapter, npc.id);
         const got = takeWords(r.state, r.words, npc.name);
         update(npc.id === firstQuest.giver ? markTip(got.state, TIP.FIRST_NPC) : got.state, false);
@@ -217,6 +316,7 @@ export const explore = {
         const obj = chapter.objects.find((o) => o.slot === target.slot);
         if (!obj) return;
         hints.done('inspect');
+        progressed();
         const r = inspect(state, chapter, obj.slot);
         const got = takeWords(r.state, r.words, obj.name);
         const stays = r.script.length === 0 || (r.script.length === 1 && r.words.length === 0 && r.script[0].who === 'narration');
@@ -229,6 +329,7 @@ export const explore = {
         }
       } else if (target.kind === 'small' || target.kind === 'boss') {
         const gate = fightGate(state, chapter, target.kind);
+        if (gate.ok) progressed();
         if (gate.ok) go('battle', { mode: target.kind === 'boss' ? 'boss' : 'review' });
         else if (gate.message) toast.show(gate.message);
       } else if (target.kind === 'fog') {
@@ -241,6 +342,7 @@ export const explore = {
 
     return () => {
       leaving = true;
+      setGuideArrow(null);
       closeOverlay();
       hints.dispose();
       cancelAnimationFrame(raf);
