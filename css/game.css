@@ -142,10 +142,11 @@ canvas, img {
 .select-go { width: 260px; }
 
 /* 큰 단추 글자(타이틀·모습 고르기): 주아 30 크림색 + 짙은 윤곽. 그림 단추일 때만 크림색(그림이 없으면 한지 바탕이라 먹색 그대로) */
-.title-menu .btn, .select-actions .btn { font-size: 30px; }
+.title-menu .btn { font-size: 38px; letter-spacing: 2px; }
+.select-actions .btn { font-size: 32px; }
 :root.ui-btn-green .title-menu .btn-green, :root.ui-btn-green .select-actions .btn-green,
 :root.ui-btn-wood .title-menu .btn-wood, :root.ui-btn-wood .select-actions .btn-wood {
-  color: #FFF4DC; -webkit-text-stroke: 5px #2B1A0C; text-shadow: 0 2px 3px rgba(0, 0, 0, .4);
+  color: #FFF4DC; -webkit-text-stroke: 6px #2B1A0C; text-shadow: 0 3px 4px rgba(0, 0, 0, .45);
 }
 /* 초점 테두리는 단추 모양(둥근 알약)을 따라간다. 쪽빛 3px, 그림 단추도 같다. */
 :root[class] .btn.btn:focus-visible { border-radius: 999px; outline: 3px solid var(--hero); outline-offset: 2px; }
