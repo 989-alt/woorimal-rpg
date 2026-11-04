@@ -125,8 +125,12 @@ const dialogueScript = [
 
 test('대화: 상반신이 있으면 <img>를, 없는 주소면 오류 없이 임시 블록을 보인다', async () => {
   const { page, errors } = await openNewGame();
-  // 그림 없음: 임시 블록
+  // 그림 없음(없는 주소): 임시 블록
+  for (const where of ['busts.dodam.base', 'busts.hero_f.base', 'dialogueBg.1-1']) {
+    await page.evaluate(([w, u]) => window.__test.setAsset(w, u), [where, MISSING]);
+  }
   await page.evaluate((sc) => window.__test.dialogue(sc), dialogueScript);
+  await page.waitForTimeout(300); // 불러오기 실패가 돌아올 시간
   await page.waitForSelector('[data-scene="dialogue"]');
   assert.equal(await page.locator('.bust img').count(), 0);
   assert.ok(await page.locator('.bust-hero').isVisible());

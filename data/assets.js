@@ -22,8 +22,8 @@ export const ASSETS = {
   bossPixel: { 1: 'assets/pixel/monster_boss_act1.png' },
   // 대화 상반신: 인물 × 표정. 표정 그림이 없으면 base로 대신한다.
   busts: {
-    hero_f: { base: null, surprise: null, joy: null },
-    hero_m: { base: null, surprise: null, joy: null },
+    hero_f: { base: 'assets/illust/bust_hero_f_base.webp', surprise: 'assets/illust/bust_hero_f_surprise.webp', joy: 'assets/illust/bust_hero_f_joy.webp' },
+    hero_m: { base: 'assets/illust/bust_hero_m_base.webp', surprise: 'assets/illust/bust_hero_m_surprise.webp', joy: 'assets/illust/bust_hero_m_joy.webp' },
     dodam: { base: null, worry: null, laugh: null },
     daon: { base: null, joy: null },
     gardener: { base: null },

@@ -62,6 +62,7 @@ test('대본의 인물·표정이 상반신 틀에 있다', () => {
 test('bustFor: 그 표정, 없으면 base, 그것도 없으면 null', () => {
   const saved = ASSETS.busts.dodam;
   try {
+    ASSETS.busts.dodam = { base: null, worry: null, laugh: null };
     assert.equal(bustFor('dodam', 'laugh'), null);
     ASSETS.busts.dodam = { base: 'assets/illust/a.webp', worry: null, laugh: 'assets/illust/b.webp' };
     assert.equal(bustFor('dodam', 'laugh'), 'assets/illust/b.webp');
