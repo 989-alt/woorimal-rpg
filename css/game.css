@@ -1043,6 +1043,40 @@ canvas, img {
   line-height: 1.5;
 }
 .battle-prompt { margin: 0; padding: 0 20px; }
+/* 5막 마지막 문제의 해설 한 줄: 문제 말풍선 바로 위(주인공 명판 오른쪽), 불투명 한지 명판 */
+.final-cue {
+  position: absolute;
+  z-index: 3;
+  left: 348px;
+  right: 24px;
+  bottom: calc(100% + 8px);
+  margin: 0;
+  padding: 8px 18px;
+  border: 3px solid var(--brass-dark);
+  border-radius: 8px;
+  background: var(--hanji);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 20px;
+  line-height: 1.4;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, .35);
+}
+/* 숄 밝힘: 몬스터 상자 가운데에 하늘색 빛이 1초 동안 조금 밝아진다(금빛 아님) */
+.battle-monster.shawl-lit { --shawl-x: 50%; --shawl-y: 58%; }
+.battle-monster.shawl-lit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--shawl-x) var(--shawl-y), rgba(159, 211, 232, .75) 0, rgba(159, 211, 232, .35) 9%, transparent 20%);
+  opacity: .8;
+  animation: shawl-lit 1s ease-out;
+}
+@keyframes shawl-lit { from { opacity: 0; } to { opacity: .8; } }
+@media (prefers-reduced-motion: reduce) {
+  .battle-monster.shawl-lit::after { animation: none; }
+}
 .battle-who {
   --bt: 9px; --br: 9px; --bb: 9px; --bl: 9px; --ring: 2px;
   position: absolute;
