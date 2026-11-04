@@ -121,3 +121,12 @@ test('지도 밖이나 걸을 수 없는 자리는 그 장의 시작 자리로 �
   st.setItem('malbit:save:가', JSON.stringify(acquireWords(in2, chapterWords(ch2), 'x')));
   assert.deepEqual(s.load('가').state.pos, { x: fog.x, y: fog.y });
 });
+
+test('옛 seenTips(옛 id만)인 version 1 저장도 그대로 불러온다', () => {
+  const st = fakeStorage();
+  const g = { ...newGame({ nickname: '옛', avatar: 0 }), seenTips: ['move', 'first-npc', 'tip-word', 'tip-boss', 'tip-review'] };
+  st.setItem('malbit:save:옛', JSON.stringify(g));
+  const r = createStore(st).load('옛');
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.state.seenTips, ['move', 'first-npc', 'tip-word', 'tip-boss', 'tip-review']);
+});
