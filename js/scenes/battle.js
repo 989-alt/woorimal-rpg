@@ -12,6 +12,8 @@ import {
   TYPE_LABEL, COLUMNS, buildFrame, drawFrame, renderPrompt, buildOptions, markOptions, moveFocus, feedbackPanel, tipCard,
 } from '../ui/battle-layout.js';
 import { HIT_MS, playHit, playMiss } from '../ui/battle-fx.js';
+import { ASSETS } from '../../data/assets.js';
+import { setArt } from '../ui/images.js';
 
 export const TIP_BOSS = 'tip-boss';
 export const TIP_REVIEW = 'tip-review';
@@ -88,6 +90,10 @@ export const battle = {
 
     const f = buildFrame({ mode, nickname: state.nickname, monsterName, hearts: HEARTS, hp: HP });
     scene.append(f.stage, f.bottom);
+    // 그림이 있으면 무대·주인공·몬스터를 그림으로, 없거나 못 불러오면 임시 그림 그대로(몬스터 그림은 보스만)
+    setArt(f.bg, ASSETS.battleBg[act.id], 'battle-bg-img art');
+    setArt(f.hero, ASSETS.battleHero[state.avatar === 'm' ? 'm' : 'f'], 'battle-hero-img art');
+    if (mode === 'boss') setArt(f.monster, ASSETS.monster[act.id], 'battle-monster-img art');
     let options = null; // { el, buttons }
     const drawHud = (fx = {}) => drawFrame(f, {
       ...fx,

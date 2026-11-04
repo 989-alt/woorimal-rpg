@@ -10,6 +10,8 @@ import { dialogue, setTypeSpeed } from './scenes/dialogue.js';
 import { battle, battleProbe } from './scenes/battle.js';
 import { gameover } from './scenes/gameover.js';
 import { clear } from './scenes/clear.js';
+import { ASSETS } from '../data/assets.js';
+import { loadImage } from './ui/images.js';
 
 function safeLocalStorage() {
   try { return window.localStorage; } catch { return null; }
@@ -104,6 +106,16 @@ if (new URLSearchParams(location.search).get('test') === '1') {
     battle: () => battleProbe()?.snapshot() ?? null,
     teleportTo,
     fastText: (on) => setTypeSpeed(on ? 0 : 30),
+    // 그림 경로를 바꿔 끼운다(예: setAsset('npcs.dodam', url)). 경로는 ASSETS 안의 점 표기이며 url은 null도 된다.
+    setAsset(where, url) {
+      const keys = where.split('.');
+      const last = keys.pop();
+      let node = ASSETS;
+      for (const k of keys) node = node?.[k];
+      if (!node || !(last in node)) throw new Error(`setAsset: ASSETS에 '${where}'이(가) 없습니다`);
+      node[last] = url;
+      return loadImage(url).then((img) => !!img);
+    },
   };
 }
 

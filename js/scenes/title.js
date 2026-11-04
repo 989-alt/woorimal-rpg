@@ -3,6 +3,8 @@ import { validateNickname } from '../rules/josa.js';
 import { newGame, chapterOf } from '../rules/game.js';
 import { actOfChapter } from '../../data/acts/index.js';
 import { blockColor, labelBlockEl } from '../ui/placeholder.js';
+import { ASSETS, bustFor } from '../../data/assets.js';
+import { setArt } from '../ui/images.js';
 
 // 한글 조합 중의 엔터는 마지막 글자가 아직 확정되지 않았으므로 받지 않는다.
 export function shouldSubmit({ key, isComposing }) {
@@ -70,6 +72,7 @@ export const title = {
       b.setAttribute('role', 'radio');
       b.append(labelBlockEl(a.label, blockColor(a.id === 'f' ? '여' : '남'), 'avatar-block'));
       b.addEventListener('click', () => select(a.id));
+      setArt(b, bustFor(`hero_${a.id}`, 'base'), 'avatar-img art');
       return b;
     });
     cards.append(...cardEls);
@@ -176,6 +179,7 @@ export const title = {
     const form = el('div', { className: 'title-form' }, label, input, help, error);
     main.append(h1, form, cards, savedWrap, actions, confirmBox, notice);
     root.appendChild(main);
+    setArt(main, ASSETS.title, 'title-bg art');
     input.focus();
     return () => main.remove();
   },

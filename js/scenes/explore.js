@@ -4,6 +4,7 @@ import { parseMap, step, facingTarget } from '../explore/grid.js';
 import { computeScale, BASE_W, BASE_H } from '../explore/scale.js';
 import { bindInput, createTouchControls, isCoarsePointer } from '../explore/input.js';
 import { drawExplore, cameraFor, animKey } from '../explore/render.js';
+import { onImageLoaded, preloadChapter } from '../ui/images.js';
 import { createHud, createToast, fogMessage, HUD_HEIGHT } from '../explore/hud.js';
 import { chapterOf, chapterComplete, fogOpen, setPos, markTip, takeWords } from '../rules/game.js';
 import { talkTo, inspect, fightGate } from '../rules/quests.js';
@@ -111,12 +112,17 @@ export const explore = {
     const still = reducedMotion();
     let raf = 0;
     let drawn = null; // 마지막으로 그린 때의 { state, size, anim }
+    let lastMoveAt = -Infinity; // 마지막으로 걸음을 뗀 때(걷기 그림 프레임용)
+    const WALK_MS = 220; // 걸음을 뗀 뒤 이 시간 동안은 걷는 모습
+    // 그림 한 장이 막 도착하면 상태가 그대로여도 다시 그린다.
+    const stopImages = onImageLoaded(() => { drawn = null; });
+    preloadChapter(state.chapter, state.avatar);
     // 상태(자리·부탁 등)가 바뀌었거나, 화면 안의 움직이는 그림이 바뀌었거나, 캔버스가 지워졌을 때만 다시 그린다.
     // 겹침 창이 열려 있는 동안은 (캔버스가 지워진 때가 아니면) 그리지 않는다.
     const frame = (time) => {
       raf = requestAnimationFrame(frame);
       if (overlay && drawn?.size === size) return;
-      const view = { map, state, chapter, camera: cameraFor(map, state.pos), time, tipTarget: tipTarget(), still };
+      const view = { map, state, chapter, camera: cameraFor(map, state.pos), time, tipTarget: tipTarget(), still, moving: time - lastMoveAt < WALK_MS };
       const anim = animKey(view);
       if (drawn && drawn.state === state && drawn.size === size && drawn.anim === anim) return;
       drawExplore(g, view);
@@ -129,6 +135,7 @@ export const explore = {
     function move(dir) {
       if (leaving || overlay) return;
       const r = step(map, state.pos, dir, opts());
+      if (r.pos.x !== state.pos.x || r.pos.y !== state.pos.y) lastMoveAt = performance.now();
       let next = setPos(state, r.pos, r.facing);
       if (tip) {
         next = markTip(next, TIP_MOVE);
@@ -177,6 +184,7 @@ export const explore = {
       leaving = true;
       closeOverlay();
       cancelAnimationFrame(raf);
+      stopImages();
       unbind();
       removeTouch();
       toast.dispose();

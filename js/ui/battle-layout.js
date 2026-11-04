@@ -35,7 +35,8 @@ export function buildFrame({ mode, nickname, monsterName, hearts: heartCount = 5
   const combo = el('div', 'battle-combo panel');
   combo.hidden = true;
   combo.setAttribute('aria-live', 'polite');
-  stage.append(el('div', 'battle-bg'), fog, hero, monster, mhp, combo);
+  const bg = el('div', 'battle-bg');
+  stage.append(bg, fog, hero, monster, mhp, combo);
 
   const bottom = el('div', 'battle-bottom');
   const status = el('div', 'battle-status panel');
@@ -53,7 +54,7 @@ export function buildFrame({ mode, nickname, monsterName, hearts: heartCount = 5
   prompt.setAttribute('aria-live', 'polite');
   question.append(el('span', 'battle-who', monsterName), typeTag, prompt);
   bottom.append(status, question);
-  return { stage, fog, hand, monster, combo, cells, hearts, lightLeft, bottom, typeTag, prompt, monsterName };
+  return { stage, bg, fog, hero, hand, monster, combo, cells, hearts, lightLeft, bottom, typeTag, prompt, monsterName };
 }
 
 // 하트·HP 칸·남은 빛·연속 표를 다시 그린다. crack*은 방금 잃은 칸에 금 가는 효과를 단다.

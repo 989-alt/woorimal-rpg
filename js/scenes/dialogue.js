@@ -6,6 +6,8 @@ import { formatLine } from '../rules/josa.js';
 import { extractWords, markTip } from '../rules/game.js';
 import { blockColor, initial, labelBlockEl } from '../ui/placeholder.js';
 import { openMeaningCard } from '../ui/meaning-card.js';
+import { ASSETS, bustFor } from '../../data/assets.js';
+import { setArt, preloadChapter } from '../ui/images.js';
 
 export const TIP_WORD = 'tip-word';
 const HERO_COLOR = '#3B5BA5'; // 쪽빛
@@ -64,6 +66,11 @@ export function resolveSpeaker(line, npcs, from, nickname) {
   return { side: 'npc', name: from, color: blockColor(from) };
 }
 
+// npc 줄의 인물 id(line.npc, 없으면 from 이름으로 찾기). 알 수 없으면 undefined.
+export function npcIdOf(line, npcs, from) {
+  return ((line.npc && npcs.find((n) => n.id === line.npc)) || npcs.find((n) => n.name === from))?.id;
+}
+
 // 이 줄에서 카드를 보여 줄 낱말(줄 안 차례, 중복 없음): params.words에 있고 이 대화에서 아직 카드를 보이지 않은 것.
 // 이미 얻었는지(state.acquired)는 보지 않는다. 탐험 장면이 대화를 열기 전에 낱말을 얻어 두기 때문이다.
 export function newWordsOf(rawText, words, shown = new Set()) {
@@ -102,6 +109,13 @@ export const dialogue = {
     box.append(tag, text, arrow);
     scene.append(heroBust, npcBust, box);
     root.appendChild(scene);
+    // 그림이 있으면 배경·상반신을 그림으로, 없거나 못 불러오면 지금의 임시 그림 그대로
+    const avatar = initState?.avatar === 'm' ? 'm' : 'f';
+    if (chapter) {
+      setArt(scene, ASSETS.dialogueBg[chapter.id], 'dialogue-bg art');
+      preloadChapter(chapter.id, avatar);
+    }
+    let heroFace = 'base';
 
     let index = -1;
     let tw = null;
@@ -117,10 +131,15 @@ export const dialogue = {
     let lastNpc = null;
     const shownCards = new Set(); // 이 대화에서 이미 카드를 보인 낱말
 
+    // 이 줄에서 보일 인물: 지금 줄 또는 가까운 앞 줄, 없으면 뒤 줄의 말하는 이와 그 줄
+    const npcLineFor = (i) => {
+      for (let j = i; j >= 0; j--) if (script[j].who === 'npc') return j;
+      for (let j = i; j < script.length; j++) if (script[j].who === 'npc') return j;
+      return -1;
+    };
     const npcFor = (i) => {
-      for (let j = i; j >= 0; j--) if (script[j].who === 'npc') return resolveSpeaker(script[j], npcs, from, nickname);
-      for (let j = i; j < script.length; j++) if (script[j].who === 'npc') return resolveSpeaker(script[j], npcs, from, nickname);
-      return null;
+      const j = npcLineFor(i);
+      return j < 0 ? null : resolveSpeaker(script[j], npcs, from, nickname);
     };
 
     function render() {
@@ -176,7 +195,13 @@ export const dialogue = {
           lastNpc = np;
           npcBust.replaceChildren(labelBlockEl(initial(np.name), np.color, 'bust-block'));
           npcBust.style.setProperty('--band', np.color);
+          setArt(npcBust, null); // replaceChildren이 그림도 치웠으므로 앞 인물 그림 표시를 지운다
         }
+        if (sp.side === 'hero') heroFace = line.face ?? 'base';
+        const nj = npcLineFor(i);
+        const speakerId = np && nj >= 0 ? npcIdOf(script[nj], npcs, from) : undefined;
+        setArt(heroBust, bustFor(`hero_${avatar}`, heroFace), 'bust-img art');
+        setArt(npcBust, speakerId ? bustFor(speakerId, script[nj].face ?? 'base') : null, 'bust-img art');
         heroBust.classList.toggle('listener', sp.side !== 'hero');
         npcBust.classList.toggle('listener', sp.side !== 'npc');
       }

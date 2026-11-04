@@ -3,6 +3,8 @@ import { BASE_W, BASE_H } from './scale.js';
 import { fogOpen } from '../rules/game.js';
 import { npcMarker, hiddenGlow } from '../rules/quests.js';
 import { drawLabelBlock, initial, MEOK } from '../ui/placeholder.js';
+import { ASSETS } from '../../data/assets.js';
+import { getLoaded } from '../ui/images.js';
 
 export const TILE = 16;
 const WALL = '#2F6B3A';
@@ -38,7 +40,8 @@ export function questObjectSlots(state, chapter) {
   return slots;
 }
 
-function drawTiles(ctx, map, camera, open) {
+// 그림이 있으면 바닥·벽 색 대신 맵 그림을 깔고, 닫힌 안개 칸만 그 위에 그린다.
+function drawTiles(ctx, map, camera, open, hasArt) {
   const x0 = Math.max(0, Math.floor(camera.x / TILE));
   const y0 = Math.max(0, Math.floor(camera.y / TILE));
   const x1 = Math.min(map.w - 1, Math.floor((camera.x + BASE_W) / TILE));
@@ -47,6 +50,7 @@ function drawTiles(ctx, map, camera, open) {
     for (let x = x0; x <= x1; x++) {
       const c = map.tileAt(x, y);
       const px = x * TILE, py = y * TILE;
+      if (hasArt && !(c === 'F' && !open)) continue;
       if (c === '#') {
         ctx.fillStyle = WALL;
         ctx.fillRect(px, py, TILE, TILE);
@@ -116,6 +120,23 @@ function drawMarker(ctx, cx, top, mark) {
   ctx.fillText(mark, cx, y + h / 2 + 0.5);
 }
 
+// 발이 칸 아래 줄에 닿게 그린다(그림 크기 그대로, 칸 가운데 맞춤). 16×32 도트는 위 16px이 칸 위로 솟는다.
+function drawFeet(ctx, img, tx, ty) {
+  ctx.drawImage(img, Math.round(tx * TILE + (TILE - img.width) / 2), ty * TILE + TILE - img.height);
+}
+
+// 주인공 걷기 시트: 한 방향 3프레임(서기·왼발·오른발), 줄 순서 아래·왼·오·위. 걸을 때 1-2-1-3 순서로 초당 8장.
+const WALK_ROW = { down: 0, left: 1, right: 2, up: 3 };
+const WALK_STEPS = [0, 1, 0, 2];
+export const walkFrame = (time, moving) => (moving ? WALK_STEPS[Math.floor(time / 125) % 4] : 0);
+const heroSheet = (state) => getLoaded(ASSETS.walk[state.avatar === 'm' ? 'm' : 'f']);
+
+// 부탁 물건 칸에 놓을 물건 id(물건 자체의 item 또는 그 칸을 목표로 하는 부탁의 item)
+function itemIdOf(chapter, obj) {
+  if (obj.item?.id) return obj.item.id;
+  return chapter.quests.find((q) => ['fetch', 'gather'].includes(q.kind) && q.targets.includes(obj.slot))?.item?.id;
+}
+
 const bobAt = (time, still) => (still ? 0 : Math.round(Math.sin(time / 250)));
 const glowOn = (glow, time) => glow !== 'none' && time % (glow === 'bright' ? 1000 : 2000) <= 300;
 
@@ -149,12 +170,15 @@ function drawTipArrow(ctx, camera, target, hero, bob) {
   drawArrow(ctx, ax, ay, angle, 8);
 }
 
-export function drawExplore(ctx, { map, state, chapter, camera, time = 0, tipTarget = null, still = false }) {
+export function drawExplore(ctx, { map, state, chapter, camera, time = 0, tipTarget = null, still = false, moving = false }) {
   ctx.save();
   ctx.fillStyle = WALL;
   ctx.fillRect(0, 0, BASE_W, BASE_H);
   ctx.translate(-Math.round(camera.x), -Math.round(camera.y));
-  drawTiles(ctx, map, camera, fogOpen(state, chapter));
+  const actId = Number(String(chapter.id).split('-')[0]);
+  const mapArt = getLoaded(ASSETS.maps[chapter.id]);
+  if (mapArt) ctx.drawImage(mapArt, 0, 0);
+  drawTiles(ctx, map, camera, fogOpen(state, chapter), !!mapArt);
 
   const bob = bobAt(time, still);
   const arrows = questObjectSlots(state, chapter);
@@ -165,7 +189,9 @@ export function drawExplore(ctx, { map, state, chapter, camera, time = 0, tipTar
     const p = map.objects[obj.slot];
     if (!p) continue;
     const px = p.x * TILE, py = p.y * TILE;
-    drawLabelBlock(ctx, px + 1, py + 1, TILE - 2, TILE - 2, EARTH, initial(obj.name));
+    const icon = arrows.includes(obj.slot) ? getLoaded(ASSETS.items[itemIdOf(chapter, obj)]) : null;
+    if (icon) drawFeet(ctx, icon, p.x, p.y);
+    else if (!mapArt) drawLabelBlock(ctx, px + 1, py + 1, TILE - 2, TILE - 2, EARTH, initial(obj.name));
     if (obj.slot === chapter.hidden.object) drawGlow(ctx, px + 1, py + 1, glow, time);
     if (arrows.includes(obj.slot)) drawArrow(ctx, px + TILE / 2, py + TILE + 2 - bob, -Math.PI / 2, 6);
   }
@@ -173,25 +199,36 @@ export function drawExplore(ctx, { map, state, chapter, camera, time = 0, tipTar
   // 몬스터
   if (map.smallMonster && !state.smallGone?.[chapter.id]) {
     const { x, y } = map.smallMonster;
-    drawCircle(ctx, x * TILE + 8, y * TILE + 8, 7, '#8A8D91', '#5E6266');
+    const art = getLoaded(ASSETS.small[actId]);
+    if (art) drawFeet(ctx, art, x, y);
+    else drawCircle(ctx, x * TILE + 8, y * TILE + 8, 7, '#8A8D91', '#5E6266');
   }
   if (map.boss) {
     const { x, y } = map.boss;
-    drawCircle(ctx, x * TILE + 8, y * TILE + 4, 14, '#5E6266', MEOK);
+    const art = getLoaded(ASSETS.bossPixel[actId]);
+    if (art) drawFeet(ctx, art, x, y);
+    else drawCircle(ctx, x * TILE + 8, y * TILE + 4, 14, '#5E6266', MEOK);
   }
 
   // 인물과 주인공: 아래쪽에 있는 것을 나중에 그린다(16×24, 발이 칸 아래에 닿게)
   const people = [];
   for (const npc of chapter.npcs) {
     const p = map.slots[npc.slot];
-    if (p) people.push({ p, color: npc.color, label: initial(npc.name), mark: npcMarker(state, chapter, npc.id) });
+    if (p) people.push({ p, color: npc.color, label: initial(npc.name), mark: npcMarker(state, chapter, npc.id), art: getLoaded(ASSETS.npcs[npc.id]) });
   }
-  people.push({ p: state.pos, color: HERO, label: initial(state.nickname), hero: true });
+  people.push({ p: state.pos, color: HERO, label: initial(state.nickname), hero: true, sheet: heroSheet(state) });
   people.sort((a, b) => a.p.y - b.p.y);
   for (const who of people) {
     const px = who.p.x * TILE, py = who.p.y * TILE - 8;
-    drawLabelBlock(ctx, px, py, TILE, 24, who.color, who.label);
-    if (who.hero) {
+    if (who.art) {
+      drawFeet(ctx, who.art, who.p.x, who.p.y);
+    } else if (who.sheet) {
+      const row = WALK_ROW[state.facing] ?? 0;
+      ctx.drawImage(who.sheet, walkFrame(time, moving && !still) * 16, row * 32, 16, 32, px, who.p.y * TILE + TILE - 32, 16, 32);
+    } else {
+      drawLabelBlock(ctx, px, py, TILE, 24, who.color, who.label);
+    }
+    if (who.hero && !who.sheet) {
       // 바라보는 쪽에 작은 한지색 점
       const f = { up: [6, 1], down: [6, 19], left: [1, 10], right: [11, 10] }[state.facing] ?? [6, 19];
       ctx.fillStyle = '#FBF5E6';
@@ -206,7 +243,7 @@ export function drawExplore(ctx, { map, state, chapter, camera, time = 0, tipTar
 
 // 시간에 따라 바뀌는 그림(발밑·머리 위 화살표 흔들림, 숨은 낱말 반짝임) 중 화면 안에 있는 것만의 지금 모습.
 // 이 값과 상태·카메라가 그대로면 같은 그림이므로 다시 그리지 않아도 된다.
-export function animKey({ map, state, chapter, camera, time = 0, tipTarget = null, still = false }) {
+export function animKey({ map, state, chapter, camera, time = 0, tipTarget = null, still = false, moving = false }) {
   // 칸(위로 8px 솟은 인물·화살표 여유 포함)이 화면에 조금이라도 걸치는지
   const inView = (p) => p.x * TILE + TILE > camera.x && p.x * TILE < camera.x + BASE_W
     && p.y * TILE + TILE + 8 > camera.y && p.y * TILE - 8 < camera.y + BASE_H;
@@ -215,6 +252,7 @@ export function animKey({ map, state, chapter, camera, time = 0, tipTarget = nul
     const arrowSeen = questObjectSlots(state, chapter).some((slot) => map.objects[slot] && inView(map.objects[slot]));
     if (arrowSeen || (tipTarget && tipInView(camera, tipTarget))) parts.push(`b${bobAt(time, still)}`);
   }
+  if (moving && !still && heroSheet(state)) parts.push(`w${walkFrame(time, true)}`);
   const glow = hiddenGlow(state, chapter);
   const spot = map.objects[chapter.hidden.object];
   if (glow !== 'none' && spot && inView(spot)) parts.push(`g${glowOn(glow, time) ? 1 : 0}`);
