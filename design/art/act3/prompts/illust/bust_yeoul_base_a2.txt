@@ -1,0 +1,6 @@
+Modern anime illustration with soft cel shading (two tones plus one gentle gradient), clean dark-brown line art, delicate hair highlights, large expressive eyes, light coming from the upper left, child-friendly, modest and practical clothing, no text, no logos.
+Upper-body bust portrait cropped from the top of the head down to just below the waist belt, the whole head and hair inside the frame with some empty space above the head, the figure centred horizontally, the eyes about one third of the way down from the top of the image.
+The first reference image is this exact character: keep her face, expression, bob haircut, clothes, hands, pose, size and position in the picture exactly the same. The second reference image is her small pixel sprite.
+Change only the fishing rod so it can never be mistaken for a bow: make it a thin, straight bamboo fishing rod that gets thinner toward the tip, with the very tip bending forward a little; the fishing line hangs straight down from the tip in a single thin vertical line, with a small round red-and-white float on it, and the line does not curve back to the rod. No bow string, no arc, no wrappings along the rod except a simple cork handle where she holds it.
+Well-drawn hands with five fingers each, clear and natural.
+Plain flat solid magenta (#FF00FF) background everywhere with no shadows or gradients.

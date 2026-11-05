@@ -1,4 +1,12 @@
 {
+ "ferryman_base": {
+  "src": "bust_ferryman_base_a1",
+  "quality": 85
+ },
+ "miru_base": {
+  "src": "bust_miru_base_a1",
+  "quality": 85
+ },
  "narae_base": {
   "src": "bust_narae_base_a2",
   "quality": 85
@@ -20,5 +28,17 @@
   "dx": 0,
   "dy": 0,
   "color_match": "sky"
+ },
+ "skygran_base": {
+  "src": "bust_skygran_base_a1",
+  "quality": 85
+ },
+ "woodcutter_base": {
+  "src": "bust_woodcutter_base_a1",
+  "quality": 85
+ },
+ "yeoul_base": {
+  "src": "bust_yeoul_base_a2",
+  "quality": 85
  }
 }
