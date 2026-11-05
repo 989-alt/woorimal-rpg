@@ -3,7 +3,7 @@
 // 이름 규칙: assets/pixel|illust/종류_장_이름_변형.확장자, UI 키트는 assets/ui/이름.v1.png (art-bible 8절)
 export const ASSETS = {
   // 탐험 맵(1536×1152, 칸당 48, 장 id)
-  maps: { '1-1': 'assets/pixel/map_ch1-1_saebyeokgol.png', '1-2': 'assets/pixel/map_ch1-2_maeul-eogwi.png', '2-1': 'assets/pixel/map_ch2-1_neouljang.png', '2-2': 'assets/pixel/map_ch2-2_bukmun.png', '3-1': 'assets/pixel/map_ch3-1_supsok.png', '3-2': 'assets/pixel/map_ch3-2_yunseulnae.png', '4-1': 'assets/pixel/map_ch4-1_gogaetgil.png', '4-2': 'assets/pixel/map_ch4-2_gogaetmaru.png', '5-1': null, '5-2': null },
+  maps: { '1-1': 'assets/pixel/map_ch1-1_saebyeokgol.png', '1-2': 'assets/pixel/map_ch1-2_maeul-eogwi.png', '2-1': 'assets/pixel/map_ch2-1_neouljang.png', '2-2': 'assets/pixel/map_ch2-2_bukmun.png', '3-1': 'assets/pixel/map_ch3-1_supsok.png', '3-2': 'assets/pixel/map_ch3-2_yunseulnae.png', '4-1': 'assets/pixel/map_ch4-1_gogaetgil.png', '4-2': 'assets/pixel/map_ch4-2_gogaetmaru.png', '5-1': 'assets/pixel/map_ch5-1_tap-apttel.png', '5-2': 'assets/pixel/map_ch5-2_tap-kkokdaegi.png' },
   // 주인공 걷기 시트 144×384: 48×96칸 × 3프레임(서기·왼발·오른발) × 4방향(아래·왼·오·위) (f 여 · m 남)
   walk: { f: 'assets/pixel/walk_hero_f.png', m: 'assets/pixel/walk_hero_m.png' },
   // 인물 도트 48×96(그림 48×72쯤, 발이 맨 아래 줄 가운데) (인물 id)
@@ -24,13 +24,13 @@ export const ASSETS = {
     northgate: 'assets/pixel/npc_northgate.png',
     narae: 'assets/pixel/npc_narae.png', woodcutter: 'assets/pixel/npc_woodcutter.png', miru: 'assets/pixel/npc_miru.png', yeoul: 'assets/pixel/npc_yeoul.png', skygran: 'assets/pixel/npc_skygran.png', ferryman: 'assets/pixel/npc_ferryman.png', // 3막
     tea: 'assets/pixel/npc_tea.png', garam: 'assets/pixel/npc_garam.png', signpost: 'assets/pixel/npc_signpost.png', keeper: 'assets/pixel/npc_keeper.png', traveler: 'assets/pixel/npc_traveler.png', // 4막
-    greykid: null, // 5막
+    greykid: 'assets/pixel/npc_greykid.png', // 5막
   },
   // 물건 아이콘 48×48 (물건 id)
-  items: { water: 'assets/pixel/icon_water.png', firewood: 'assets/pixel/icon_firewood.png', letter: 'assets/pixel/icon_letter.png', 'price-board': 'assets/pixel/icon_price-board.png', weight: 'assets/pixel/icon_weight.png', bundle: 'assets/pixel/icon_bundle.png', 'trail-ribbon': 'assets/pixel/icon_trail-ribbon.png', lunchbox: 'assets/pixel/icon_lunchbox.png', 'rain-bowl': 'assets/pixel/icon_rain-bowl.png', 'warm-tea': 'assets/pixel/icon_warm-tea.png', 'pine-twigs': 'assets/pixel/icon_pine-twigs.png', 'bundle-strap': 'assets/pixel/icon_bundle-strap.png', bell: null, 'light-shard': null, lullaby: null },
+  items: { water: 'assets/pixel/icon_water.png', firewood: 'assets/pixel/icon_firewood.png', letter: 'assets/pixel/icon_letter.png', 'price-board': 'assets/pixel/icon_price-board.png', weight: 'assets/pixel/icon_weight.png', bundle: 'assets/pixel/icon_bundle.png', 'trail-ribbon': 'assets/pixel/icon_trail-ribbon.png', lunchbox: 'assets/pixel/icon_lunchbox.png', 'rain-bowl': 'assets/pixel/icon_rain-bowl.png', 'warm-tea': 'assets/pixel/icon_warm-tea.png', 'pine-twigs': 'assets/pixel/icon_pine-twigs.png', 'bundle-strap': 'assets/pixel/icon_bundle-strap.png', bell: 'assets/pixel/icon_bell.png', 'light-shard': 'assets/pixel/icon_light-shard.png', lullaby: 'assets/pixel/icon_lullaby.png' },
   // 꼬마 몬스터 도트 48×96(발이 맨 아래 줄)·보스 도트 96×96(2×2칸, 발이 보스 칸 아래 줄 가운데) (막 번호)
-  small: { 1: 'assets/pixel/monster_small_act1.png', 2: 'assets/pixel/monster_small_act2.png', 3: 'assets/pixel/monster_small_act3.png', 4: 'assets/pixel/monster_small_act4.png', 5: null },
-  bossPixel: { 1: 'assets/pixel/monster_boss_act1.png', 2: 'assets/pixel/monster_boss_act2.png', 3: 'assets/pixel/monster_boss_act3.png', 4: 'assets/pixel/monster_boss_act4.png', 5: null },
+  small: { 1: 'assets/pixel/monster_small_act1.png', 2: 'assets/pixel/monster_small_act2.png', 3: 'assets/pixel/monster_small_act3.png', 4: 'assets/pixel/monster_small_act4.png', 5: 'assets/pixel/monster_small_act5.png' },
+  bossPixel: { 1: 'assets/pixel/monster_boss_act1.png', 2: 'assets/pixel/monster_boss_act2.png', 3: 'assets/pixel/monster_boss_act3.png', 4: 'assets/pixel/monster_boss_act4.png', 5: 'assets/pixel/monster_boss_act5.png' },
   // 대화 상반신: 인물 × 표정. 표정 그림이 없으면 base로 대신한다.
   busts: {
     hero_f: { base: 'assets/illust/bust_hero_f_base.webp', surprise: 'assets/illust/bust_hero_f_surprise.webp', joy: 'assets/illust/bust_hero_f_joy.webp' },
@@ -71,7 +71,7 @@ export const ASSETS = {
   monster: { 1: 'assets/illust/monster_act1.webp', 2: 'assets/illust/monster_act2.webp', 3: 'assets/illust/monster_act3.webp', 4: 'assets/illust/monster_act4.webp', 5: null }, // 보스(막 번호), 1440×1440
   title: 'assets/illust/title.webp', // 2560×1440, 글자 없음(제목은 HTML)
   ending: { ending01: null, ending02: null, ending03: null }, // 엔딩 장면 그림 2560×1440 (data/ending.js의 scenes[].bg, ending03은 마지막 말 화면 바탕)
-  worldmap: null, // 세계 지도 1536×864 (아래쪽 새벽골은 밝고 북쪽 탑으로 갈수록 잿빛). 표시 자리는 data/world.js
+  worldmap: 'assets/pixel/worldmap.png', // 세계 지도 1536×864 (아래쪽 새벽골은 밝고 북쪽 탑으로 갈수록 잿빛). 표시 자리는 data/world.js
   // UI 키트(8비트 색표 PNG + 투명, 2배로 만들어 절반 크기로 보임). 크기·조각 값은 아래 UI_KIT.
   ui: {
     logo: 'assets/ui/logo_title.v1.png',

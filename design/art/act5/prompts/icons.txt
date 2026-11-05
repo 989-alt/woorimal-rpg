@@ -1,0 +1,6 @@
+Pixel art item icons for an RPG inventory, detailed pixel art, each icon about 48 by 48 pixels, three icons in a row with wide even gaps, each centred in its own third of the image, the same size. The reference image shows icons of the same world: match their pixel style, size and outlines exactly.
+Left: Haesol's bell, two small round brass bells (#C9963F brass with lighter #F1C178 highlights and darker #8A5E2A shading) hanging side by side from one short loop of plain brown cord tied in a small knot; only brass and brown, no orange, no red.
+Middle: a shard of word light, one small flat crystal-like shard with straight broken edges, painted only in warm gold (#F2C14E body and #FFE7A3 lighter facets, darker gold-brown 1px outline); the colour is in the shard itself only: no glow around it, no rays, no sparkles, no light pixels outside its outline.
+Right: a lullaby note, a small sheet of cream mulberry paper folded twice into a little square, slightly worn soft edges, one corner lifted; completely blank, no writing, no lines, no marks.
+Style: crisp hard-edged pixels, no blur, no anti-aliasing, limited palette, 1px darker-hue outlines (never black), soft cel shading, light from the upper left, cozy fantasy, child-friendly.
+Solid flat magenta (#FF00FF) background everywhere, no ground shadows, no text, no letters, no numbers, no labels.

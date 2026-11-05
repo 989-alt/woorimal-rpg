@@ -3,11 +3,13 @@
 // 사용: node tools/layout-guide.mjs <chapterId> <out.png>
 //       node tools/layout-guide.mjs --rows <chapterId>   맵 행을 JSON으로(tools/map-fit.py가 읽는다)
 //       node tools/layout-guide.mjs --exit <chapterId>   출구 { x, y, dir }를 JSON으로(없으면 null)
+//       node tools/layout-guide.mjs world <out.png>      세계 지도 밑그림 512×288(data/world.js 자리를 1/3로)
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import { ACTS } from '../data/acts/index.js';
 import { parseMap } from '../js/explore/grid.js';
+import { WORLD } from '../data/world.js';
 
 const TILE = 16;
 const PATH = [0xE8, 0xC8, 0x8A];
@@ -71,6 +73,41 @@ export function renderGuide(rows) {
   return encodePng(W, H, buf);
 }
 
+// 세계 지도 밑그림(512×288 = 1536×864의 1/3): 아래 왼쪽 밝은 초록에서 위 오른쪽 회색으로 가는 대각선 바탕,
+// 다섯 곳 자리에 지름 40 표시(새벽골·너울장·윤슬내·안개 고개는 원, 잿빛 탑은 네모).
+const WORLD_SCALE = 3;
+const WORLD_MARKS = {
+  1: { c: [0xD9, 0xA5, 0x5B], shape: 'circle' },
+  2: { c: [0xE0, 0x58, 0x4F], shape: 'circle' },
+  3: { c: [0x3F, 0xA7, 0xC9], shape: 'circle' },
+  4: { c: [0xB9, 0xBB, 0xBE], shape: 'circle' },
+  5: { c: [0x5E, 0x62, 0x66], shape: 'square' },
+};
+const GREEN = [0x8C, 0xC9, 0x6A], GREY = [0x9A, 0x9C, 0x9E];
+export function renderWorldGuide(world = WORLD) {
+  const W = world.size.w / WORLD_SCALE, H = world.size.h / WORLD_SCALE;
+  const buf = Buffer.alloc(W * H * 3);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const t = Math.min(1, Math.max(0, (x / (W - 1) + (1 - y / (H - 1))) / 2)); // 0 = 아래 왼쪽, 1 = 위 오른쪽
+      buf.set(GREEN.map((g, i) => Math.round(g + (GREY[i] - g) * t)), (y * W + x) * 3);
+    }
+  }
+  const R = 20;
+  for (const p of world.places) {
+    const mark = WORLD_MARKS[p.act];
+    const cx = Math.round(p.x / WORLD_SCALE), cy = Math.round(p.y / WORLD_SCALE);
+    for (let y = cy - R; y < cy + R; y++) {
+      for (let x = cx - R; x < cx + R; x++) {
+        if (x < 0 || y < 0 || x >= W || y >= H) continue;
+        if (mark.shape === 'circle' && (x + 0.5 - cx) ** 2 + (y + 0.5 - cy) ** 2 > R * R) continue;
+        buf.set(mark.c, (y * W + x) * 3);
+      }
+    }
+  }
+  return encodePng(W, H, buf);
+}
+
 // 출구 통로: 출구 칸 다음 칸부터 exit.dir 쪽으로 맵 끝까지의 칸 [[x, y], …].
 // 길이 화면 밖으로 이어지는 곳이라 막힌 칸('#')이어도 맵 그림에 길처럼 그려도 된다(설계 2절).
 // tools/map-fit.py의 exit_passage와 같은 정의.
@@ -94,6 +131,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   }
   const [id, out] = process.argv.slice(2);
   if (!id || !out) { console.error('사용: node tools/layout-guide.mjs <chapterId> <out.png>'); process.exit(2); }
+  if (id === 'world') {
+    mkdirSync(dirname(out), { recursive: true });
+    writeFileSync(out, renderWorldGuide());
+    console.log(`saved ${out}`);
+    process.exit(0);
+  }
   const chapter = findChapter(id);
   if (!chapter) { console.error(`알 수 없는 장 '${id}'`); process.exit(1); }
   mkdirSync(dirname(out), { recursive: true });
