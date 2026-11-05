@@ -198,7 +198,7 @@ test('타이틀: 로고 상자 폭 600, 이름은 h1 글자, 메뉴 단추 340×
   await page.close();
 });
 
-test('모습 고르기: 글자는 패널·명판 위, 카드 약 300×400(3:4), 이름은 카드 안 리본, 이름 칸은 위 절반', async () => {
+test('모습 고르기: 글자는 패널·명판 위, 카드 약 260×350(3:4), 이름은 카드 안 리본, 이름 칸은 위 절반', async () => {
   const page = await browser.newPage({ viewport: { width: 1366, height: 768 } });
   const errors = collectErrors(page);
   await page.goto(server.url + '/?test=1');
@@ -213,7 +213,8 @@ test('모습 고르기: 글자는 패널·명판 위, 카드 약 300×400(3:4), 
   assert.equal(await page.locator('.avatar-plate').count(), 0, '따로 떨어진 이름 상자는 없다');
   assert.equal(await page.locator('.avatar-card .ribbon').count(), 2, '이름은 카드 안 리본');
   const card = await box(page, '.avatar-card');
-  assert.ok(card.height >= 370 && card.height <= 400, `카드 높이 ${card.height}`);
+  // 1366×768: 이름 패널·카드·단추 사이 틈(약 31px)을 같게 두고 남는 높이를 카드에 준다
+  assert.ok(card.height >= 330 && card.height <= 400, `카드 높이 ${card.height}`);
   near(card.width, card.height * 0.75, 2, '카드는 3:4');
   const bg = await page.evaluate(() => { const c = getComputedStyle(document.querySelector('.select-name')); return c.backgroundColor + c.backgroundImage; });
   assert.ok(bg !== 'rgba(0, 0, 0, 0)none', '이름 패널은 한지 바탕');
@@ -227,3 +228,37 @@ test('모습 고르기: 글자는 패널·명판 위, 카드 약 300×400(3:4), 
   assert.deepEqual(errors, []);
   await page.close();
 });
+
+// 선생님(2026-11-05): 카드가 이름 패널에 붙어 보였다(위 약 15px, 아래 단추까지 약 50px).
+// 이름 패널 → 카드 틈과 카드 → 단추 틈이 같고(고른 카드가 떠오른 모습 그대로 잰다), 덩어리 전체가 세로 가운데에 있다.
+for (const [w, h] of [[1366, 768], [1180, 820], [1920, 1080]]) {
+  test(`모습 고르기 ${w}×${h}: 이름 패널↔카드 틈과 카드↔단추 틈이 같고(4px 안), 덩어리는 세로 가운데`, async () => {
+    const page = await browser.newPage({ viewport: { width: w, height: h } });
+    const errors = collectErrors(page);
+    await page.goto(server.url + '/?test=1');
+    await page.waitForSelector('[data-scene="title"]');
+    await page.getByRole('button', { name: '처음부터' }).click();
+    await page.waitForSelector('.select-scene .title-bg');
+    await page.locator('.avatar-card[data-avatar="m"]').click(); // 고른 카드를 바꿔도 같다
+    await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'));
+    await page.mouse.move(0, 0); // 카드 위에 마우스를 두면 살짝 떠오른다
+    await page.waitForTimeout(250); // 떠오름 전환(160ms)
+    const m = await page.evaluate(() => {
+      const r = (s) => document.querySelector(s).getBoundingClientRect();
+      const cols = [...document.querySelectorAll('.avatar-col')].map((c) => c.getBoundingClientRect());
+      const sc = document.querySelector('.select-scene');
+      return {
+        up: Math.min(...cols.map((c) => c.top)) - r('.select-name').bottom,
+        down: r('.select-actions').top - Math.max(...cols.map((c) => c.bottom)),
+        above: r('.select-title').top, below: innerHeight - r('.select-actions').bottom,
+        scroll: sc.scrollHeight - sc.clientHeight,
+      };
+    });
+    near(m.up, m.down, 4, `이름 패널↔카드 ${m.up.toFixed(1)}px, 카드↔단추 ${m.down.toFixed(1)}px`);
+    assert.ok(m.up >= 20, `카드가 이름 패널에 붙지 않는다: ${m.up}`);
+    near(m.above, m.below, 4, '위아래 남는 자리');
+    assert.equal(m.scroll, 0, '스크롤 없이 다 보인다');
+    assert.deepEqual(errors, []);
+    await page.close();
+  });
+}

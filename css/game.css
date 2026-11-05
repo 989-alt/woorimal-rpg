@@ -85,6 +85,16 @@ canvas, img {
   display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 20px 16px;
   --card-h: clamp(300px, calc(100dvh - 388px), 400px);
 }
+/* 처음부터: 이름 패널과 카드, 카드와 단추 사이를 같은 틈(--sel-gap)으로 두고, 덩어리 전체를 세로 가운데에 놓는다.
+   고른 카드는 8px 떠오르고 1.04배 커져 윗변이 8 + 0.02h만큼 올라간다(아랫변은 안 고른 카드가 더 낮다). 그만큼 위 여백을 더 줘서 눈에 보이는 틈을 맞춘다.
+   카드 높이: 화면 높이 - (위아래 여백 40 + 제목 84 + 12 + 이름 패널 138 + 단추 80 = 354) - 틈 둘 - 떠오름(8 + 0.02h)의 나머지. */
+.select-scene.select-new {
+  justify-content: safe center;
+  --sel-gap: clamp(24px, 4dvh, 40px);
+  --card-h: clamp(280px, calc((100dvh - 362px - var(--sa-t) - var(--sa-b) - 2 * var(--sel-gap)) / 1.02), 400px);
+}
+.select-new > .avatar-cards { margin-top: calc(var(--sel-gap) + 8px + var(--card-h) * .02 - 12px); }
+.select-new > .select-actions { margin-top: calc(var(--sel-gap) - 12px); }
 .select-scene > * { flex: none; }
 /* 배경: 마을은 남기되 살짝 흐리고 어둡게 + 가장자리 어둠(비네트)으로 부품이 살게 한다 */
 .select-scene .title-bg { filter: blur(3px) brightness(.8) saturate(.9); transform: scale(1.04); }
@@ -2085,15 +2095,17 @@ p.ending-thanks {
   .ios-tip-close { min-width: 100px; }
 
   /* 이름·모습 고르기: 왼쪽에 제목·이름·단추, 오른쪽에 모습 카드 둘 */
-  .select-scene {
+  .select-scene, .select-scene.select-new {
     --card-h: clamp(160px, min(calc(100dvh - 96px - var(--sa-t) - var(--sa-b)), calc((100vw - 450px - var(--sa-l) - var(--sa-r)) / 1.5)), 290px);
-    display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-auto-rows: auto;
-    align-content: center; justify-items: center; column-gap: 20px; row-gap: 8px;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-auto-rows: min-content;
+    align-content: center; justify-items: center; column-gap: 20px; row-gap: 0;
     padding: calc(8px + var(--sa-t)) calc(16px + var(--sa-r)) calc(8px + var(--sa-b)) calc(16px + var(--sa-l));
   }
   .select-scene > * { grid-column: 1; }
   .select-scene > .title-bg { grid-column: auto; }
   .select-scene > .avatar-cards { grid-column: 2; grid-row: 1 / span 6; align-self: center; margin: 0; gap: 16px; }
+  /* 왼쪽 줄은 줄 사이(row-gap) 대신 여백으로 띄운다: 카드가 걸친 빈 줄들에 줄 사이가 쌓여 왼쪽 묶음이 위로 쏠리지 않게. 제목·이름·단추 사이는 같은 12px */
+  .select-scene > :is(.select-name, .saved-names, .select-notfound, .title-confirm, .select-actions) { margin-top: 12px; }
   .select-continue { grid-template-columns: minmax(0, 1fr); }
   .select-title { width: 300px; height: 56px; font-size: 28px; line-height: 36px; -webkit-text-stroke-width: 5px; }
   .select-name { width: 100%; max-width: 400px; min-height: 0; }
@@ -2109,7 +2121,7 @@ p.ending-thanks {
   .avatar-badge { top: -10px; right: -10px; width: 40px; height: 40px; }
   .avatar-badge .icon-check { transform: scale(.8); }
   .avatar-art { border-radius: 90px 90px 10px 10px; }
-  .select-actions { gap: 16px; margin-top: 4px; padding-top: 0; }
+  .select-actions { gap: 16px; padding-top: 0; }
   .select-back { width: 120px; }
   .select-go { width: 170px; }
   .select-actions .btn { font-size: 24px; }
