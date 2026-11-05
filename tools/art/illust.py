@@ -26,6 +26,8 @@ design/art/act<N>/illust.json (없어도 된다):
   colorMatch { "WHO_FACE": plum|orange|sky } 표정 그림에서 바랜 옷 색 무리를 base에 맞춘다
   holes      { NAME: [[x0,y0,x1,y1], …] }   원본 좌표 상자: 분홍으로 칠해진 구멍
   greyUnmix  [WHO, …]                       회색 인물(cut 대신 unmix_grey)
+  colorFaces ["WHO_FACE", …]                greyUnmix 인물이지만 색이 있는 표정(cut 결과를 쓴다)
+  framed     ["WHO_FACE", …]                커밋된 상반신을 참고 그림으로 넣어 이미 틀에 맞게 나온 그림(틀·lift 없이 1080×1440로만 맞춘다)
   lift       { WHO: 비율 }                   틀에 넣은 뒤 그림 높이의 이 비율만큼 위로 올린다(아래가 녹아 흐르는 인물)
 
 원본(raw/)은 저장소에 없다. 표정 정렬 기준과 전투 배경 원본은 커밋된 WebP에서 다시 읽으므로 컨테이너가 다시 시작돼도 된다.
@@ -225,18 +227,22 @@ def cut(act, name):
 
 
 def bust(act, who, face, src):
-    if who in act.conf.get('greyUnmix', []):
+    key = f'{who}_{face}'
+    if who in act.conf.get('greyUnmix', []) and key not in act.conf.get('colorFaces', []):
         im, _ = unmix_grey(act.rawp(f'{src}.png'))
     else:
         im = despill(Image.open(act.rawp(f'{src}_cut.png')).convert('RGBA'))
-    im = frame(im, act.conf.get('fit', {}).get(who, 0.92)).resize(BUST, Image.LANCZOS)
-    lift = act.conf.get('lift', {}).get(who, 0)
+    framed = key in act.conf.get('framed', [])
+    if framed:
+        im = im.resize(BUST, Image.LANCZOS)
+    else:
+        im = frame(im, act.conf.get('fit', {}).get(who, 0.92)).resize(BUST, Image.LANCZOS)
+    lift = 0 if framed else act.conf.get('lift', {}).get(who, 0)
     if lift:  # 아래가 녹아 흐르는 인물(잿빛 아이)은 대사 상자에 몸이 가리지 않게 위로 올린다
         up = Image.new('RGBA', BUST, (0, 0, 0, 0))
         up.alpha_composite(im, (0, -round(BUST[1] * lift)))
         im = up
     info = {}
-    key = f'{who}_{face}'
     if face != 'base':
         base_path = os.path.join(OUT, f'bust_{who}_base.webp')
         if not os.path.exists(base_path):

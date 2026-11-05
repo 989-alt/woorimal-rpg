@@ -42,6 +42,7 @@ export const FACES = {
   dodam: ['base', 'worry', 'laugh'],
   haesol: ['base', 'pout', 'surprise'],
   narae: ['base', 'sad', 'surprise', 'light'],
+  greykid: ['base', 'joy', 'color'], // color: 엔딩에서 색을 되찾은 모습
   other: ['base', 'joy'],
 };
 // 대표색은 그 주인만 쓴다.

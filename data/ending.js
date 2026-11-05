@@ -70,7 +70,7 @@ const ENDING = {
       warm: true,
       lines: [
         say('잿빛이던 탑이 새벽빛을 받아 따스한 빛깔로 물들었다.'),
-        npc('greykid', 'joy', '탑을 다부지게 오른 너희 덕분에 나도 색을 찾았어!'),
+        npc('greykid', 'color', '탑을 다부지게 오른 너희 덕분에 나도 색을 찾았어!'),
         npc('woodcutter', 'joy', '너울가지 좋은 사람들이 앞뜰에 모여 이야기꽃을 피우네.'),
         npc('chestnut', 'joy', '이 아이들은 늘품이 있으니 한울이 더 밝아지겠구먼.'),
       ],

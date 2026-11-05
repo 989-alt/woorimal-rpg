@@ -357,7 +357,7 @@ holding its placeholder is incomplete; a later run fills only those.
 - `walk_hero_m.png` · `npc_ch1_dodam.png` · `npc_ch1_villager01.png` (인물 도트는 한 명당 파일 하나)
 - `bust_haesol_joy.webp` · `bust_hero_f_surprise.webp` · `bust_narae_light.webp`
 - `bg_ch3_yunseulnae.webp` · `monster_ch3_mulangae.webp` · `battle_bg.webp` · `title.webp`
-- 표정 이름은 대본의 표정 값과 같다: base, surprise, joy, worry, laugh, pout, sad, light.
+- 표정 이름은 대본의 표정 값과 같다: base, surprise, joy, worry, laugh, pout, sad, light, color(잿빛 아이가 엔딩에서 색을 되찾은 모습).
 
 **걷기**: 방향마다 3프레임(서기, 왼발, 오른발), 1-2-1-3 순서로 초당 8장. 시트 줄 순서는 아래, 왼, 오, 위. **좌우 뒤집기 금지**(주머니가 오른쪽 허리).
 

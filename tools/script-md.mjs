@@ -10,7 +10,7 @@ import { QUIZ_TYPES, QUIZ_SIZE } from '../js/rules/review-quiz.js';
 
 const KIND = { fetch: '가져오기', gather: '모으기', deliver: '전하기', find: '찾기', chase: '그림자 쫓기' };
 const TYPE = { meaning: '뜻 고르기', blank: '빈칸 채우기', usage: '알맞게 쓴 문장 고르기' };
-const FACE = { base: '', joy: '기쁨', surprise: '놀람', worry: '걱정', laugh: '웃음', pout: '뾰로통', sad: '쓸쓸함', light: '빛' };
+const FACE = { base: '', joy: '기쁨', surprise: '놀람', worry: '걱정', laugh: '웃음', pout: '뾰로통', sad: '쓸쓸함', light: '빛', color: '색을 되찾음' };
 const SHOW = { beforeBoss: '(보스를 이기기 전에만 보임)', afterBoss: '(보스를 이긴 뒤에만 보임)' };
 const wordById = Object.fromEntries(WORDS.map((w) => [w.id, w]));
 
