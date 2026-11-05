@@ -61,7 +61,7 @@ export const ASSETS = {
     garam: { base: 'assets/illust/bust_garam_base.webp', joy: 'assets/illust/bust_garam_joy.webp' },
     signpost: { base: 'assets/illust/bust_signpost_base.webp', joy: 'assets/illust/bust_signpost_joy.webp' },
     keeper: { base: 'assets/illust/bust_keeper_base.webp', joy: 'assets/illust/bust_keeper_joy.webp' },
-    traveler: { base: null, joy: null },
+    traveler: { base: 'assets/illust/bust_traveler_base.webp', joy: 'assets/illust/bust_traveler_joy.webp' },
     // 5막
     greykid: { base: null, joy: null },
   },
