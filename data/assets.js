@@ -51,11 +51,11 @@ export const ASSETS = {
     northgate: { base: 'assets/illust/bust_northgate_base.webp' },
     // 3막
     narae: { base: 'assets/illust/bust_narae_base.webp', sad: 'assets/illust/bust_narae_sad.webp', surprise: 'assets/illust/bust_narae_surprise.webp', light: null },
-    woodcutter: { base: 'assets/illust/bust_woodcutter_base.webp', joy: null },
-    miru: { base: 'assets/illust/bust_miru_base.webp', joy: null },
-    yeoul: { base: 'assets/illust/bust_yeoul_base.webp', joy: null },
-    skygran: { base: 'assets/illust/bust_skygran_base.webp', joy: null },
-    ferryman: { base: 'assets/illust/bust_ferryman_base.webp', joy: null },
+    woodcutter: { base: 'assets/illust/bust_woodcutter_base.webp', joy: 'assets/illust/bust_woodcutter_joy.webp' },
+    miru: { base: 'assets/illust/bust_miru_base.webp', joy: 'assets/illust/bust_miru_joy.webp' },
+    yeoul: { base: 'assets/illust/bust_yeoul_base.webp', joy: 'assets/illust/bust_yeoul_joy.webp' },
+    skygran: { base: 'assets/illust/bust_skygran_base.webp', joy: 'assets/illust/bust_skygran_joy.webp' },
+    ferryman: { base: 'assets/illust/bust_ferryman_base.webp', joy: 'assets/illust/bust_ferryman_joy.webp' },
     // 4막
     tea: { base: null, joy: null },
     garam: { base: null, joy: null },

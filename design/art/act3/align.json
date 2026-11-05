@@ -3,9 +3,25 @@
   "src": "bust_ferryman_base_a1",
   "quality": 85
  },
+ "ferryman_joy": {
+  "src": "bust_ferryman_joy_a1",
+  "quality": 85,
+  "iou_head": 0.9955,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ },
  "miru_base": {
   "src": "bust_miru_base_a1",
   "quality": 85
+ },
+ "miru_joy": {
+  "src": "bust_miru_joy_a1",
+  "quality": 85,
+  "iou_head": 0.9942,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
  },
  "narae_base": {
   "src": "bust_narae_base_a2",
@@ -33,12 +49,36 @@
   "src": "bust_skygran_base_a1",
   "quality": 85
  },
+ "skygran_joy": {
+  "src": "bust_skygran_joy_a1",
+  "quality": 85,
+  "iou_head": 0.9956,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ },
  "woodcutter_base": {
   "src": "bust_woodcutter_base_a1",
   "quality": 85
  },
+ "woodcutter_joy": {
+  "src": "bust_woodcutter_joy_a1",
+  "quality": 85,
+  "iou_head": 0.9961,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ },
  "yeoul_base": {
   "src": "bust_yeoul_base_a2",
   "quality": 85
+ },
+ "yeoul_joy": {
+  "src": "bust_yeoul_joy_a1",
+  "quality": 85,
+  "iou_head": 0.9753,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
  }
 }
