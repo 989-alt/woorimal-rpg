@@ -1074,7 +1074,10 @@ canvas, img {
   box-shadow: 0 3px 8px rgba(0, 0, 0, .35);
 }
 /* 숄 밝힘: 몬스터 상자 가운데에 하늘색 빛이 1초 동안 조금 밝아진다(금빛 아님) */
-.battle-monster.shawl-lit { --shawl-x: 50%; --shawl-y: 58%; }
+.battle-monster { --shawl-x: 50%; --shawl-y: 58%; }
+/* 세로 그림(5막 보스 1440×2160): 폭·위끝은 그대로, 아래로 1.5배. 숄 자리는 그림 속 숄 가운데(상자 기준 백분율) */
+.battle-monster.tall { height: calc(var(--mon-h) * 1.5); border-radius: 0; --shawl-x: 51%; --shawl-y: 56%; }
+.battle-monster.tall::after { border-radius: 0; }
 .battle-monster.shawl-lit::after {
   content: '';
   position: absolute;
@@ -1729,9 +1732,11 @@ p.ending-thanks {
 }
 .credits .ending-actions { padding-bottom: 2px; }
 
-/* 엔딩 대화: 한 장 그림(still)은 상반신을 띄우지 않는다. warm은 잿빛 탑 그림을 새벽빛으로 물들인다 */
+/* 엔딩 대화: 한 장 그림(still)은 상반신을 띄우지 않는다. warm은 잿빛 탑 그림을 새벽빛으로 물들인다:
+   잿빛 그림의 밝기만 남기고(luminosity) 빛깔은 왼쪽 위 금빛에서 오른쪽 아래 장밋빛으로 가는 새벽 바탕에서 받는다 */
 .dialogue-scene.still .bust { display: none; }
-.dialogue-scene.warm .dialogue-bg { filter: sepia(.35) saturate(1.45) hue-rotate(-10deg) brightness(1.08); }
+.dialogue-scene.warm { background: linear-gradient(155deg, #FFE4A6 0%, #F5C994 32%, #E4AE98 64%, #B996A6 100%); }
+.dialogue-scene.warm .dialogue-bg { mix-blend-mode: luminosity; filter: brightness(1.14) contrast(1.06); }
 
 @media (max-width: 1100px) {
   .pouch-body { grid-template-columns: minmax(0, 1fr) 236px; gap: 10px; }

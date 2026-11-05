@@ -7,8 +7,9 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
-import { ASSETS, UI_KIT } from '../data/assets.js';
+import { ASSETS, UI_KIT, endingBg } from '../data/assets.js';
 import { ACTS } from '../data/acts/index.js';
+import ENDING from '../data/ending.js';
 import { chapterPaths } from '../js/ui/images.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -92,7 +93,11 @@ const SPEC = {
   // UI 키트: 키마다 UI_KIT의 그림 크기. 상한은 틀·버튼·메달·리본 40KB, 로고 200KB, 아이콘 12KB(아트 바이블 8절).
   ui: Object.fromEntries(Object.entries(UI_KIT).map(([key, { w, h }]) => [key, { w, h, max: uiMax(key), alpha: true }])),
 };
-const specFor = (group, where) => (group === 'ui' ? SPEC.ui[where.split('.')[1]] : SPEC[group]);
+// 경로별 예외(갈래 규격보다 먼저 본다): 5막 보스는 탑 높이의 세로 그림(설계 4절 5막, 아트 바이블 8절)
+const SPEC_AT = {
+  'monster.5': { w: 1440, h: 2160, max: 400 * KB, alpha: true },
+};
+const specFor = (group, where) => SPEC_AT[where] ?? (group === 'ui' ? SPEC.ui[where.split('.')[1]] : SPEC[group]);
 
 function* entries(node, trail) {
   if (typeof node === 'string') yield [trail, node];
@@ -222,6 +227,23 @@ test(`1~4막 마지막 장 + 세계 지도 미리 받기 ${CHAPTER_MAX / MB}MB �
       console.log(`# chapter ${ch.id} (${avatar}) + worldmap ${mb(total)} MB`);
       assert.ok(total <= CHAPTER_MAX, `${ch.id} (${avatar}) + 세계 지도 ${mb(total)}MB`);
     }
+  }
+});
+
+// 마지막 장(5-2)에서는 엔딩 장면 그림을 미리 받는다(js/ui/images.js preloadChapter와 같은 목록):
+// 엔딩 그림 세 장 + 되찾은 마을 장면이 다시 쓰는 대화 배경. 엔딩 그림에는 주인공을 그리지 않으므로 다른 모습도 없다.
+test(`5-2 + 엔딩 그림 미리 받기 ${CHAPTER_MAX / MB}MB 이하, 다른 모습 주인공 없음`, () => {
+  const act5 = ACTS[ACTS.length - 1];
+  const ch = act5.chapters[act5.chapters.length - 1];
+  assert.equal(ch.id, '5-2');
+  const ending = [...ENDING.scenes.map((sc) => endingBg(sc.bg)), ...Object.values(ASSETS.ending)].filter(Boolean);
+  for (const avatar of ['f', 'm']) {
+    const paths = [...chapterPaths(act5, ch, avatar), ...ending];
+    const total = sum(paths);
+    console.log(`# chapter 5-2 (${avatar}) + ending ${mb(total)} MB`);
+    assert.ok(total <= CHAPTER_MAX, `5-2 (${avatar}) + 엔딩 ${mb(total)}MB`);
+    const other = avatar === 'f' ? 'hero_m' : 'hero_f';
+    assert.deepEqual(paths.filter((p) => p.includes(other)), [], `5-2 ${avatar}: 다른 모습 주인공`);
   }
 });
 

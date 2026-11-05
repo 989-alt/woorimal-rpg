@@ -18,12 +18,15 @@ STEP
   battlebg            전투 배경: 커밋된 assets/illust/bg_ch<N>-2.webp → 채도 15%·0.8배·위쪽 잿빛 안개·아래 따뜻하게 12%·흐림 5
                       → battle_bg_act<N>.webp
   refpng WEBP OUT     WebP(투명)를 마젠타(#FF00FF) 바탕에 얹은 PNG(생성 참고 그림용)
+  shawlguide OUT      5막 보스 밑그림 1024×1536: 마젠타 바탕, 아래가 넓고 위로 겹겹이 쌓인 둥근 머리 회색(#8A8D91)
+                      사람 덩어리 무리, 가로 50%·세로 58%에 폭 30% 날개 모양 숄(#B4C0C6, 불투명도 40%)
 
 design/art/act<N>/illust.json (없어도 된다):
   fit        { WHO: 배율 }                  상반신 틀 배율(원본을 줄여 아래 끝을 맞춘다)
   colorMatch { "WHO_FACE": plum|orange|sky } 표정 그림에서 바랜 옷 색 무리를 base에 맞춘다
   holes      { NAME: [[x0,y0,x1,y1], …] }   원본 좌표 상자: 분홍으로 칠해진 구멍
   greyUnmix  [WHO, …]                       회색 인물(cut 대신 unmix_grey)
+  lift       { WHO: 비율 }                   틀에 넣은 뒤 그림 높이의 이 비율만큼 위로 올린다(아래가 녹아 흐르는 인물)
 
 원본(raw/)은 저장소에 없다. 표정 정렬 기준과 전투 배경 원본은 커밋된 WebP에서 다시 읽으므로 컨테이너가 다시 시작돼도 된다.
 """
@@ -227,6 +230,11 @@ def bust(act, who, face, src):
     else:
         im = despill(Image.open(act.rawp(f'{src}_cut.png')).convert('RGBA'))
     im = frame(im, act.conf.get('fit', {}).get(who, 0.92)).resize(BUST, Image.LANCZOS)
+    lift = act.conf.get('lift', {}).get(who, 0)
+    if lift:  # 아래가 녹아 흐르는 인물(잿빛 아이)은 대사 상자에 몸이 가리지 않게 위로 올린다
+        up = Image.new('RGBA', BUST, (0, 0, 0, 0))
+        up.alpha_composite(im, (0, -round(BUST[1] * lift)))
+        im = up
     info = {}
     key = f'{who}_{face}'
     if face != 'base':
@@ -300,10 +308,57 @@ def refpng(webp, out):
     print(f'saved {out} {im.width}x{im.height}')
 
 
+def shawlguide(out, W=1024, H=1536):
+    """5막 보스 밑그림: 사람 덩어리를 아래 줄부터 쌓고(아래가 넓다), 무리 한가운데에 날개 모양 숄을 옅게 얹는다.
+    덩어리마다 #5E6266 가장자리를 둘러 한 사람씩 읽히게 한다(생성 참고용, 결과 그림에는 윤곽이 없다)."""
+    from PIL import ImageDraw
+    body, edge, shawl = (138, 141, 145, 255), (94, 98, 102, 255), (180, 192, 198)
+    im = Image.new('RGBA', (W, H), MAGENTA)
+    d = ImageDraw.Draw(im)
+    rows = [7, 7, 6, 6, 5, 4, 3, 2]  # 아래 줄부터 위로(아래가 넓다)
+    top, bottom = 0.06 * H, 0.97 * H
+    step = (bottom - top) / (len(rows) + 0.4)
+    w0 = W * 0.90 / rows[0]
+    # 무리 안쪽에 바탕 구멍이 남지 않게, 덩어리들 뒤에 무리 둘레만 한 어두운 덩어리를 먼저 깐다
+    env = [(W / 2 - W * 0.45, bottom), (W / 2 + W * 0.45, bottom)]
+    env += [(W / 2 + w0 * n / 2 * 0.95, bottom - (i + 0.8) * step) for i, n in enumerate(rows)]
+    env += [(W / 2 - w0 * n / 2 * 0.95, bottom - (i + 0.8) * step) for i, n in reversed(list(enumerate(rows)))]
+    d.polygon(env, fill=edge)
+    for i, n in reversed(list(enumerate(rows))):  # 위(뒤) 줄을 먼저 그려 아래(앞) 줄이 덮는다
+        y_feet = bottom - i * step + (0 if i == 0 else step * 0.5)
+        w = w0 * (1 - 0.03 * i)
+        hr = w * 0.26  # 머리 반지름
+        off = (w * 0.5 if (rows[0] - n) % 2 else 0) * 0
+        for k in range(n):
+            cx = W / 2 + (k - (n - 1) / 2) * w + off
+            hy = bottom - i * step - step * 1.25
+            sh = hy + hr * 1.05  # 처진 어깨에서 아래로 넓어지는 몸
+            poly = [(cx - w * 0.30, sh + hr * 0.55), (cx - w * 0.15, sh), (cx + w * 0.15, sh), (cx + w * 0.30, sh + hr * 0.55),
+                    (cx + w * 0.56, y_feet), (cx - w * 0.56, y_feet)]
+            d.polygon(poly, fill=body, outline=edge, width=4)
+            d.ellipse((cx - hr, hy - hr, cx + hr, hy + hr), fill=body, outline=edge, width=4)
+    # 숄: 가운데(50%, 58%)에서 양쪽 위로 뒤로 날리는 두 날개, 전체 폭 30%
+    cx, cy, half = 0.5 * W, 0.58 * H, 0.15 * W
+    m = Image.new('L', (W, H), 0)
+    md = ImageDraw.Draw(m)
+    for sgn in (-1, 1):
+        pts = [(cx, cy - 0.01 * H), (cx + sgn * half * 0.45, cy - 0.05 * H), (cx + sgn * half, cy - 0.085 * H),
+               (cx + sgn * half * 0.92, cy - 0.04 * H), (cx + sgn * half * 0.80, cy - 0.01 * H),
+               (cx + sgn * half * 0.70, cy + 0.015 * H), (cx + sgn * half * 0.45, cy + 0.03 * H), (cx, cy + 0.035 * H)]
+        md.polygon(pts, fill=255)
+    m = m.filter(ImageFilter.GaussianBlur(2)).point(lambda v: round(v * 0.40))
+    layer = Image.new('RGBA', (W, H), shawl + (0,))
+    layer.putalpha(m)
+    im.alpha_composite(layer)
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    im.convert('RGB').save(out)
+    print(f'saved {out} {W}x{H}')
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--act', type=int, required=True)
-    p.add_argument('step', choices=['cut', 'bust', 'monster', 'bg', 'battlebg', 'refpng'])
+    p.add_argument('step', choices=['cut', 'bust', 'monster', 'bg', 'battlebg', 'refpng', 'shawlguide'])
     p.add_argument('args', nargs='*')
     a = p.parse_args()
     act = Act(a.act)
@@ -316,6 +371,7 @@ def main():
     elif s == 'bg': bg(act, args[0], args[1], float(args[2]) if len(args) > 2 else 0.0)
     elif s == 'battlebg': battlebg(act)
     elif s == 'refpng': refpng(*args)
+    elif s == 'shawlguide': shawlguide(*args)
 
 
 if __name__ == '__main__':
