@@ -272,7 +272,7 @@ HS = 30                    # 아치 높이(그림 px)
 NPL = 14                   # 널 수
 def bulge(y):              # 난간이 가운데에서 바깥으로 부푸는 양
     t = np.clip((y - BY0) / (BY1 - BY0), 0, 1)
-    return 11 * np.sin(np.pi * t) ** 1.1
+    return 14 * np.sin(np.pi * t) ** 1.1
 
 def plank_y(t):
     return BY0 + (BY1 - BY0) * t - HS * np.sin(np.pi * t)
@@ -298,38 +298,41 @@ def draw_bridge():
     for cx in (BX0 - 2, BX1 + 4):
         for y in range(BY1, BY1 + 3):
             img[y, cx:cx + 12 - 2 * (y - BY1)] = C['path_sh']
-    # 바닥 널
+    # 바닥 널: 널 금이 다리 끝 쪽으로 휘고(먼 쪽은 위로, 가까운 쪽은 아래로 볼록), 가운데 꼭대기는 밝고
+    # 양 끝 비탈은 그늘 띠가 넓다. 왼쪽 난간 그림자가 바닥에 진다.
     ts = np.linspace(0, 1, NPL + 1)
     ybs = plank_y(ts)
+    xm = (BX0 + BX1) / 2
     for y in range(BY0, BY1):
         b = bulge(y)
         xl, xr = int(round(BX0 + 4 - b)), int(round(BX1 - 4 + b))
-        # 이 y가 어느 널 안인가
-        k = int(np.searchsorted(ybs, y + 0.5) - 1)
-        k = min(max(k, 0), NPL - 1)
-        y0, y1 = ybs[k], ybs[k + 1]
-        pos = y - y0                    # 널 안 위치
-        hgt = y1 - y0
-        tmid = (k + 0.5) / NPL
+        hw = (xr - xl) / 2
+        t_here = float(np.interp(y, ybs, ts))
+        bow = 4.0 * (2 * t_here - 1)
         for x in range(xl, xr):
+            u = (x + 0.5 - xm) / hw
+            v = y - bow * (1 - u * u)              # 휜 널 금을 곧게 편 자리
+            k = int(np.searchsorted(ybs, v + 0.5) - 1)
+            k = min(max(k, 0), NPL - 1)
+            y0, y1 = ybs[k], ybs[k + 1]
+            pos, hgt = v - y0, y1 - y0
+            tm = (k + 0.5) / NPL
+            sh = float(np.clip((abs(tm - 0.5) - 0.18) / 0.32, 0, 1))   # 끝 비탈 그늘 정도
             c = 'path'
-            if pos < 1:                                  # 널 사이 틈
-                c = 'plank_gap'
-            elif tmid > 0.5 and pos > hgt - 5:           # 가까운 쪽(볕을 등진 비탈)은 널 아래쪽이 그늘
+            if pos < 1:
+                c = 'plank_gap' if sh > 0.3 else 'path_sh2'
+            elif pos > hgt - (1 + (0.10 + 0.42 * sh) * hgt):
+                c = 'path_sh2' if (sh > 0.55 and pos > hgt - 2) else 'path_sh'
+            elif abs(tm - 0.5) < 0.12 and pos < 2:                      # 꼭대기 널 위끝 볕
+                c = 'cream'
+            elif sh > 0.85 and (x + y) % 2 == 0 and pos > hgt * 0.45:   # 다리 맨 끝은 한 단 더 그늘
                 c = 'path_sh'
-            elif tmid <= 0.5 and pos < 2 and hgt > 4:    # 먼 쪽(볕을 받는 비탈)은 널 위끝이 밝다
-                c = 'cream' if (x + k) % 5 else 'path'
             img[y, x] = C[c]
-        # 널 끝 못
-        if 2 <= pos < 3 or (hgt < 7 and pos == hgt // 2):
-            img[y, xl + 2] = C['wood_mid']; img[y, xr - 3] = C['wood_mid']
-        # 왼쪽 난간 그림자가 바닥에
-        img[y, xl:xl + 2] = C['path_sh2']
-    # 꼭대기 널: 밝은 줄
-    k = NPL // 2
-    yc = int(round(ybs[k])) + 1
-    for x in range(int(BX0 + 4 - bulge(yc)) + 2, int(BX1 - 4 + bulge(yc)) - 1):
-        img[yc, x] = C['cream']
+        # 왼쪽 난간 그림자(난간 휜 선을 따라 3px), 널 끝 못
+        img[y, xl:xl + 1] = C['path_sh2']
+        img[y, xl + 1:xl + 3] = C['path_sh']
+        if (y - BY0) % 11 == 3:
+            img[y, xl + 4] = C['wood_mid']; img[y, xr - 3] = C['wood_mid']
     # 결 무늬
     for _ in range(26):
         y = int(rng.integers(BY0 + 4, BY1 - 4)); b = bulge(y)
@@ -389,6 +392,10 @@ def draw_bridge():
         b = bulge(y)
         post(int(round(BX0 + 4 - b)) - 4, y, tall)
         post(int(round(BX1 - 4 + b)) + 3, y, tall)
+        xl = int(round(BX0 + 4 - b))
+        if BY0 + 8 < y < BY1 - 20:                       # 왼쪽 기둥 그림자가 바닥에
+            for k in range(4):
+                img[y + 2 + k, xl + 3:xl + 8 - k] = C['path_sh']
     # 다리 머리 돌(둑에 놓인 받침돌)
     for (cx, cy) in ((BX0 - 12, BY0 + 26), (BX1 + 12, BY0 + 26), (BX0 - 12, BY1 - 34), (BX1 + 12, BY1 - 34)):
         for y in range(cy - 4, cy + 6):
@@ -399,91 +406,128 @@ def draw_bridge():
                 img[y, x] = C[c]
 
 # ---------------------------------------------------------------- 디딤돌
-STONES = [  # 칸(x,y), 가운데 비켜남, 반지름, 모양 지수, 울퉁불퉁 위상
-    ((23, 10), (-1, 2), (21, 18), 2.5, 0.3), ((24, 10), (1, 0), (23, 19), 2.3, 1.7), ((25, 10), (1, 2), (21, 18), 2.7, 2.9),
-    ((23, 11), (2, 1), (21, 19), 2.4, 4.1), ((24, 11), (-1, 2), (22, 18), 2.8, 5.3), ((25, 11), (-2, 0), (22, 19), 2.5, 0.9),
-    ((24, 12), (0, -4), (21, 17), 2.6, 2.2),
+STONES = [  # 칸(x,y), 가운데 비켜남(지그재그), 반지름(a,b), 모양 지수, 울퉁불퉁 위상, 기울기(도)
+    ((23, 10), (-3, -3), (21, 18), 2.3, 0.3, -9), ((24, 10), (2, 4), (23, 18), 2.1, 1.7, 7), ((25, 10), (-1, -3), (20, 18), 2.5, 2.9, -4),
+    ((23, 11), (3, 4), (22, 18), 2.2, 4.1, 11), ((24, 11), (-2, -3), (21, 19), 2.6, 5.3, -6), ((25, 11), (2, 4), (23, 17), 2.3, 0.9, 8),
+    ((24, 12), (-1, -4), (21, 17), 2.4, 2.2, -5),
 ]
+PEBBLES = [(1086, 512, 9, 6), (1270, 560, 8, 5), (1128, 590, 7, 4), (1232, 474, 6, 4)]   # 물에 반쯤 잠긴 회색 돌(걸을 수 없음)
 
-def draw_stones():
-    top_all = np.zeros((H, W), bool)
-    shapes = []
-    for (tx, ty), (ox, oy), (a, b), p, ph in STONES:
+def stone_shapes(scales):
+    out = []
+    for i, ((tx, ty), (ox, oy), (a, b), p, ph, rot) in enumerate(STONES):
+        a, b = a * scales[i], b * scales[i]
         cx, cy = tx * T + 24 + ox, ty * T + 21 + oy
-        x0, x1, y0, y1 = cx - a - 3, cx + a + 4, cy - b - 3, cy + b + 12
+        x0, x1, y0, y1 = int(cx - a - 4), int(cx + a + 5), int(cy - b - 4), int(cy + b + 13)
         yy2, xx2 = np.mgrid[y0:y1, x0:x1]
-        ang = np.arctan2(yy2 - cy, xx2 - cx)
-        r = (np.abs((xx2 - cx) / a) ** p + np.abs((yy2 - cy) / b) ** p) * (1 + 0.09 * np.sin(3 * ang + ph) + 0.05 * np.sin(5 * ang + 2 * ph))
+        th = np.radians(rot)
+        u = (xx2 - cx) * np.cos(th) + (yy2 - cy) * np.sin(th)
+        v = -(xx2 - cx) * np.sin(th) + (yy2 - cy) * np.cos(th)
+        ang = np.arctan2(v, u)
+        r = (np.abs(u / a) ** p + np.abs(v / b) ** p) * (1 + 0.10 * np.sin(3 * ang + ph) + 0.06 * np.sin(5 * ang + 2 * ph))
         top = r <= 1
         sidem = np.zeros_like(top)
-        for k in range(1, 7):
+        for k in range(1, 8):
             sh = np.zeros_like(top); sh[k:] = top[:-k]
             sidem |= sh
         sidem &= ~top
-        shapes.append((x0, y0, top, sidem, cx, cy, a, b, p, r))
-        top_all[y0:y1, x0:x1] |= top | sidem
-    # 물 쪽 거품(왼쪽 = 상류) · 돌 둘레 젖은 그늘 · 아래(하류 오른쪽) 물살 자국
-    for x0, y0, top, sidem, cx, cy, a, b, p, r in shapes:
-        allm = top | sidem
-        hh, ww = allm.shape
-        for y in range(hh):
-            for x in range(ww):
-                if allm[y, x]: continue
+        out.append(dict(x0=x0, y0=y0, top=top, side=sidem, cx=cx, cy=cy, a=a, b=b, r=r, seed=i))
+    return out
+
+def paint_stones(shapes):
+    allbig = np.zeros((H, W), bool)
+    for s_ in shapes:
+        hh, ww = s_['top'].shape
+        allbig[s_['y0']:s_['y0'] + hh, s_['x0']:s_['x0'] + ww] |= s_['top'] | s_['side']
+    # 물: 돌 사이 물은 한 단 깊게(돌 사이가 또렷이), 위쪽(상류) 왼편 물거품, 아래·오른편 젖은 어둠
+    for s_ in shapes:
+        x0, y0, cx, cy, a, b = s_['x0'], s_['y0'], s_['cx'], s_['cy'], s_['a'], s_['b']
+        m = s_['top'] | s_['side']
+        hh, ww = m.shape
+        for y in range(-3, hh + 3):
+            for x in range(-4, ww + 4):
                 X0, Y0 = x0 + x, y0 + y
-                if top_all[Y0, X0]: continue
-                near = allm[max(0, y - 2):y + 3, max(0, x - 2):x + 3].any()
-                if not near: continue
-                if X0 < cx - a * 0.5:
-                    img[Y0, X0] = C['w5' if (X0 + Y0) % 3 else 'cream']
-                elif Y0 > cy:
-                    img[Y0, X0] = C['w0' if Y0 > cy + b * 0.6 else 'w1']
-        # 물살 자국: 돌 오른쪽으로 벌어지는 두 줄
-        for sgn, y_start in ((-1, cy - b // 2), (1, cy + b // 2 + 5)):
-            xx, yv = cx + a + 2, float(y_start)
+                if allbig[Y0, X0]: continue
+                d = min(max(abs(dy), abs(dx)) for dy in range(-3, 4) for dx in range(-3, 4)
+                        if 0 <= y + dy < hh and 0 <= x + dx < ww and m[y + dy, x + dx]) if m[max(0, y - 3):y + 4, max(0, x - 3):x + 4].any() else 9
+                if d > 3: continue
+                if X0 < cx - a * 0.45 and d <= 2:
+                    img[Y0, X0] = C['cream' if (X0 * 3 + Y0) % 4 == 0 else 'w5']
+                elif Y0 > cy - b * 0.2 or X0 > cx + a * 0.5:
+                    img[Y0, X0] = C['w0' if d <= 1 else 'w1']
+                elif d <= 1:
+                    img[Y0, X0] = C['w1']
+        for sgn, ys_ in ((-1, cy - b * 0.4), (1, cy + b * 0.6 + 5)):     # 물살 자국
+            xx = int(cx + a + 2)
             for k in range(int(rng.integers(12, 20))):
-                X0, Y0 = xx + k, int(round(yv + sgn * k * 0.22))
-                if 0 <= X0 < W and not top_all[Y0, X0] and (k % 6) != 5:
+                X0, Y0 = xx + k, int(round(ys_ + sgn * k * 0.25))
+                if 0 <= X0 < W and not allbig[Y0, X0] and (k % 6) != 5:
                     img[Y0, X0] = C['w5' if k < 9 else 'w4']
-            put(xx + 5, y_start - 2 * sgn, 'cream')
-    for x0, y0, top, sidem, cx, cy, a, b, p, r in shapes:
+    for s_ in shapes:
+        x0, y0, top, side, cx, cy, a, b, r = (s_[k] for k in ('x0', 'y0', 'top', 'side', 'cx', 'cy', 'a', 'b', 'r'))
         hh, ww = top.shape
+        lr = np.random.default_rng(100 + s_['seed'])
+        nz = np.array(Image.fromarray(lr.uniform(-1, 1, (hh // 5 + 3, ww // 5 + 3)).astype(np.float32))
+                      .resize(((ww // 5 + 3) * 5, (hh // 5 + 3) * 5), Image.BICUBIC))[:hh, :ww]
         for y in range(hh):
             for x in range(ww):
                 X0, Y0 = x0 + x, y0 + y
-                if sidem[y, x]:
+                if side[y, x]:
                     k = 0
                     while y - k - 1 >= 0 and not top[y - k - 1, x]: k += 1
-                    below = y + 1 >= hh or not (top[y + 1, x] or sidem[y + 1, x])
-                    edge_lr = (x == 0 or not (top[y, x - 1] or sidem[y, x - 1])) or (x == ww - 1 or not (top[y, x + 1] or sidem[y, x + 1]))
-                    if below or edge_lr: c = 'st_wet'
-                    elif k <= 1: c = 'st_hi'
-                    elif k <= 3: c = 'st'
-                    else: c = 'st_mid'
+                    below = y + 1 >= hh or not (top[y + 1, x] or side[y + 1, x])
+                    edge = (x == 0 or not (top[y, x - 1] or side[y, x - 1])) or (x == ww - 1 or not (top[y, x + 1] or side[y, x + 1]))
+                    dark = X0 > cx + a * 0.35                   # 볕을 등진 오른쪽 옆면은 한 단 어둡게
+                    if below: c = 'st_wet'
+                    elif edge: c = 'st_dk'
+                    elif k == 0: c = 'st' if not dark else 'st_mid'
+                    elif k <= 2: c = ('st_mid' if dark else 'st') if (X0 + k) % 7 else 'wood_mid'
+                    elif k <= 4: c = 'st_dk' if dark else 'st_mid'
+                    else: c = 'st_wet' if (X0 + Y0) % 3 == 0 else 'st_dk'
                     img[Y0, X0] = C[c]
                 elif top[y, x]:
                     rr = r[y, x]
-                    up_left = (X0 - cx) / a + (Y0 - cy) / b < -0.2
-                    if rr > 0.9 and (Y0 < cy - b * 0.55 or up_left): c = 'st_hi'     # 윗가장자리 테
-                    elif rr > 0.9: c = 'st'
-                    elif rr > 0.8 and up_left: c = 'cream'
-                    elif rr > 0.8 and not up_left and Y0 > cy: c = 'path_sh'
+                    lit = (X0 - cx) / a + (Y0 - cy) / b
+                    if rr > 0.93: c = 'st' if lit < 0.1 else 'st_dk'
+                    elif rr > 0.83 and lit < -0.35: c = 'cream' if nz[y, x] > -0.5 else 'st_hi'
+                    elif rr > 0.80 and lit > 0.45: c = 'path_sh2'
+                    elif nz[y, x] > 0.62: c = 'path_sh'                      # 따뜻한 얼룩
+                    elif nz[y, x] < -0.68: c = 'st_hi'                       # 회색 이끼(지의류) 얼룩
                     else: c = 'path'
                     img[Y0, X0] = C[c]
-        # 윗면 윤곽(아래쪽은 옆면이 받는다): 볕 쪽은 밝은 돌색, 그늘 쪽은 어두운 돌색
-        allm = top | sidem
-        for y in range(hh):
-            for x in range(ww):
-                if not top[y, x]: continue
-                nb = [(y - 1, x), (y, x - 1), (y, x + 1)]
-                if any(not (0 <= j < hh and 0 <= i < ww) or not allm[j, i] for j, i in nb):
-                    img[y0 + y, x0 + x] = C['st_dk' if (x0 + x) > cx + a * 0.3 else 'st_mid']
-        # 이끼 조금, 잔금
-        for _ in range(3):
-            X0 = int(cx + rng.integers(-a // 2, a // 2)); Y0 = int(cy + rng.integers(-b // 3, b // 2))
-            img[Y0, X0:X0 + 3] = C['path_sh2']
-        mx, my = cx + a - 6, cy + b // 2 - 2
-        for d in ((0, 0), (1, 0), (0, 1), (-1, 1), (1, 1)):
-            put(mx + d[0], my + d[1], 'g_reed' if d != (0, 0) else 'g')
+        for _ in range(2):                                                 # 잔금
+            X0 = int(cx + lr.integers(-int(a * 0.5), int(a * 0.3))); Y0 = int(cy + lr.integers(-int(b * 0.4), int(b * 0.3)))
+            for k in range(int(lr.integers(4, 8))):
+                put(X0 + k, Y0 + (k // 3) * (1 if k % 2 else 0), 'plank_gap')
+        for _ in range(4):                                                 # 작은 구멍
+            put(cx + lr.integers(-int(a * 0.6), int(a * 0.6)), cy + lr.integers(-int(b * 0.5), int(b * 0.5)), 'st')
+        ang = lr.uniform(np.pi * 0.55, np.pi * 1.1)                        # 이끼: 아래 왼쪽 가장자리
+        mx, my = cx + 0.78 * a * np.cos(ang), cy + 0.72 * b * np.sin(ang)
+        for d in ((0, 0), (1, 0), (-1, 0), (0, -1), (1, -1), (2, 0), (-1, 1), (0, 1), (2, 1), (3, 0), (-2, 0), (1, 1)):
+            put(mx + d[0], my + d[1], ('g' if d == (0, 0) else ('g_reed' if d[1] < 0 else 'g_mid')))
+        put(mx + 2, my - 1, 'g_hi'); put(mx - 1, my - 1, 'g_hi')
+        mx2, my2 = cx + 0.7 * a * np.cos(ang + 2.4), cy + 0.6 * b * np.sin(ang + 2.4)   # 맞은편에 이끼 점 몇
+        for d in ((0, 0), (1, 0), (0, 1)):
+            put(mx2 + d[0], my2 + d[1], 'g_reed' if d == (0, 0) else 'g')
+    for cx, cy, a, b in PEBBLES:
+        rock(cx, cy, a, b)
+
+def draw_stones():
+    """디딤돌을 그리고, 칸마다 길 색이 0.43 아래면 그 돌만 조금씩 키워 다시 그린다."""
+    base = img.copy()
+    scales = [1.0] * len(STONES)
+    for it in range(10):
+        img[:] = base
+        sh = stone_shapes(scales)
+        paint_stones(sh)
+        bad = False
+        for i, ((tx, ty), *_r) in enumerate(STONES):
+            share = (img[ty * T:(ty + 1) * T, tx * T:(tx + 1) * T] == C['path']).all(-1).mean()
+            if share < 0.42:
+                scales[i] *= 1.04; bad = True
+        if not bad:
+            break
+    print('stones', [round(v, 2) for v in scales])
 
 # ---------------------------------------------------------------- 꾸밈: 갈대, 물속 회색 바위, 덤불
 def reeds(cx, base_y, n, spread=7, hmin=9, hmax=20, cat=True):
@@ -601,6 +645,30 @@ def rockdetail():
                 sub[yy_, xx_] = C['st_mid']
     img[y0:y1, x0:x1] = sub
 
+SEAMS = [  # 다시 그린 그림에 남은 네모 이음매(방향, 이음매 좌표, 시작, 끝) — 아래 숲, 모두 막힌 칸
+    ('h', 1108, 285, 625), ('v', 530, 975, 1110), ('v', 290, 1058, 1152), ('h', 980, 328, 555),
+    ('h', 983, 995, 1224), ('h', 1108, 990, 1224), ('v', 1013, 980, 1110), ('v', 1219, 980, 1112),
+]
+def seams():
+    """이음매 양쪽 6px 띠에서 점을 이음매 건너편 점과 무작위로 바꿔(가까울수록 자주) 색 덩어리 경계를 풀어 준다."""
+    src_ = img.copy()
+    lr = np.random.default_rng(77)
+    for kind, c0, a0, a1 in SEAMS:
+        for t_ in range(a0, a1):
+            for d in range(-6, 7):
+                if lr.random() > 0.55 * (1 - abs(d) / 7):
+                    continue
+                j = int(lr.integers(-2, 3))
+                m = -d + (1 if d >= 0 else -1) * int(lr.integers(0, 3))
+                if kind == 'v':
+                    y, x, ys_, xs_ = t_, c0 + d, t_ + j, c0 + m
+                else:
+                    y, x, ys_, xs_ = c0 + d, t_, c0 + m, t_ + j
+                if 0 <= y < H and 0 <= x < W and 0 <= ys_ < H and 0 <= xs_ < W:
+                    img[y, x] = src_[ys_, xs_]
+
+if 'seams' in only:
+    seams()
 if 'rock' in only:
     rockdetail()
 if 'mistify' in only:

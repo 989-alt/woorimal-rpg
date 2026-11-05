@@ -17,9 +17,11 @@
        --aspect 4:3 --resolution 2K --ref design/art/act3/raw/map_3-2_ref48_v2.png --ledger design/art/credits.tsv --task T3R --cap 356
   3) 저장소 뿌리에서:
      $PY design/art/act3/map-fixes/quant_3-2.py design/art/act3/raw/map_3-2_2k_b1.png design/art/act3/raw/map_3-2_b1_px.png      (bad 5: 디딤돌 칸)
-     $PY design/art/act3/map-fixes/paint_3-2.py design/art/act3/raw/map_3-2_b1_px.png design/art/act3/raw/map_3-2_b1_fix.png --only rock,mistify,stream,bridge,stones,glints
-       (빨래 바위 잔금 · 도랑과 냇물 어귀를 물안개 색으로 · 맨 위 윗물길 · 코드로 그린 둥근 다리와 디딤돌을 다시 얹기 · 하류 윤슬)
+     $PY design/art/act3/map-fixes/paint_3-2.py design/art/act3/raw/map_3-2_b1_px.png design/art/act3/raw/map_3-2_b1_fix.png --only seams,rock,mistify,stream,bridge,stones,glints
+       (아래 숲 네모 이음매 풀기 · 빨래 바위 잔금 · 도랑과 냇물 어귀를 물안개 색으로 · 맨 위 윗물길 · 코드로 그린 둥근 다리와 디딤돌을 다시 얹기 · 하류 윤슬)
      $PY design/art/act3/map-fixes/quant_3-2.py design/art/act3/raw/map_3-2_b1_fix.png assets/pixel/map_ch3-2_yunseulnae.png    (64색)
      $PY tools/map-fit.py score assets/pixel/map_ch3-2_yunseulnae.png 3-2   → bad 0 (warp·칸 복사 없음)
      $PY tools/map-fit.py overlay assets/pixel/map_ch3-2_yunseulnae.png 3-2 design/art/act3/overlay_3-2.png
-  다리 바닥 칸 길 색 62~70%, 디딤돌 칸 47~56%. 걸을 수 없는 물속 바위는 회색이라 모래색 디딤돌과 헷갈리지 않는다.
+  2차 손질(크레딧 0): 디딤돌을 기울기·크기·지그재그로 흩고 윗면에 얼룩·지의류·잔금·이끼, 회갈색 옆면, 젖은 밑동, 상류 쪽 물거품.
+    칸마다 길 색이 0.42 아래면 그 돌만 4%씩 키워 다시 그린다(paint_3-2.py draw_stones). 다리 널 금을 끝 쪽으로 휘고 양 끝 비탈 그늘 띠·꼭대기 볕·난간과 기둥 그림자.
+  다리 바닥 칸 길 색 45~74%, 디딤돌 칸 42~44%. 걸을 수 없는 물속 바위는 회색이라 디딤돌과 헷갈리지 않는다.
