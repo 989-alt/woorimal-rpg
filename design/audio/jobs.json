@@ -1,0 +1,203 @@
+{
+ "note": "배경음악·효과음 요청(tools/kie-audio.py). 모든 음악은 가사 없는 연주곡(instrumental) 하나의 결: 따뜻하고 아늑한 동화 마을, 어쿠스틱, 가볍고 부드럽게. 기존 게임·작곡가·가수 이름은 쓰지 않는다.",
+ "jobs": [
+  {
+   "id": "m_title",
+   "kind": "music",
+   "title": "Morning Light Over the Village",
+   "style": "instrumental, cozy fantasy storybook main theme, warm acoustic guitar fingerpicking, celesta, soft wooden flute melody, light strings, gentle and welcoming, hopeful, calm, 82 bpm, clean mix",
+   "negative_tags": "vocals, singing, voice, choir, humming, lyrics, rap, spoken word, electric guitar, distortion, heavy drums, edm, dubstep, harsh, dark, horror",
+   "duration": 90,
+   "style_weight": 0.75,
+   "weirdness_constraint": 0.3
+  },
+  {
+   "id": "m_act1",
+   "kind": "music",
+   "title": "Dawn Village Stroll",
+   "style": "instrumental, peaceful dawn in a small fantasy village, gentle acoustic guitar, glockenspiel, soft flute, warm pizzicato strings, light and cozy, steady relaxed walking tempo, 92 bpm, seamless loop, background music",
+   "negative_tags": "vocals, singing, voice, choir, humming, lyrics, rap, spoken word, electric guitar, distortion, heavy drums, edm, dubstep, harsh, dark, horror",
+   "duration": 100,
+   "style_weight": 0.75,
+   "weirdness_constraint": 0.3
+  },
+  {
+   "id": "m_act2",
+   "kind": "music",
+   "title": "Bustling Market Day",
+   "style": "instrumental, lively cheerful village market day, acoustic guitar strumming, accordion, light hand percussion, pizzicato strings, tin whistle melody, bouncy and friendly, 112 bpm, seamless loop, background music",
+   "negative_tags": "vocals, singing, voice, choir, humming, lyrics, rap, spoken word, shouting, electric guitar, distortion, heavy drums, edm, dubstep, harsh, dark",
+   "duration": 100,
+   "style_weight": 0.75,
+   "weirdness_constraint": 0.3
+  },
+  {
+   "id": "m_act3",
+   "kind": "music",
+   "title": "Sparkling Forest Stream",
+   "style": "instrumental, calm forest by a sparkling stream, harp arpeggios, kalimba, soft woodwinds, light strings, airy and clear, gentle shimmer, 84 bpm, seamless loop, background music",
+   "negative_tags": "vocals, singing, voice, choir, humming, lyrics, rap, spoken word, electric guitar, distortion, heavy drums, edm, dubstep, harsh, dark, horror",
+   "duration": 100,
+   "style_weight": 0.75,
+   "weirdness_constraint": 0.3
+  },
+  {
+   "id": "m_act4",
+   "kind": "music",
+   "title": "Misty Pass at Sunset",
+   "style": "instrumental, misty mountain pass at sunset, wistful and warm, solo cello and acoustic guitar, soft recorder melody, gentle strings, slow and tender, a little melancholy but hopeful, 76 bpm, seamless loop, background music",
+   "negative_tags": "vocals, singing, voice, choir, humming, lyrics, rap, spoken word, electric guitar, distortion, heavy drums, edm, dubstep, harsh, horror, scary",
+   "duration": 100,
+   "style_weight": 0.75,
+   "weirdness_constraint": 0.3
+  },
+  {
+   "id": "m_act5",
+   "kind": "music",
+   "title": "The Quiet Grey Tower",
+   "style": "instrumental, quiet lonely grey stone tower, sparse music box and soft felt piano, gentle low strings, calm and tender, a little mysterious but safe and not scary, slow, 70 bpm, seamless loop, background music",
+   "negative_tags": "vocals, singing, voice, choir, humming, lyrics, rap, spoken word, electric guitar, distortion, heavy drums, edm, dubstep, harsh, horror, scary, dissonant",
+   "duration": 100,
+   "style_weight": 0.75,
+   "weirdness_constraint": 0.3
+  },
+  {
+   "id": "m_world",
+   "kind": "music",
+   "title": "Over the Hills We Go",
+   "style": "instrumental, gentle adventure on a world map, acoustic guitar, light hand drum, flute melody, warm strings, travelling at a cheerful walking pace, cozy fantasy, 100 bpm, seamless loop, background music",
+   "negative_tags": "vocals, singing, voice, choir, humming, lyrics, rap, spoken word, electric guitar, distortion, heavy drums, edm, dubstep, harsh, dark",
+   "duration": 90,
+   "style_weight": 0.75,
+   "weirdness_constraint": 0.3
+  },
+  {
+   "id": "m_review",
+   "kind": "music",
+   "title": "Little Word Duel",
+   "style": "instrumental, light playful small battle, quiz challenge for kids, pizzicato strings, marimba, light snare and shaker, upbeat but gentle, cheeky, 126 bpm, seamless loop, video game background music",
+   "negative_tags": "vocals, singing, voice, choir, humming, lyrics, rap, spoken word, electric guitar, distortion, heavy drums, edm, dubstep, harsh, dark, horror",
+   "duration": 80,
+   "style_weight": 0.75,
+   "weirdness_constraint": 0.3
+  },
+  {
+   "id": "m_boss",
+   "kind": "music",
+   "title": "Brave Hearts Stand Firm",
+   "style": "instrumental, brave boss battle for children, driving acoustic strings ostinato, soft timpani, bold flute and horn melody, determined and energetic but not harsh, fantasy adventure, 138 bpm, seamless loop, video game background music",
+   "negative_tags": "vocals, singing, voice, choir, humming, lyrics, rap, spoken word, electric guitar, distortion, heavy metal, edm, dubstep, harsh, horror, scary",
+   "duration": 90,
+   "style_weight": 0.75,
+   "weirdness_constraint": 0.3
+  },
+  {
+   "id": "m_final",
+   "kind": "music",
+   "title": "Light Returns to the Tower",
+   "style": "instrumental, final climactic battle, emotional and brave, full orchestral strings, piano, soaring flute and french horn melody, rising hope, intense but warm and not scary, 134 bpm, seamless loop, video game background music",
+   "negative_tags": "vocals, singing, voice, choir, humming, lyrics, rap, spoken word, electric guitar, distortion, heavy metal, edm, dubstep, harsh, horror",
+   "duration": 100,
+   "style_weight": 0.75,
+   "weirdness_constraint": 0.3
+  },
+  {
+   "id": "m_ending",
+   "kind": "music",
+   "title": "A New Dawn",
+   "style": "instrumental, ending theme at dawn, hopeful and warm, gentle piano and strings, acoustic guitar, flute melody, uplifting and tender, bittersweet gratitude, 80 bpm, background music",
+   "negative_tags": "vocals, singing, voice, choir, humming, lyrics, rap, spoken word, electric guitar, distortion, heavy drums, edm, dubstep, harsh, dark",
+   "duration": 100,
+   "style_weight": 0.75,
+   "weirdness_constraint": 0.3
+  },
+  {
+   "id": "m_quiz",
+   "kind": "music",
+   "title": "Thinking Cap",
+   "style": "instrumental, thinking time quiz, curious and light, marimba, pizzicato strings, soft clarinet, gentle ticking percussion, bouncy, calm focus, 104 bpm, seamless loop, background music",
+   "negative_tags": "vocals, singing, voice, choir, humming, lyrics, rap, spoken word, electric guitar, distortion, heavy drums, edm, dubstep, harsh, dark",
+   "duration": 80,
+   "style_weight": 0.75,
+   "weirdness_constraint": 0.3
+  },
+  {
+   "id": "s_chime",
+   "kind": "sound",
+   "prompt": "a single short magical sparkle chime, bright soft glockenspiel and bell twinkle rising upward, gentle and warm, one shot sound effect, about two seconds, no music, no voice",
+   "estimate": 3
+  },
+  {
+   "id": "s_card",
+   "kind": "sound",
+   "prompt": "soft paper card flipping open with a tiny warm sparkle, about one second, one shot sound effect, clean, no music, no voice",
+   "estimate": 3
+  },
+  {
+   "id": "s_codex",
+   "kind": "sound",
+   "prompt": "old storybook opening, soft paper page rustle and gentle thump, about one second, one shot sound effect, clean, no music, no voice",
+   "estimate": 3
+  },
+  {
+   "id": "s_accept",
+   "kind": "sound",
+   "prompt": "short gentle two-note wooden marimba confirmation, warm and friendly, under one second, one shot sound effect, clean, no music, no voice",
+   "estimate": 3
+  },
+  {
+   "id": "s_done",
+   "kind": "sound",
+   "prompt": "short cheerful success jingle, glockenspiel and marimba, three rising notes, bright and happy, about two seconds, one shot sound effect, clean, no music, no voice",
+   "estimate": 3
+  },
+  {
+   "id": "s_correct",
+   "kind": "sound",
+   "prompt": "bright correct answer ding, two quick rising bell notes, clear and pleasant, under one second, one shot sound effect, clean, no music, no voice",
+   "estimate": 3
+  },
+  {
+   "id": "s_wrong",
+   "kind": "sound",
+   "prompt": "soft gentle wrong answer sound, two low descending wooden marimba notes, kind and not harsh, under one second, one shot sound effect, clean, no music, no voice",
+   "estimate": 3
+  },
+  {
+   "id": "s_hit",
+   "kind": "sound",
+   "prompt": "soft cartoon magic hit, light airy whoosh ending in a gentle pop, under one second, one shot sound effect, clean, no music, no voice",
+   "estimate": 3
+  },
+  {
+   "id": "s_streak",
+   "kind": "sound",
+   "prompt": "stronger magical hit, bright sparkling whoosh with a shimmering bell accent, about one second, one shot sound effect, clean, no music, no voice",
+   "estimate": 3
+  },
+  {
+   "id": "s_defeat",
+   "kind": "sound",
+   "prompt": "magical sparkle dissolve, twinkling fairy dust rising and fading away, gentle, about two seconds, one shot sound effect, clean, no music, no voice",
+   "estimate": 3
+  },
+  {
+   "id": "s_heart",
+   "kind": "sound",
+   "prompt": "soft low cushioned thump followed by a small sad descending two-note chime, gentle, about one second, one shot sound effect, clean, no music, no voice",
+   "estimate": 3
+  },
+  {
+   "id": "s_exit",
+   "kind": "sound",
+   "prompt": "magical gate opening, gentle harp glissando upward with warm shimmer, about two seconds, one shot sound effect, clean, no music, no voice",
+   "estimate": 3
+  },
+  {
+   "id": "s_travel",
+   "kind": "sound",
+   "prompt": "short adventurous whoosh with a gentle wooden flute flourish, setting off on a journey, about two seconds, one shot sound effect, clean, no music, no voice",
+   "estimate": 3
+  }
+ ]
+}

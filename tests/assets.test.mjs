@@ -7,6 +7,7 @@ import { ACTS } from '../data/acts/index.js';
 import ENDING from '../data/ending.js';
 
 const NAME_RULE = /^assets\/(pixel|illust|ui)\/[a-z0-9_.\-]+\.(png|webp)$/;
+const AUDIO_RULE = /^assets\/audio\/(music|sfx)_[a-z0-9]+\.v\d+\.mp3$/; // 소리(ASSETS.audio)
 
 function* paths(node, trail = '') {
   if (typeof node === 'string') yield [trail, node];
@@ -15,7 +16,7 @@ function* paths(node, trail = '') {
 
 test('그림 경로는 모두 이름 규칙을 따르고 실제 파일이 있다(null 제외)', () => {
   for (const [where, path] of paths(ASSETS)) {
-    assert.match(path, NAME_RULE, `${where}: ${path}`);
+    assert.match(path, where.startsWith('audio.') ? AUDIO_RULE : NAME_RULE, `${where}: ${path}`);
     assert.ok(existsSync(new URL(`../${path}`, import.meta.url)), `${where}: ${path} 파일이 없다`);
   }
 });
