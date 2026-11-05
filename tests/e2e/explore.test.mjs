@@ -310,3 +310,41 @@ test('걸음 한 번은 두 칸 사이를 미끄러져 지나가고, 끝나면 �
   assert.deepEqual(errors, []);
   await page.close();
 });
+
+// 달리기: 걸음마다 남긴 때(__test.steps, 페이지 안 performance.now)로 같은 거리(6칸)를 가는 시간을 견준다.
+// 바쁜 기계에서는 타이머가 조금씩 늦게 오므로 정확한 ms가 아니라 걷기/달리기 비율(약 1.5)을 넓게 본다.
+async function timeRow(page, { shift }) {
+  const from = { x: 3, y: 9 }; // 1-1 9줄: x 2~29가 막힘 없이 트인 길
+  const N = 6;
+  await page.evaluate((pos) => window.__test.patchState({ pos, facing: 'right' }), from);
+  await page.waitForFunction((x) => window.__test.heroAt?.x === x, from.x);
+  await page.evaluate(() => { window.__test.steps = []; });
+  if (shift) await page.keyboard.down('Shift');
+  await page.keyboard.down('ArrowRight');
+  await page.waitForFunction((x) => window.__test.state().pos.x >= x, from.x + N);
+  await page.keyboard.up('ArrowRight');
+  if (shift) await page.keyboard.up('Shift');
+  const steps = (await page.evaluate(() => window.__test.steps)).slice(0, N);
+  assert.equal(steps.length, N);
+  return { ms: steps.map((s) => s.ms), took: steps[N - 1].t - steps[0].t };
+}
+
+test('달리기: Shift를 누르고 있으면 같은 거리를 약 1.5배 빨리 가고, 떼면 다시 걷는다', async (t) => {
+  const { page, errors } = await openGame();
+  await page.waitForFunction(() => window.__test);
+  await page.evaluate(() => window.__test.newGame('하늘', 'f'));
+  await page.waitForSelector('[data-scene="explore"] canvas');
+  assert.equal(await page.locator('.touch-run').count(), 0, '마우스 기기에는 달리기 버튼이 없다');
+  const walk = await timeRow(page, { shift: false });
+  const run = await timeRow(page, { shift: true });
+  assert.deepEqual(walk.ms, Array(6).fill(250), '걷기: 한 칸 250ms');
+  assert.deepEqual(run.ms, Array(6).fill(167), '달리기: 한 칸 167ms');
+  const ratio = walk.took / run.took;
+  t.diagnostic(`6칸: 걷기 ${Math.round(walk.took)}ms, 달리기 ${Math.round(run.took)}ms, 비율 ${ratio.toFixed(2)}`);
+  assert.ok(ratio > 1.3 && ratio < 1.75, `6칸 걷기 ${Math.round(walk.took)}ms / 달리기 ${Math.round(run.took)}ms = ${ratio.toFixed(2)}`);
+  assert.equal(await page.evaluate(() => window.__test.running()), false, 'Shift를 떼면 달리기가 풀린다');
+  const again = await timeRow(page, { shift: false });
+  assert.deepEqual(again.ms, Array(6).fill(250), '다시 걷기');
+  assert.deepEqual(errors, []);
+  await page.close();
+});

@@ -112,6 +112,9 @@ test('walkFrame: 서 있으면 0, 걸으면 1-2-1-3 순서로 125ms마다', asyn
   assert.equal(walkFrame(124, true), 0);
   assert.equal(walkFrame(500, true), 0); // 한 바퀴(500ms) 돌고 처음으로
   assert.equal(walkFrame(625, true), 1);
+  // 달리기(한 칸 167ms): 발도 1.5배 빨리 바뀐다(약 83ms마다)
+  assert.deepEqual([0, 84, 168, 251, 335].map((t) => walkFrame(t, true, 167)), [0, 1, 0, 2, 0]);
+  assert.equal(walkFrame(84, false, 167), 0);
 });
 
 test('tipLift: 첫 부탁 인물에 도트 그림이 그려져 있을 때만 8', async () => {

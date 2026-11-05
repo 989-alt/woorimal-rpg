@@ -47,6 +47,7 @@ test('키보드: 첫 몇 분 동안 안내가 하나씩 한 번만', async () =>
   // 탐험: 걷는 법 → 첫 걸음에 사라짐
   await hintOf(page, 'move').waitFor();
   assert.match(await hintOf(page, 'move').innerText(), /방향키로 걸어 보세요/);
+  assert.match(await hintOf(page, 'move').innerText(), /Shift를 누르고 있으면 달릴 수 있어요/);
   await page.keyboard.press('ArrowRight');
   await hintOf(page, 'move').waitFor({ state: 'detached' });
 
@@ -159,7 +160,7 @@ test('키보드: 첫 몇 분 동안 안내가 하나씩 한 번만', async () =>
   await page.close();
 });
 
-test('터치(hasTouch, isMobile, 1024×768): move 글에 "화살표", talk 글에 "말하기 버튼"', async () => {
+test('터치(hasTouch, isMobile, 1024×768): move 글에 "화살표"와 "달리기 버튼", talk 글에 "말하기 버튼"', async () => {
   const context = await browser.newContext({ viewport: { width: 1024, height: 768 }, hasTouch: true, isMobile: true });
   const page = await context.newPage();
   const errors = collectErrors(page);
@@ -167,6 +168,7 @@ test('터치(hasTouch, isMobile, 1024×768): move 글에 "화살표", talk 글�
   await page.evaluate(() => window.__test.newGame('하늘', 'f'));
   await hintOf(page, 'move').waitFor();
   assert.match(await hintOf(page, 'move').innerText(), /화살표/);
+  assert.match(await hintOf(page, 'move').innerText(), /달리기 버튼을 누르고 있으면 빨리 걸어요/);
   await page.keyboard.press('ArrowRight');
   await hintOf(page, 'move').waitFor({ state: 'detached' });
   await page.evaluate(() => window.__test.teleportTo('dodam'));

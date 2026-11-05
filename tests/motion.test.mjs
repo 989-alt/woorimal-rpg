@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { glidePos, drawnPos, nextGlide, snapTile, MOVE_MS } from '../js/explore/motion.js';
+import { glidePos, drawnPos, nextGlide, snapTile, MOVE_MS, RUN_FACTOR, stepMs, walkFrameMs, createPace } from '../js/explore/motion.js';
 import { HOLD_MS } from '../js/explore/input.js';
 
 const A = { x: 3, y: 5 };
@@ -82,4 +82,36 @@ test('꾹 누른 걸음 사슬은 끊김 없이 고르게 간다', () => {
     last = x;
   }
   assert.equal(last, pos.x);
+});
+
+test('달리기: 걷기보다 1.5배 빠르다(한 칸 250ms → 167ms)', () => {
+  assert.equal(RUN_FACTOR, 1.5);
+  assert.equal(stepMs(false), MOVE_MS);
+  assert.equal(stepMs(true), 167);
+  assert.ok(Math.abs(stepMs(false) / stepMs(true) - RUN_FACTOR) < 0.01);
+  // 한 칸에 발을 두 번 바꾼다: 빨리 갈수록 발도 빨리 바뀐다
+  assert.equal(walkFrameMs(), 125);
+  assert.equal(walkFrameMs(stepMs(true)), 83.5);
+  // 달리는 걸음도 미끄러짐 시간이 짧다
+  assert.equal(nextGlide(null, A, B, 0, stepMs(true)).ms, 167);
+  assert.deepEqual(glidePos(A, B, 0, 167, stepMs(true)), B);
+});
+
+test('createPace: 키보드나 터치 어느 하나라도 누르고 있으면 달리고, 둘 다 떼면 걷는다. 바뀔 때만 알린다', () => {
+  const pace = createPace();
+  const seen = [];
+  const off = pace.onChange(() => seen.push(pace.running()));
+  assert.equal(pace.running(), false);
+  assert.equal(pace.ms(), MOVE_MS);
+  pace.set('key', true);
+  assert.equal(pace.ms(), stepMs(true));
+  pace.set('touch', true); // 이미 달리는 중: 알리지 않는다
+  pace.set('key', false); // 터치는 아직 누르고 있다
+  assert.equal(pace.running(), true);
+  pace.set('touch', false);
+  pace.set('touch', false); // 두 번 떼도 한 번만
+  assert.deepEqual(seen, [true, false]);
+  off();
+  pace.set('key', true);
+  assert.deepEqual(seen, [true, false]);
 });

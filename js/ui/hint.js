@@ -17,7 +17,7 @@ export function placeHint(anchor, size, box, gap = 12, margin = 16, force = null
 }
 
 // 눈에 띄게 할 낱말(조작 이름·숫자). 긴 것부터 찾는다.
-const EMPHASIS = /방향키|화살표|Space|말하기 버튼|할 일 버튼|할 일\(Q\)|도감\(E\)|도감|글 상자|1~4|하트 5개|몬스터 HP 6칸|3번|6번|금빛|확인/g;
+const EMPHASIS = /방향키|화살표|Shift|달리기 버튼|Space|말하기 버튼|할 일 버튼|할 일\(Q\)|도감\(E\)|도감|글 상자|1~4|하트 5개|몬스터 HP 6칸|3번|6번|금빛|확인/g;
 
 // 글을 { text, em } 조각으로 나눈다(조각을 이으면 원래 글).
 export function splitEmphasis(text) {

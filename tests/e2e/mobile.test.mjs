@@ -244,12 +244,74 @@ async function heroClear(page, label) {
     const hud = document.querySelector('.hud').getBoundingClientRect();
     if (hero.t < hud.bottom - 1) out.push(`${label}: 주인공이 HUD 밑(위끝 ${Math.round(hero.t)} < ${Math.round(hud.bottom)})`);
     if (hero.b > innerHeight + 1 || hero.l < -1 || hero.r > innerWidth + 1) out.push(`${label}: 주인공이 화면 밖`);
-    for (const sel of ['.touch-pad', '.touch-act']) {
+    for (const sel of ['.touch-pad', '.touch-run', '.touch-act']) {
       const z = document.querySelector(sel)?.getBoundingClientRect();
       if (z && hero.l < z.right - 1 && z.left < hero.r - 1 && hero.t < z.bottom - 1 && z.top < hero.b - 1) out.push(`${label}: 주인공이 ${sel} 밑`);
     }
     return out;
   }, label);
+}
+
+// 달리기 버튼: 십자 오른쪽에 있고, 십자·말하기 버튼과 겹치지 않으며(8px 넘게 띄운다), min px 이상, 화면 안, 글은 "달리기".
+async function runButtonClear(page, label, min) {
+  return page.evaluate(([label, min]) => {
+    const r = (s) => document.querySelector(s)?.getBoundingClientRect();
+    const run = r('.touch-run');
+    if (!run) return [`${label}: 달리기 버튼이 없다`];
+    const out = [];
+    if (document.querySelector('.touch-run').textContent !== '달리기') out.push(`${label}: 달리기 버튼 글`);
+    if (run.width < min || run.height < min) out.push(`${label}: 달리기 버튼 ${Math.round(run.width)}×${Math.round(run.height)} < ${min}`);
+    if (run.left < 0 || run.bottom > innerHeight) out.push(`${label}: 달리기 버튼이 화면 밖`);
+    for (const sel of ['.touch-pad', '.touch-act']) {
+      const z = r(sel);
+      const apart = run.right + 8 <= z.left || z.right + 8 <= run.left || run.bottom + 8 <= z.top || z.bottom + 8 <= run.top;
+      if (!apart) out.push(`${label}: 달리기 버튼이 ${sel}와 겹치거나 붙는다`);
+    }
+    const pad = r('.touch-pad');
+    if (!(run.left >= pad.right && run.left - pad.right <= 24)) out.push(`${label}: 달리기 버튼이 십자 바로 오른쪽이 아니다`);
+    return out;
+  }, [label, min]);
+}
+
+// 여러 손가락: CDP 터치로 달리기 버튼과 오른쪽 화살표를 함께 누르고 6칸 가는 시간을 잰다(explore.test의 Shift 검사와 같은 방식).
+async function touchRow(page, cdp, { run }) {
+  const from = { x: 3, y: 9 }; // 1-1 9줄: 트인 길
+  const N = 6;
+  await page.evaluate((pos) => window.__test.patchState({ pos, facing: 'right' }), from);
+  await page.waitForFunction((x) => window.__test.heroAt?.x === x, from.x);
+  await page.waitForSelector('.touch-run');
+  const mid = async (sel) => { const b = await page.locator(sel).boundingBox(); return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2) }; };
+  const runAt = { ...(await mid('.touch-run')), id: 1 };
+  const rightAt = { ...(await mid('.touch-right')), id: 2 };
+  await page.evaluate(() => { window.__test.steps = []; });
+  if (run) await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [runAt] });
+  if (run) await page.waitForFunction(() => window.__test.running());
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: run ? [runAt, rightAt] : [rightAt] });
+  await page.waitForFunction((x) => window.__test.state().pos.x >= x, from.x + N);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.waitForFunction(() => !window.__test.running());
+  const steps = (await page.evaluate(() => window.__test.steps)).slice(0, N);
+  assert.equal(steps.length, N);
+  return { ms: steps.map((s) => s.ms), took: steps[N - 1].t - steps[0].t };
+}
+
+for (const size of [[844, 390], [1180, 820]]) {
+  test(`${size[0]}×${size[1]} 터치: 달리기 버튼과 화살표를 함께 누르면 같은 거리를 약 1.5배 빨리 간다`, async (t) => {
+    const { ctx, page, errors } = await openTouch(size);
+    await page.evaluate(() => window.__test.newGame('하늘', 'f'));
+    await page.waitForSelector('[data-scene="explore"] .touch-run');
+    const cdp = await ctx.newCDPSession(page);
+    const walk = await touchRow(page, cdp, { run: false });
+    const run = await touchRow(page, cdp, { run: true });
+    assert.deepEqual(walk.ms, Array(6).fill(250), '화살표만: 한 칸 250ms');
+    assert.deepEqual(run.ms, Array(6).fill(167), '달리기 버튼과 함께: 한 칸 167ms');
+    const ratio = walk.took / run.took;
+    t.diagnostic(`6칸: 걷기 ${Math.round(walk.took)}ms, 달리기 ${Math.round(run.took)}ms, 비율 ${ratio.toFixed(2)}`);
+    assert.ok(ratio > 1.3 && ratio < 1.75, `비율 ${ratio.toFixed(2)}`);
+    assert.equal(await page.locator('.touch-run.pressed').count(), 0, '손을 떼면 눌린 모습도 풀린다');
+    assert.deepEqual(errors, []);
+    await ctx.close();
+  });
 }
 
 for (const size of [...PHONES, ...TABLETS]) {
@@ -269,6 +331,7 @@ for (const size of [...PHONES, ...TABLETS]) {
     await finishDialogue(page);
     await page.waitForSelector('[data-scene="explore"] .touch-pad');
     await check('탐험');
+    problems.push(...(await runButtonClear(page, `${w}×${h}`, h <= 500 ? 44 : 48)));
     problems.push(...(await heroClear(page, `${w}×${h} 탐험 시작`)));
     // 맵 네 귀퉁이 쪽으로 옮겨도 주인공이 부품 밑에 숨지 않는다(그다음 처음 자리로 되돌린다)
     const start = await page.evaluate(() => window.__test.state().pos);

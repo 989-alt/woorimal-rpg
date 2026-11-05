@@ -459,6 +459,16 @@ canvas, img {
   border-radius: 50%;
   font-size: 22px;
 }
+/* 달리기: 십자 오른쪽, 십자 아래 줄과 같은 높이. 누르고 있는 동안만 달린다 */
+.touch-run {
+  position: absolute;
+  left: calc(16px + 3 * 56px + 12px);
+  bottom: 16px;
+  width: 108px;
+  height: 56px;
+  border-radius: 12px;
+  font-size: 20px;
+}
 
 /* ── 대화 ───────────────────────────────
    대사 상자는 조각한 나무 틀(.frame-dialogue)이고, 이름 리본이 상자 위 테에 걸쳐 앉는다(시안 ui-03).
@@ -2054,6 +2064,7 @@ p.ending-thanks {
 .hud { padding: calc(8px + var(--sa-t)) calc(12px + var(--sa-r)) 0 calc(12px + var(--sa-l)); height: calc(88px + var(--sa-t)); }
 .touch-pad { left: calc(16px + var(--sa-l)); bottom: calc(16px + var(--sa-b)); }
 .touch-act { right: calc(16px + var(--sa-r)); bottom: calc(16px + var(--sa-b)); }
+.touch-run { left: calc(16px + 3 * 56px + 12px + var(--sa-l)); bottom: calc(16px + var(--sa-b)); }
 .toast { bottom: calc(24px + var(--sa-b)); max-width: calc(100% - 32px - var(--sa-l) - var(--sa-r)); white-space: normal; text-align: center; }
 .dialogue-box { left: calc(24px + var(--sa-l)); right: calc(24px + var(--sa-r)); bottom: calc(16px + var(--sa-b)); }
 .battle-mhp { top: calc(12px + var(--sa-t)); right: calc(24px + var(--sa-r)); }
@@ -2155,11 +2166,12 @@ p.ending-thanks {
   .hud-sys > .hud-button > .name { display: none; }
   @media (min-width: 1181px) { .hud-sys { position: absolute; flex-direction: column; } }
   .toast { bottom: calc(12px + var(--sa-b)); padding: 8px 16px; font-size: 17px; }
-  /* 터치 조작: 십자 3×48, 말하기 76 */
+  /* 터치 조작: 십자 3×48, 달리기 92×48, 말하기 76 */
   .touch-pad { left: calc(12px + var(--sa-l)); bottom: calc(10px + var(--sa-b)); grid-template: repeat(3, 48px) / repeat(3, 48px); }
   :root.ui-btn-wood .touch-controls button { --tw: 14px 18px 9px 18px; }
   .touch-dir { font-size: 18px; }
   .touch-act { right: calc(12px + var(--sa-r)); bottom: calc(10px + var(--sa-b)); width: 80px; height: 76px; font-size: 18px; }
+  .touch-run { left: calc(12px + 3 * 48px + 10px + var(--sa-l)); bottom: calc(10px + var(--sa-b)); width: 92px; height: 48px; font-size: 17px; }
   :root.ui-btn-wood .touch-controls .touch-act { --tw: 20px 24px 13px 24px; }
 
   /* 대화: 상자 높이 118, 글자 19 */

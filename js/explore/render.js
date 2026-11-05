@@ -6,6 +6,7 @@ import { npcMarker, hiddenGlow, visibleNpcs } from '../rules/quests.js';
 import { drawLabelBlock, initial, MEOK } from '../ui/placeholder.js';
 import { ASSETS } from '../../data/assets.js';
 import { getLoaded } from '../ui/images.js';
+import { MOVE_MS, walkFrameMs } from './motion.js';
 
 export { TILE };
 const WALL = '#2F6B3A';
@@ -179,10 +180,11 @@ const BOSS_BOX = [32, 32]; // 보스 도트(그림 96×96, 2×2칸)
 // 머리 위 표시(!·…·?)를 붙일 윗선. 도트 그림이 있으면 16×32 상자 위(칸 위 16), 임시 블록이면 블록 위(칸 위 8).
 export const headTop = (tileY, hasArt) => tileY * TILE - (hasArt ? 16 : 8);
 
-// 주인공 걷기 시트: 한 방향 3프레임(서기·왼발·오른발), 줄 순서 아래·왼·오·위. 걸을 때 1-2-1-3 순서로 초당 8장.
+// 주인공 걷기 시트: 한 방향 3프레임(서기·왼발·오른발), 줄 순서 아래·왼·오·위. 걸을 때 1-2-1-3 순서로 한 칸에 두 장(걷기 초당 8장, 달리기 12장).
+// stepMs: 지금 걸음의 한 칸 시간(달리면 짧다). 발 바꾸는 빠르기를 걸음 빠르기에 맞춰 발이 미끄러져 보이지 않게 한다.
 const WALK_ROW = { down: 0, left: 1, right: 2, up: 3 };
 const WALK_STEPS = [0, 1, 0, 2];
-export const walkFrame = (time, moving) => (moving ? WALK_STEPS[Math.floor(time / 125) % 4] : 0);
+export const walkFrame = (time, moving, stepMs = MOVE_MS) => (moving ? WALK_STEPS[Math.floor(time / walkFrameMs(stepMs)) % 4] : 0);
 const heroSheet = (state) => getLoaded(ASSETS.walk[state.avatar === 'm' ? 'm' : 'f']);
 
 // 부탁 물건 칸에 놓을 물건 id(물건 자체의 item 또는 그 칸을 목표로 하는 부탁의 item)
@@ -344,7 +346,7 @@ function drawTipArrow(ctx, camera, view, target, hero, bob, lift = 0) {
 
 // heroAt: 그려지는 주인공 자리(칸 단위, 미끄러지는 중이면 소수). 없으면 state.pos.
 // flashNpc: 머리 위 표시를 깜박일 인물 id(없으면 null)
-export function drawExplore(ctx, { map, state, chapter, camera, view = { w: BASE_W, h: BASE_H }, time = 0, tipTarget = null, flashNpc = null, still = false, moving = false, heroAt = state.pos }) {
+export function drawExplore(ctx, { map, state, chapter, camera, view = { w: BASE_W, h: BASE_H }, time = 0, tipTarget = null, flashNpc = null, still = false, moving = false, heroAt = state.pos, stepMs }) {
   ctx.save();
   ctx.fillStyle = WALL;
   ctx.fillRect(0, 0, view.w + 1, view.h + 1); // 보이는 세계 전체(맵 밖은 숲색). 분수 크기여서 한 칸 더
@@ -406,7 +408,7 @@ export function drawExplore(ctx, { map, state, chapter, camera, view = { w: BASE
       const row = WALK_ROW[state.facing] ?? 0;
       // 시트는 3열 × 4줄(48픽셀 그림이면 144×384). 한 칸을 16×32 상자에 그린다.
       const cw = who.sheet.width / 3, ch = who.sheet.height / 4;
-      ctx.drawImage(who.sheet, walkFrame(time, moving && !still) * cw, row * ch, cw, ch, px, who.p.y * TILE + TILE - 32, 16, 32);
+      ctx.drawImage(who.sheet, walkFrame(time, moving && !still, stepMs) * cw, row * ch, cw, ch, px, who.p.y * TILE + TILE - 32, 16, 32);
     } else {
       drawLabelBlock(ctx, px, py, TILE, 24, who.color, who.label);
     }
@@ -425,7 +427,7 @@ export function drawExplore(ctx, { map, state, chapter, camera, view = { w: BASE
 
 // 시간에 따라 바뀌는 그림(발밑·머리 위 화살표 흔들림, 머리 위 표시 깜박임, 숨은 낱말 빛무리) 중 화면 안에 있는 것만의 지금 모습.
 // 이 값과 상태·카메라가 그대로면 같은 그림이므로 다시 그리지 않아도 된다.
-export function animKey({ map, state, chapter, camera, view = { w: BASE_W, h: BASE_H }, time = 0, tipTarget = null, flashNpc = null, still = false, moving = false, heroAt = state.pos }) {
+export function animKey({ map, state, chapter, camera, view = { w: BASE_W, h: BASE_H }, time = 0, tipTarget = null, flashNpc = null, still = false, moving = false, heroAt = state.pos, stepMs }) {
   // 칸(위로 8px 솟은 인물·화살표 여유 포함)이 화면에 조금이라도 걸치는지
   const inView = (p) => p.x * TILE + TILE > camera.x && p.x * TILE < camera.x + view.w
     && p.y * TILE + TILE + 8 > camera.y && p.y * TILE - 8 < camera.y + view.h;
@@ -434,7 +436,7 @@ export function animKey({ map, state, chapter, camera, view = { w: BASE_W, h: BA
     const arrowSeen = questObjectSlots(state, chapter).some((slot) => map.objects[slot] && inView(map.objects[slot]));
     if (arrowSeen || (tipTarget && tipInView(camera, view, tipTarget, tipLift(chapter, map, tipTarget)))) parts.push(`b${bobAt(time, still)}`);
   }
-  if (moving && !still && heroSheet(state)) parts.push(`w${walkFrame(time, true)}`);
+  if (moving && !still && heroSheet(state)) parts.push(`w${walkFrame(time, true, stepMs)}`);
   if (heroAt.x !== state.pos.x || heroAt.y !== state.pos.y) parts.push(`h${heroAt.x},${heroAt.y}`); // 미끄러지는 중
   if (flashNpc) { // 깜박이는 표시가 화면 안에 있는 동안만 250ms마다 바뀐다
     const npc = chapter.npcs.find((n) => n.id === flashNpc);

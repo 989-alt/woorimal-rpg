@@ -4,7 +4,7 @@ import { parseMap, step, facingTarget } from '../explore/grid.js';
 import { computeView, ART } from '../explore/scale.js';
 import { bindInput, createTouchControls, isCoarsePointer } from '../explore/input.js';
 import { drawExplore, cameraFor, animKey, inViewWorld } from '../explore/render.js';
-import { nextGlide, drawnPos, glideEnd } from '../explore/motion.js';
+import { nextGlide, drawnPos, glideEnd, createPace } from '../explore/motion.js';
 import { onImageLoaded, preloadChapter } from '../ui/images.js';
 import { createHud, createToast, fogMessage, HUD_INSET } from '../explore/hud.js';
 import { chapterOf, fogOpen, bossGone, exitOpen, exitBlockedText, stepOffOpenExit, setPos, markTip, takeWords, afterBossKey, afterBossDue, markSceneSeen, introDue, finishIntro } from '../rules/game.js';
@@ -243,9 +243,12 @@ export const explore = {
       const top = el.getBoundingClientRect().top;
       const hudBottom = hud.el.getBoundingClientRect().bottom - top;
       if (hudBottom > 0) box.insetTop = hudBottom / k;
-      const rects = [...el.querySelectorAll('.touch-pad, .touch-act, .hud-sys')]
-        .map((n) => n.getBoundingClientRect())
-        .filter((r) => r.width > 0 && r.top - top >= hudBottom - 1); // HUD 줄 안에 있는 단추 묶음은 HUD가 이미 덮는다
+      // 십자와 그 오른쪽 달리기 버튼은 한 덩어리로 잰다: 따로 재면 십자 밖으로 밀린 주인공이 달리기 버튼 밑에 설 수 있다.
+      const rectOf = (sel) => el.querySelector(sel)?.getBoundingClientRect();
+      const pad = rectOf('.touch-pad'), run = rectOf('.touch-run');
+      const padRun = pad && run ? new DOMRect(pad.left, Math.min(pad.top, run.top), Math.max(pad.right, run.right) - pad.left, Math.max(pad.bottom, run.bottom) - Math.min(pad.top, run.top)) : pad;
+      const rects = [padRun, rectOf('.touch-act'), ...[...el.querySelectorAll('.hud-sys')].map((n) => n.getBoundingClientRect())]
+        .filter((r) => r && r.width > 0 && r.top - top >= hudBottom - 1); // HUD 줄 안에 있는 단추 묶음은 HUD가 이미 덮는다
       box.avoid = rects.map((r) => ({ x: r.left / k, y: (r.top - top) / k, w: r.width / k, h: r.height / k }));
     }
     fit();
@@ -313,7 +316,7 @@ export const explore = {
       const camera = cameraFor(map, heroAt, box, box.insetTop, box.avoid);
       const arrow = tipTarget() ?? guideArrow; // 첫 인물 화살표와 길잡이 화살표는 같은 화살표다
       const flashNpc = !still && flash && time < flash.until ? flash.npcId : null; // 움직임 줄이기에서는 깜박이지 않는다
-      const view = { map, state, chapter, camera, view: box, time, tipTarget: arrow, flashNpc, still, moving, heroAt };
+      const view = { map, state, chapter, camera, view: box, time, tipTarget: arrow, flashNpc, still, moving, heroAt, stepMs: glide?.ms };
       const anim = animKey(view);
       if (drawn && drawn.state === state && drawn.size === size && drawn.anim === anim && drawn.arrow === arrow) return;
       if (window.__test) {
@@ -344,7 +347,8 @@ export const explore = {
       const r = step(map, state.pos, dir, opts());
       const moved = r.pos.x !== state.pos.x || r.pos.y !== state.pos.y;
       if (moved) sfx('step');
-      if (!still && moved) glide = nextGlide(glide, state.pos, r.pos, performance.now());
+      if (!still && moved) glide = nextGlide(glide, state.pos, r.pos, performance.now(), pace.ms()); // 달리는 동안은 한 칸이 더 짧다
+      if (moved && window.__test) (window.__test.steps ??= []).push({ t: performance.now(), ms: pace.ms() }); // 검사용: 걸음마다 때와 한 칸 시간
       const tooSoon = moved && leavingTooSoon(state, chapter, state.pos, r.pos, map);
       hints.done('move');
       guideOnMove();
@@ -402,8 +406,10 @@ export const explore = {
       }
     }
 
-    const unbind = bindInput(window, { move, act, codex: showCodex, tasks: showTasks });
-    const removeTouch = isCoarsePointer() ? createTouchControls(stage, { move, act }) : () => {};
+    const pace = createPace(); // 달리기: Shift(키보드)나 달리기 버튼(터치)을 누르고 있는 동안
+    if (window.__test) window.__test.running = pace.running; // 검사용
+    const unbind = bindInput(window, { move, act, codex: showCodex, tasks: showTasks }, pace);
+    const removeTouch = isCoarsePointer() ? createTouchControls(stage, { move, act }, pace) : () => {};
     fit(); // 터치 조작이 붙은 뒤 덮는 곳을 다시 잰다
 
     return () => {

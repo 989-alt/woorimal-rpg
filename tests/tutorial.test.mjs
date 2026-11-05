@@ -17,7 +17,8 @@ const EVENTS = [
 
 test('처음 탐험: move', () => {
   assert.equal(dueHint(s0, ch, ex()).id, 'move');
-  assert.equal(dueHint(s0, ch, ex(), { touch: true }).text, '왼쪽 아래 화살표를 눌러 걸어 보세요');
+  assert.equal(dueHint(s0, ch, ex(), { touch: true }).text, '왼쪽 아래 화살표를 눌러 걸어 보세요\n달리기 버튼을 누르고 있으면 빨리 걸어요');
+  assert.equal(dueHint(s0, ch, ex()).text, '방향키로 걸어 보세요\nShift를 누르고 있으면 달릴 수 있어요');
 });
 
 test('move를 본 뒤 인물 앞: talk(8초), 아니면 없음', () => {

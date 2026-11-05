@@ -39,6 +39,8 @@ test('강조 낱말만 따로 나눈다(조각을 이으면 원래 글)', () => 
   assert.equal(parts.map((p) => p.text).join(''), '사람을 보고 Space를 누르면\n말을 걸 수 있어요');
   assert.deepEqual(parts.filter((p) => p.em).map((p) => p.text), ['Space']);
   assert.deepEqual(splitEmphasis('아무 말'), [{ text: '아무 말', em: false }]);
+  assert.deepEqual(splitEmphasis('방향키로 걸어 보세요\nShift를 누르고 있으면 달릴 수 있어요').filter((p) => p.em).map((p) => p.text), ['방향키', 'Shift']);
+  assert.deepEqual(splitEmphasis('달리기 버튼을 누르고 있으면 빨리 걸어요').filter((p) => p.em).map((p) => p.text), ['달리기 버튼']);
 });
 
 test('force로 자리를 정하면 앵커 높이와 상관없이 그쪽에 놓인다', () => {

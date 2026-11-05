@@ -21,7 +21,8 @@ export const HINT_MS = 8000;
 const TABLE = {
   [TIP.MOVE]: {
     anchor: 'hero', until: 'move', ms: null,
-    key: '방향키로 걸어 보세요', touch: '왼쪽 아래 화살표를 눌러 걸어 보세요',
+    key: '방향키로 걸어 보세요\nShift를 누르고 있으면 달릴 수 있어요',
+    touch: '왼쪽 아래 화살표를 눌러 걸어 보세요\n달리기 버튼을 누르고 있으면 빨리 걸어요',
   },
   [TIP.TALK]: {
     anchor: 'hero', until: 'talk', ms: HINT_MS,
