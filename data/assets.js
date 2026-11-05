@@ -65,8 +65,8 @@ export const ASSETS = {
     // 5막
     greykid: { base: 'assets/illust/bust_greykid_base.webp', joy: 'assets/illust/bust_greykid_joy.webp' },
   },
-  dialogueBg: { '1-1': 'assets/illust/bg_ch1-1.webp', '1-2': 'assets/illust/bg_ch1-2.webp', '2-1': 'assets/illust/bg_ch2-1.webp', '2-2': 'assets/illust/bg_ch2-2.webp', '3-1': 'assets/illust/bg_ch3-1.webp', '3-2': 'assets/illust/bg_ch3-2.webp', '4-1': 'assets/illust/bg_ch4-1.webp', '4-2': 'assets/illust/bg_ch4-2.webp', '5-1': null, '5-2': null }, // 장 id (2560×1440)
-  battleBg: { 1: 'assets/illust/battle_bg_act1.webp', 2: 'assets/illust/battle_bg_act2.webp', 3: 'assets/illust/battle_bg_act3.webp', 4: 'assets/illust/battle_bg_act4.webp', 5: null }, // 막 번호 (2560×1440, 잿빛)
+  dialogueBg: { '1-1': 'assets/illust/bg_ch1-1.webp', '1-2': 'assets/illust/bg_ch1-2.webp', '2-1': 'assets/illust/bg_ch2-1.webp', '2-2': 'assets/illust/bg_ch2-2.webp', '3-1': 'assets/illust/bg_ch3-1.webp', '3-2': 'assets/illust/bg_ch3-2.webp', '4-1': 'assets/illust/bg_ch4-1.webp', '4-2': 'assets/illust/bg_ch4-2.webp', '5-1': 'assets/illust/bg_ch5-1.webp', '5-2': 'assets/illust/bg_ch5-2.webp' }, // 장 id (2560×1440)
+  battleBg: { 1: 'assets/illust/battle_bg_act1.webp', 2: 'assets/illust/battle_bg_act2.webp', 3: 'assets/illust/battle_bg_act3.webp', 4: 'assets/illust/battle_bg_act4.webp', 5: 'assets/illust/battle_bg_act5.webp' }, // 막 번호 (2560×1440, 잿빛)
   battleHero: { f: 'assets/illust/battle_hero_f.webp', m: 'assets/illust/battle_hero_m.webp' }, // 1080×1440, 오른쪽(몬스터 쪽)을 봄
   monster: { 1: 'assets/illust/monster_act1.webp', 2: 'assets/illust/monster_act2.webp', 3: 'assets/illust/monster_act3.webp', 4: 'assets/illust/monster_act4.webp', 5: null }, // 보스(막 번호), 1440×1440
   title: 'assets/illust/title.webp', // 2560×1440, 글자 없음(제목은 HTML)
