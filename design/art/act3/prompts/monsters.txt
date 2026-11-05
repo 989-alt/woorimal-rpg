@@ -1,0 +1,6 @@
+Pixel art monster sprites for a top-down 3/4 view RPG, detailed pixel art, 48 pixels per tile, child-friendly, lonely and sad rather than scary. The reference image shows two fog creatures of the same world: match their pixel style, grey shading and dithered edges exactly.
+Two creek-mist creatures side by side with a wide gap, both on the same baseline, facing the viewer:
+Left: a little creek mist, a small faceless soft grey figure curled up round like a water drop, a little taller than wide, head bowed and knees drawn in, its base melting into a few short wisps of mist.
+Right: a creek-mist shadow, much bigger (square proportion): a group of three or four tall thin faceless grey silhouettes rising up out of the water like thin wisps, leaning against each other, their long arms hanging down toward the water, their lower bodies melting and flowing down into low mist at the base.
+Both: desaturated grey only (#B9BBBE light, #8A8D91 mid, #5E6266 dark), large simple soft shapes with smooth cel shading, lighter on the upper left, no eyes, no mouth, no face, no teeth, no claws, no outline, the outer edge broken up with a fine checkerboard dither, no loose floating bits, no water drawn, no sparkles.
+Solid flat magenta (#FF00FF) background everywhere, no ground shadows, no text.
