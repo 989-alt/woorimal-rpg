@@ -389,7 +389,7 @@ test('5막: 나래는 마지막 문제(빈칸)이고 finalCue가 있다', () => 
   assert.equal(act5.finalWordId, '나래');
   assert.equal(act5.bossQuizzes['나래'].type, 'blank');
   assert.equal(act5.bossQuizzes['나래'].prompt, '아기 새가 처음으로 ___를 펴고 둥지를 떠났다.');
-  assert.equal(act5.finalCue, '그림자 한가운데에서 하늘색 숄 자락이 희미하게 펄럭인다.');
+  assert.equal(act5.finalCue, '그림자 한가운데에서 하늘색 망토 자락이 희미하게 펄럭인다.');
 });
 
 test('엔딩: cast가 말하는 인물을 덮고, 줄 규칙, [[ ]] 없음, 마지막 말', () => {

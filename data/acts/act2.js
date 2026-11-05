@@ -56,14 +56,14 @@ const CH_2_1 = {
       ],
     },
     {
-      id: 'fruit', slot: 'b', name: '사과 장수 아저씨', color: '#9C8670',
+      id: 'fruit', slot: 'b', name: '사과 장수 아저씨', honorific: true, color: '#9C8670',
       chat: [
         npc('fruit', 'base', '우리 사과는 새벽골 너머 과수원에서 왔단다.'),
         npc('fruit', 'joy', '한 입 베어 물면 아삭 소리가 나지.'),
       ],
     },
     {
-      id: 'guard', slot: 'c', name: '문지기 아저씨', color: '#6B5444',
+      id: 'guard', slot: 'c', name: '문지기 아저씨', honorific: true, color: '#6B5444',
       chat: [
         npc('guard', 'base', '어서 오너라, 여기가 한울에서 제일 큰 장터 너울장이다.'),
         npc('guard', 'base', '그런데 아까부터 장터 문 위 간판이 반짝반짝하더구나.'),
@@ -71,7 +71,7 @@ const CH_2_1 = {
       ],
     },
     {
-      id: 'shopper', slot: 'd', name: '장 보는 할머니', color: '#D8CDB8',
+      id: 'shopper', slot: 'd', name: '장 보는 할머니', honorific: true, color: '#D8CDB8',
       chat: [
         npc('shopper', 'base', '값 팻말 글씨가 흐려서 무엇이 얼마인지 모르겠구나.'),
         npc('shopper', 'base', '사과 장수네 저울도 말썽이라던데, 큰일이야.'),
@@ -107,7 +107,7 @@ const CH_2_1 = {
         npc('haesol', 'base', '물에 젖기 전에 꼭 찾아 줘!'),
       ],
       done: [
-        hero('joy', '해솔, 분수대에 걸려 있던 팻말 찾아왔어!'),
+        hero('joy', '해솔아, 분수대에 걸려 있던 팻말 찾아왔어!'),
         npc('haesol', 'base', '와, 고마워!'),
         npc('haesol', 'base', '그런데 오늘은 아침부터 하나도 못 팔았어.'),
         hero('base', '그럼 내가 첫 손님 할게, 이 머리끈 하나 주세요!'),
@@ -210,7 +210,7 @@ const CH_2_2 = {
       ],
     },
     {
-      id: 'chestnut', slot: 'b', name: '밤 장수 할머니', color: '#857565',
+      id: 'chestnut', slot: 'b', name: '밤 장수 할머니', honorific: true, color: '#857565',
       chat: [
         npc('chestnut', 'base', '군밤 냄새 좋지?'),
         npc('chestnut', 'joy', '배고프면 언제든 들르렴.'),
@@ -225,7 +225,7 @@ const CH_2_2 = {
       ],
     },
     {
-      id: 'northgate', slot: 'd', name: '북문 할아버지', color: '#A89A86',
+      id: 'northgate', slot: 'd', name: '북문 할아버지', honorific: true, color: '#A89A86',
       chat: [
         npc('northgate', 'base', '안개 너머 그림자는 흐린 저울을 들고 서 있단다.'),
         npc('northgate', 'base', '그 녀석이 값과 셈을 다 흐려 놓는 게야.'),
@@ -286,7 +286,7 @@ const CH_2_2 = {
         npc('haesol', 'base', '머리끈은 동쪽 꽃 골목 끝으로 굴러갔어.'),
       ],
       done: [
-        hero('joy', '해솔, 네 물건 다 모아 왔어!'),
+        hero('joy', '해솔아, 네 물건 다 모아 왔어!'),
         npc('haesol', 'base', '고마워, 이제 보따리에 다 싸야지.'),
         say('해솔은 물건을 보따리 여러 개에 꽁꽁 싸서 묶었다.'),
         npc('haesol', 'surprise', '어이쿠, 짐을 [[바리바리]] 싸고 나니 산더미 같네!'),

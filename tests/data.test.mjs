@@ -20,11 +20,11 @@ test('낱말 50개, 막마다 10개, 중복 없음, 나래 있음·짜장 없음
   }
   assert.ok(wordById['나래']);
   assert.equal(wordById['나래'].act, 5);
-  assert.equal(wordById['나래'].meaning, '날개를 문학적으로 이르는 말');
+  assert.equal(wordById['나래'].meaning, "'날개'를 시나 노래에서 아름답게 이르는 말");
   assert.equal(wordById['짜장'], undefined);
   assert.deepEqual(ACT1_IDS, ['어스름', '아침나절', '해거름', '부리나케', '매무새', '짬', '곰비임비', '얼추', '손사래', '오롯이']);
   assert.equal(wordById['어스름'].meaning, '해 뜨기 전이나 해 진 뒤의 조금 어둑한 때');
-  assert.equal(wordById['오롯이'].example, '이 주머니를 오롯이 너에게 맡기마.');
+  assert.equal(wordById['오롯이'].example, '할머니의 마음이 주머니에 오롯이 담겨 있다.');
   assert.equal(wordById['도담도담'].meaning, '아이가 탈 없이 잘 자라는 모양');
 });
 

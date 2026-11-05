@@ -13,7 +13,7 @@ test('actScriptMd 4막: 보이는 꼴, 뾰로통, 보스 뒤 장면, chatAfter, 
   const md = actScriptMd(ACTS[3], '하늘');
   for (const s of [
     '**살갑구나**', '(뾰로통)', '(쓸쓸함)', '### 보스를 이긴 뒤 한 번 나오는 장면', '(보스를 이기기 전에만 보임)',
-    '해솔(동료)', '**해솔** (부탁 「', '을 끝낸 뒤)', '세계 지도 카드: 나래의 길잡이를 따라 안개 낀 고개로',
+    '해솔(동료)', '**해솔** (부탁 「', '전하기」를 끝낸 뒤)', '따뜻한 차를 가람에게', '고친 보따리 끈을 해솔에게', '세계 지도 카드: 나래의 길잡이를 따라 안개 낀 고개로',
     '알려 주는 인물: 가람',
   ]) assert.ok(md.includes(s), s);
   assert.deepEqual(leftovers(md), []);
@@ -73,6 +73,8 @@ test('actScriptMd 1막: 지금 docs/review/act1-script.md의 줄이 모두 차�
     j++;
   }
   assert.ok(after.includes('알려 주는 인물: 텃밭 아저씨'));
+  // 받는 사람이 어르신(honorific)이면 '께', 또래·아이면 '에게'
+  assert.ok(after.some((l) => l.includes('편지를 어귀 할아버지께')));
   // 숨은 낱말을 알려 주는 인물의 reveal·after 대사도 뽑는다(1막만 따로 둔다)
   assert.ok(after.includes('**텃밭 아저씨** (숨은 낱말을 처음 알려 줄 때)'));
   assert.ok(after.includes('**텃밭 아저씨** (숨은 낱말을 알려 준 뒤)'));

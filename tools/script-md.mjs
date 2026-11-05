@@ -14,6 +14,9 @@ const FACE = { base: '', joy: '기쁨', surprise: '놀람', worry: '걱정', lau
 const SHOW = { beforeBoss: '(보스를 이기기 전에만 보임)', afterBoss: '(보스를 이긴 뒤에만 보임)' };
 const wordById = Object.fromEntries(WORDS.map((w) => [w.id, w]));
 
+// 조사만 돌려준다(받침에 맞게). 예: josaOf('전하기', '을') → '를'
+const josaOf = (word, kind) => attachJosa(word, kind).slice(word.length);
+
 const textOf = (nickname) => (t) =>
   formatLine(t, nickname).replace(/\[\[(.+?)\]\]/g, (_, inner) => `**${wordMark(inner).form}**`);
 
@@ -79,7 +82,10 @@ export function actScriptMd(act, nickname = '하늘') {
       out.push(`### 부탁 ${i + 1}: ${q.title}`);
       out.push('');
       let how = `${nameOf(q.giver)} · ${KIND[q.kind]}`;
-      if (q.kind === 'deliver') how += ` · ${attachJosa(q.item.name, '을')} ${nameOf(q.targets[0])}께`;
+      if (q.kind === 'deliver') {
+        const to = ch.npcs.find((n) => n.id === q.targets[0]);
+        how += ` · ${attachJosa(q.item.name, '을')} ${to.name}${to.honorific ? '께' : '에게'}`; // 께는 어르신께만
+      }
       else if (q.targets.length) how += ` · 조사할 곳: ${q.targets.map((s) => ch.objects.find((o) => o.slot === s).name).join(', ')}`;
       else if (q.kind === 'chase') how += ` · ${act.small.name}와 복습전`;
       if (q.item && q.kind !== 'deliver') how += ` · 얻는 물건: ${q.item.name}`;
@@ -135,7 +141,7 @@ export function actScriptMd(act, nickname = '하늘') {
       }
       if (n.chatAfter) {
         const q = quests.find((x) => x.id === n.chatAfter.quest);
-        out.push(`**${n.name}** (부탁 「${q.title}」을 끝낸 뒤)`);
+        out.push(`**${n.name}** (부탁 「${q.title}」${josaOf(q.title, '을')} 끝낸 뒤)`);
         out.push('');
         out.push(lines(n.chatAfter.lines));
         out.push('');
@@ -201,7 +207,7 @@ export function endingScriptMd(ending, nickname = '하늘') {
 
   out.push('## 마지막 말');
   out.push('');
-  out.push('한지 패널 가운데에 크게 한 줄만 띄웁니다. 2초 뒤 "다음" 단추가 나옵니다(저절로 넘어가지 않습니다).');
+  out.push('한지 패널 가운데에 크게 한 줄만 띄웁니다. 2초 뒤 "다음" 버튼이 나옵니다(저절로 넘어가지 않습니다).');
   out.push('');
   out.push(`> ${text(ending.message)}`);
   out.push('');
@@ -210,7 +216,7 @@ export function endingScriptMd(ending, nickname = '하늘') {
   out.push('');
   out.push(`제목: ${nickname}의 말빛 주머니 ${WORDS.length}/${WORDS.length}`);
   out.push('');
-  out.push('막마다 한 줄에 낱말 카드 10장이 놓이고, 카드를 누르면 옆 칸에 뜻·예문·만난 곳이 나옵니다. 단추: "마무리 퀴즈"');
+  out.push('막마다 한 줄에 낱말 카드 10장이 놓이고, 카드를 누르면 옆 칸에 뜻·예문·만난 곳이 나옵니다. 버튼: "마무리 퀴즈"');
   out.push('');
   for (const act of ACTS) {
     out.push(`- ${act.id}막 ${act.title}: ${WORDS.filter((w) => w.act === act.id).map((w) => w.word).join(', ')}`);
@@ -219,13 +225,13 @@ export function endingScriptMd(ending, nickname = '하늘') {
 
   out.push('## 마무리 퀴즈');
   out.push('');
-  out.push(`낱말 ${WORDS.length}개 가운데 ${QUIZ_SIZE}개를 무작위로 골라 뜻 고르기 ${QUIZ_TYPES.meaning}문제, 초성 ${QUIZ_TYPES.chosung}문제, 상황 빈칸 ${QUIZ_TYPES.situation}문제를 섞어 냅니다. 하트·시간 제한은 없습니다. 처음 화면의 "마무리 퀴즈" 단추로도 다시 풀 수 있습니다(엔딩을 본 저장이 있을 때).`);
+  out.push(`낱말 ${WORDS.length}개 가운데 ${QUIZ_SIZE}개를 무작위로 골라 뜻 고르기 ${QUIZ_TYPES.meaning}문제, 초성 ${QUIZ_TYPES.chosung}문제, 상황 빈칸 ${QUIZ_TYPES.situation}문제를 섞어 냅니다. 하트·시간 제한은 없습니다. 처음 화면의 "마무리 퀴즈" 버튼으로도 다시 풀 수 있습니다(엔딩을 본 저장이 있을 때).`);
   out.push('');
   out.push(`- **뜻 고르기**: "'낱말'의 뜻은?" 보기 넷 가운데 하나는 그 낱말 뜻, 셋은 다른 낱말 뜻입니다.`);
   out.push('- **초성**: 초성 글자(예: ㅇㅅㄹ)와 뜻을 보고 낱말을 직접 칩니다.');
   out.push('- **상황 빈칸**: 아래 문장의 빈칸에 들어갈 낱말을 넷 가운데 고릅니다. 오답 보기에는 뜻이 가까운 낱말(맨 아래 묶음)을 넣지 않고, 하나는 다른 막 낱말입니다.');
   out.push('');
-  out.push('끝나면 "10문제 중 n개 맞힘"과 낱말별 ○/×, 틀린 낱말의 뜻이 나오고 "다시 풀기"·"계속" 단추가 있습니다.');
+  out.push('끝나면 "10문제 중 n개 맞힘"과 낱말별 ○/×, 틀린 낱말의 뜻이 나오고 "다시 풀기"·"계속" 버튼이 있습니다.');
   out.push('');
   out.push('### 상황 빈칸 문장 (낱말마다 하나, 굵은 글씨가 빈칸에 들어가는 꼴)');
   out.push('');
@@ -252,7 +258,7 @@ export function endingScriptMd(ending, nickname = '하늘') {
   }
   out.push(`인사: ${text(ending.thanks)}`);
   out.push('');
-  out.push('단추: "처음 화면으로"');
+  out.push('버튼: "처음 화면으로"');
   out.push('');
   return out.join('\n');
 }

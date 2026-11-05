@@ -30,7 +30,7 @@ export const REVIEW_SITUATIONS = [
   { word: '볕뉘', situation: '창고 판자 틈새로 ___가 비쳐 어두운 바닥이 조금 밝아졌다.' },
   { word: '여우비', situation: '햇볕이 나 있는데 ___가 오락가락해서 빨래를 걷을지 망설였다.' },
   { word: '는개', situation: '안개인 줄 알았는데 손등이 젖는 걸 보니 ___였다.' },
-  { word: '함초롬하다', situation: '머리를 감고 곱게 빗어 내린 동생 머리카락이 ___.' },
+  { word: '함초롬하다', situation: '머리를 감아 물기가 촉촉한 동생 머리카락이 ___.' },
   { word: '시나브로', situation: '해가 지는 줄도 모르게 ___ 날이 어두워졌다.' },
   { word: '가뭇없다', situation: '눈 깜짝할 사이에 지우개가 ___ 사라져서 아무리 찾아도 보이지 않았다.', answerForm: '가뭇없이' },
   { word: '아스라하다', situation: '할아버지의 어린 시절 이야기는 ___ 옛날 일처럼 들렸다.', answerForm: '아스라한' },

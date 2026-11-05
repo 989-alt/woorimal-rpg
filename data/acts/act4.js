@@ -62,7 +62,7 @@ const CH_4_1 = {
       ],
     },
     {
-      id: 'tea', slot: 'c', name: '찻집 아주머니', color: '#A08C76',
+      id: 'tea', slot: 'c', name: '찻집 아주머니', honorific: true, color: '#A08C76',
       chat: [
         npc('tea', 'base', '고갯길 찻집에 들러 따끈한 차 한 잔 하고 가렴.'),
         npc('tea', 'joy', '몸이 녹으면 마음도 녹는단다.'),
@@ -77,7 +77,7 @@ const CH_4_1 = {
       ],
     },
     {
-      id: 'signpost', slot: 'e', name: '푯말 할아버지', color: '#7F7060',
+      id: 'signpost', slot: 'e', name: '푯말 할아버지', honorific: true, color: '#7F7060',
       chat: [
         npc('signpost', 'base', '푯말은 길손에게 길을 알려 주는 고마운 친구란다.'),
         npc('signpost', 'joy', '그래서 내가 날마다 바로 세워 두지.'),
@@ -136,7 +136,7 @@ const CH_4_1 = {
       ],
       done: [
         npc('signpost', 'joy', '고맙다, 이제 길손들이 서로 의심하지 않겠구나.'),
-        npc('signpost', 'base', '그런데 하늘색 숄을 두른 아이는 안개 속에서 더 또렷해 보이는구나.'),
+        npc('signpost', 'base', '그런데 하늘색 망토를 두른 아이는 안개 속에서 더 또렷해 보이는구나.'),
         npc('haesol', 'pout', '그렇죠, 할아버지도 이상하다고 생각하시죠?'),
         npc('narae', 'base', '…난 몰라.'),
         say('나래는 쌀쌀맞게 모르는 척하며 [[새치름하다|새치름하게]] 고개를 돌렸다.'),
@@ -198,7 +198,7 @@ const CH_4_2 = {
   exit: { x: 28, y: 1, dir: 'up', goal: '나래를 찾아 북동쪽 길로 가자' },
   intro: [
     say('고갯마루에 오르자 안개가 더 짙어지고 노을이 한 줄만 남았다.'),
-    npc('haesol', 'pout', '나래, 너 정말 수상해, 안개가 짙을수록 왜 더 힘이 나?'),
+    npc('haesol', 'pout', '나래야, 너 정말 수상해, 안개가 짙을수록 왜 더 힘이 나?'),
     npc('narae', 'sad', '…나도 모른다고 했잖아.'),
     npc('haesol', 'pout', '모르는 게 아니라 숨기는 거겠지!'),
     say('둘은 서로 등을 돌리고 멀찍이 떨어져 섰다.'),
@@ -233,14 +233,14 @@ const CH_4_2 = {
       },
     },
     {
-      id: 'keeper', slot: 'c', name: '쉼터지기 아저씨', color: '#8C7A66',
+      id: 'keeper', slot: 'c', name: '쉼터지기 아저씨', honorific: true, color: '#8C7A66',
       chat: [
         npc('keeper', 'base', '이 쉼터는 고개를 넘는 길손이 쉬어 가는 곳이란다.'),
         npc('keeper', 'joy', '지붕이 반쯤 꺾였어도 비는 피할 수 있지.'),
       ],
     },
     {
-      id: 'traveler', slot: 'd', name: '나그네 할머니', color: '#BFB09A',
+      id: 'traveler', slot: 'd', name: '나그네 할머니', honorific: true, color: '#BFB09A',
       chat: [
         npc('traveler', 'base', '나는 이 고개를 수십 번 넘나든 나그네란다.'),
         npc('traveler', 'base', '쉼터 기둥에 옛 친구 둘이 새긴 글씨가 있는데, 그게 반짝이더구나.'),
@@ -297,16 +297,16 @@ const CH_4_2 = {
         npc('narae', 'sad', '해솔은 서쪽 바위 옆에 있을 거야.'),
       ],
       done: [
-        hero('base', '해솔, 이거 나래가 고쳐 준 보따리 끈이야.'),
+        hero('base', '해솔아, 이거 나래가 고쳐 준 보따리 끈이야.'),
         npc('haesol', 'surprise', '나래가 고쳤다고?'),
         npc('haesol', 'pout', '나는 나래가 길을 잘 찾고 칭찬받을 때마다 괜히 미웠는데.'),
-        hero('base', '해솔, 그건 남이 잘되는 게 괜히 싫은 [[시샘]]이었던 것 같아.'),
+        hero('base', '해솔아, 그건 남이 잘되는 게 괜히 싫은 [[시샘]]이었던 것 같아.'),
         npc('haesol', 'pout', '…맞아, 나 사실 샘이 났어.'),
         npc('narae', 'sad', '나도 미안해, 일부러 모른 척하고 쌀쌀맞게 굴었어.'),
         say('{이름|은} 두 친구의 어깨를 감싸고 토닥토닥 [[다독이다|다독였다]].'),
         hero('joy', '우리 셋은 같이 여기까지 왔잖아, 앞으로도 같이 가자.'),
         npc('haesol', 'base', '응, 미안해 나래야, 우리 다시 잘 지내자!'),
-        npc('narae', 'base', '응, 고마워 해솔.'),
+        npc('narae', 'base', '응, 고마워, 해솔아.'),
       ],
     },
   ],
@@ -325,15 +325,15 @@ const CH_4_2 = {
   afterBoss: [
     say('서로 등 돌린 그림자 무리가 빛 알갱이로 흩어졌다.'),
     say('그런데 흩어지던 잿빛이 나래 쪽으로 몰려들었다.'),
-    npc('narae', 'sad', '{이름|아}, 해솔, 이제는 말해야겠어.'),
+    npc('narae', 'sad', '{이름|아}, 해솔아, 이제는 말해야겠어.'),
     npc('narae', 'sad', '나도 저 그림자에서 빠져나온 말이야.'),
     npc('narae', 'sad', '아무도 부르지 않으면 나도 그림자가 돼.'),
-    npc('haesol', 'surprise', '그게 무슨 말이야, 나래!'),
+    npc('haesol', 'surprise', '그게 무슨 말이야, 나래야!'),
     npc('narae', 'base', '안개 속에서 힘이 났던 것도 그래서야, 숨겨서 미안해.'),
     say('잿빛 안개가 나래를 휘감더니 북동쪽 하늘로 끌고 갔다.'),
     hero('surprise', '나래야!'),
     npc('haesol', 'surprise', '나래를 데려갔어, 잿빛 탑 쪽이야!'),
-    hero('base', '해솔, 우리 너나들이 친구 나래를 꼭 되찾자.'),
+    hero('base', '해솔아, 우리 너나들이 친구 나래를 꼭 되찾자.'),
   ],
 };
 
@@ -356,10 +356,10 @@ const BOSS_QUIZZES = {
     type: 'meaning',
     prompt: "'새치름하다'의 뜻은?",
     options: [
-      '수줍어서 얼굴이 빨개지다',
+      '수줍어서 얼굴이 쉽게 빨개지는 데가 있다',
       '눈물이 날 만큼 몹시 슬프다',
       '쌀쌀맞게 시치미를 떼는 태도가 있다',
-      '기뻐서 깡충깡충 뛰다',
+      '기뻐서 깡충깡충 뛰는 모양이다',
     ],
     answer: 2,
   },

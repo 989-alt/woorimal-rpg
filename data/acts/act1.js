@@ -55,7 +55,7 @@ const CH_1_1 = {
   ],
   npcs: [
     {
-      id: 'dodam', slot: 'a', name: '도담 할머니', color: '#8E4A7A',
+      id: 'dodam', slot: 'a', name: '도담 할머니', honorific: true, color: '#8E4A7A',
       chat: [
         npc('dodam', 'base', '마을 사람들 말에 귀를 기울여 보렴.'),
         npc('dodam', 'laugh', '도움이 필요한 사람이 꼭 있을 게다.'),
@@ -69,7 +69,7 @@ const CH_1_1 = {
       ],
     },
     {
-      id: 'gardener', slot: 'c', name: '텃밭 아저씨', color: '#7A5C48',
+      id: 'gardener', slot: 'c', name: '텃밭 아저씨', honorific: true, color: '#7A5C48',
       chat: [
         npc('gardener', 'base', '어, 그… 그걸 뭐라고 하더라?'),
         npc('gardener', 'base', '말이 혀끝에서 맴도는데 도무지 생각이 안 나는구먼.'),
@@ -211,14 +211,14 @@ const CH_1_2 = {
   ],
   npcs: [
     {
-      id: 'baker', slot: 'a', name: '빵집 아저씨', color: '#EDE6D6',
+      id: 'baker', slot: 'a', name: '빵집 아저씨', honorific: true, color: '#EDE6D6',
       chat: [
         npc('baker', 'joy', '갓 구운 빵 냄새가 참 좋지?'),
         npc('baker', 'base', '네가 모아 준 장작 덕분에 화덕이 아주 따끈하단다.'),
       ],
     },
     {
-      id: 'laundry', slot: 'b', name: '빨래터 아주머니', color: '#C9A97E',
+      id: 'laundry', slot: 'b', name: '빨래터 아주머니', honorific: true, color: '#C9A97E',
       chat: [
         npc('laundry', 'base', '빨래 너는 곳은 잘 살펴봤니?'),
         npc('laundry', 'base', '빨래터 일은 걱정 말고 네 일부터 보렴.'),
@@ -230,7 +230,7 @@ const CH_1_2 = {
       ],
     },
     {
-      id: 'gate', slot: 'c', name: '어귀 할아버지', color: '#7A5C48',
+      id: 'gate', slot: 'c', name: '어귀 할아버지', honorific: true, color: '#7A5C48',
       chat: [
         npc('gate', 'base', '저 안개 너머에 커다란 안개 덩이가 버티고 있단다.'),
         npc('gate', 'base', '저 녀석 때문에 아무도 마을 밖으로 나가지 못하고 있지.'),
