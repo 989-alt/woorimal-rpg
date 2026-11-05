@@ -3,6 +3,7 @@ import { ASSETS } from '../../data/assets.js';
 import { ACTS } from '../../data/acts/index.js';
 import { setArt } from '../ui/images.js';
 import { createSoundButton } from '../ui/audio.js';
+import { armFirstTap, createFullscreenButton, createIosTip } from '../ui/fullscreen.js';
 
 // 엔딩을 본 저장(마지막 막을 마침)이 하나라도 있는가. 엔딩은 따로 기록하지 않고 clearedActs로 본다(설계 6절).
 export function hasEndingSave(store) {
@@ -11,6 +12,10 @@ export function hasEndingSave(store) {
     const r = store.load(name);
     return r.ok && (r.state.clearedActs ?? []).includes(last);
   });
+}
+
+function safeStorage() {
+  try { return window.localStorage; } catch { return null; }
 }
 
 function el(tag, props = {}, ...kids) {
@@ -52,13 +57,20 @@ export const title = {
       next?.focus();
     });
 
-    main.append(h1, menu, createSoundButton('title-sound')); // 오른쪽 위 스피커 단추
+    // 오른쪽 위 단추 묶음: 스피커와 (되는 곳에서만) 전체 화면
+    const sys = el('div', { className: 'title-sys' }, createSoundButton('title-sound'));
+    const fs = createFullscreenButton('title-fs');
+    if (fs) sys.append(fs);
+    main.append(h1, menu, sys);
+    const tip = createIosTip(safeStorage()); // 아이폰 사파리: 홈 화면에 추가 안내(한 번만)
+    if (tip) main.append(tip);
+    const disarm = armFirstTap(main); // 터치 기기: 첫 누름에 전체 화면
     if (!store.available) {
       main.append(el('p', { className: 'title-notice frame-plate', textContent: '이 창에서는 저장되지 않아요' }));
     }
     root.appendChild(main);
     setArt(main, ASSETS.title, 'title-bg art');
     newBtn.focus();
-    return () => main.remove();
+    return () => { disarm(); main.remove(); };
   },
 };

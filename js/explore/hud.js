@@ -7,6 +7,7 @@ import { ASSETS, bustFor } from '../../data/assets.js';
 import { setArt } from '../ui/images.js';
 import { blockColor, initial, labelBlockEl, textOn } from '../ui/placeholder.js';
 import { createSoundButton } from '../ui/audio.js';
+import { createFullscreenButton, forgetFullscreenButton } from '../ui/fullscreen.js';
 
 export const BAG_SLOTS = 3;
 
@@ -128,7 +129,13 @@ export function createHud({ onCodex, onTasks, avatar = 'f' }) {
   const codexButton = button('도감', 'E', 'icon-book', onCodex);
   const tasksButton = button('할 일', 'Q', 'icon-scroll', onTasks);
   const soundButton = createSoundButton('hud-button hud-sound');
-  el.append(medallion, companions, task, words, codexButton, tasksButton, soundButton);
+  // 소리·전체 화면 단추 묶음. 넓은 화면은 도감·할 일 옆, 좁은 화면은 HUD 아래 오른쪽에 작게(css)
+  const sys = document.createElement('div');
+  sys.className = 'hud-sys';
+  sys.append(soundButton);
+  const fsButton = createFullscreenButton('hud-button hud-fs');
+  if (fsButton) sys.append(fsButton);
+  el.append(medallion, companions, task, words, codexButton, tasksButton, sys);
 
   let bagKey = null;
   let companionKey = null;
@@ -139,13 +146,22 @@ export function createHud({ onCodex, onTasks, avatar = 'f' }) {
     codexButton,
     tasksButton,
     soundButton,
+    sys,
     setTaskText,
+    dispose() { if (fsButton) forgetFullscreenButton(fsButton); },
     update(state, chapter) {
       setTaskText(nextGoal(state, chapter).text);
       face.textContent = initial(state.nickname);
       face.style.background = blockColor(state.nickname);
       face.style.color = textOn(blockColor(state.nickname));
-      count.textContent = `이 장의 낱말 ${acquiredCount(state, chapter)}/${chapterWords(chapter).length}`;
+      // "이 장의"는 휴대폰에서 눈에만 줄인다(읽어 주는 프로그램과 글은 그대로)
+      const countText = `낱말 ${acquiredCount(state, chapter)}/${chapterWords(chapter).length}`;
+      if (count.textContent !== `이 장의 ${countText}`) {
+        const lead = document.createElement('span');
+        lead.className = 'hud-count-lead';
+        lead.textContent = '이 장의 ';
+        count.replaceChildren(lead, countText);
+      }
       // 걸을 때마다 불리므로, 동료와 가방은 바뀐 때만 칸을 다시 만든다(그림이 깜박이지 않게).
       const here = visibleNpcs(state, chapter).filter((n) => n.companion);
       const cKey = here.map((n) => n.id).join(',');

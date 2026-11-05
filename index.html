@@ -2,15 +2,30 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>말빛 한울</title>
+  <meta name="theme-color" content="#6E3211">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="말빛 한울">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="preload" href="assets/fonts/gowun-dodum.v1.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="icon" href="data:,">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
   <link rel="stylesheet" href="css/ui-kit.css">
   <link rel="stylesheet" href="css/game.css">
 </head>
 <body>
   <div id="app"></div>
+  <!-- 세로로 든 휴대폰·태블릿: 게임을 가로로 돌려 달라는 안내(CSS가 세로일 때만 보인다) -->
+  <div class="rotate-overlay" role="alert">
+    <div class="rotate-card frame-panel">
+      <span class="rotate-icon" aria-hidden="true"><span class="rotate-phone"></span></span>
+      <p class="rotate-title">가로로 돌려 주세요</p>
+      <p class="rotate-text">이 게임은 화면을 옆으로 눕혀서 해요.</p>
+    </div>
+  </div>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

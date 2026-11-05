@@ -17,6 +17,7 @@ import { reviewQuiz, reviewQuizProbe } from './scenes/review-quiz.js';
 import { ASSETS } from '../data/assets.js';
 import { loadImage, forgetFailed } from './ui/images.js';
 import { loadUiKit } from './ui/ui-kit.js';
+import { isFullscreenKey, toggleFullscreen } from './ui/fullscreen.js';
 import { initAudio, playMusic, musicFor, sfx, soundPref, withSoundPref, useSavePref, useGlobalPref, toggleSound, isSoundKey, audioProbe } from './ui/audio.js';
 
 function safeLocalStorage() {
@@ -42,6 +43,12 @@ window.addEventListener('keydown', (e) => {
   if (!isSoundKey(e)) return;
   e.preventDefault();
   toggleSound();
+});
+// F 키: 어디서든 전체 화면을 켜고 끈다(되는 브라우저만, 글을 쓰는 칸 빼고)
+window.addEventListener('keydown', (e) => {
+  if (!isFullscreenKey(e)) return;
+  e.preventDefault();
+  toggleFullscreen();
 });
 // 단추 누름 소리(UI 키트 단추만. 보기·퀴즈 확인처럼 정답·오답 소리가 따로 나는 단추는 빼고)
 document.addEventListener('click', (e) => {

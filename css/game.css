@@ -15,6 +15,11 @@
   --font-title: 'Jua', var(--font-body);
   /* 한지 바탕: 위가 조금 밝고 아래로 갈수록 누런 결(평평한 색 한 장으로 보이지 않게) */
   --paper: radial-gradient(ellipse at 50% 0%, #FFFDF4 0%, #FBF5E6 48%, #F1E2BC 100%);
+  /* 안전 영역(노치·둥근 모서리·홈 막대). viewport-fit=cover일 때 휴대폰에서 값이 생긴다. 바탕은 끝까지, 부품은 이 안쪽에 둔다 */
+  --sa-t: env(safe-area-inset-top, 0px);
+  --sa-r: env(safe-area-inset-right, 0px);
+  --sa-b: env(safe-area-inset-bottom, 0px);
+  --sa-l: env(safe-area-inset-left, 0px);
 }
 
 * { box-sizing: border-box; }
@@ -23,6 +28,13 @@
 html, body {
   margin: 0;
   height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none; /* 당겨서 새로 고침·튕김이 게임을 흔들지 않게 */
+  touch-action: manipulation; /* 두 번 눌러 확대를 끈다(방향 단추를 빨리 눌러도 화면이 커지지 않게). 손가락 확대는 된다 */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
   background: var(--wood-dark);
   color: var(--meok);
   font-family: var(--font-body);
@@ -61,9 +73,10 @@ canvas, img {
   display: grid; gap: 16px; width: 340px; max-width: 94%;
 }
 .title-menu .btn { width: 100%; }
-/* 오른쪽 위 스피커 단추(72×80, HUD의 소리 단추와 같은 모양) */
-.title-sound { position: absolute; top: 16px; right: 16px; z-index: 1; filter: drop-shadow(0 3px 2px rgba(20, 10, 0, .4)); }
-.title-notice { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); margin: 0; width: max-content; max-width: 94%; font-size: 18px; text-align: center; }
+/* 오른쪽 위 단추 묶음: 스피커와 전체 화면(72×80, HUD의 소리 단추와 같은 모양). 노치·둥근 모서리 안쪽(안전 영역)에 둔다 */
+.title-sys { position: absolute; top: calc(16px + var(--sa-t)); right: calc(16px + var(--sa-r)); z-index: 1; display: flex; gap: 10px; }
+.title-sys > .btn-icon { filter: drop-shadow(0 3px 2px rgba(20, 10, 0, .4)); }
+.title-notice { position: absolute; left: 50%; bottom: calc(24px + var(--sa-b)); transform: translateX(-50%); margin: 0; width: max-content; max-width: 94%; font-size: 18px; text-align: center; }
 
 /* ── 이름·모습 고르기 ───────────────────── */
 .select-scene {
@@ -338,11 +351,13 @@ canvas, img {
 .hud-button:hover:not(:disabled) { filter: drop-shadow(0 3px 2px rgba(20, 10, 0, .4)) brightness(1.08); }
 .hud-button:active:not(:disabled) { filter: drop-shadow(0 1px 1px rgba(20, 10, 0, .4)) brightness(.94); }
 .hud-button + .hud-button { margin-left: 0; }
-/* 소리 단추: 넓은 화면은 도감·할 일 옆. 좁은 화면(1180 이하)은 줄에서 빼서 HUD 바로 아래 오른쪽에 작게(56×56, 이름 없이)
-   두어 할 일 두루마리 글 자리를 그대로 남긴다. */
+/* 소리·전체 화면 단추 묶음: 넓은 화면은 도감·할 일 옆. 좁은 화면(1180 이하)은 줄에서 빼서 HUD 바로 아래 오른쪽에
+   작게(56×56, 이름 없이) 세로로 두어 할 일 두루마리 글 자리를 그대로 남긴다(탐험 카메라는 이 단추 밑으로 주인공을 넣지 않는다). */
+.hud-sys { flex: none; display: flex; gap: 8px; }
 @media (max-width: 1180px) {
-  .hud-sound { position: absolute; top: 96px; right: 12px; width: 56px; height: 56px; }
-  .hud-sound > .name { display: none; }
+  .hud-sys { position: absolute; top: calc(96px + var(--sa-t)); right: calc(12px + var(--sa-r)); flex-direction: column; }
+  .hud-sys > .hud-button { width: 56px; height: 56px; }
+  .hud-sys > .hud-button > .name { display: none; }
 }
 
 .explore-stage { position: absolute; inset: 0; }
@@ -1945,4 +1960,448 @@ p.ending-thanks {
 }
 @media (prefers-reduced-motion: reduce) {
   .quiz { animation: none; }
+}
+
+/* ── 휴대폰·태블릿 ──────────────────────────────────────────────
+   1) 세로로 든 터치 기기: "가로로 돌려 주세요" 안내가 화면을 덮는다(게임을 세로로 줄여 넣지 않는다).
+      태블릿도 세로는 같은 안내(탐험 HUD 한 줄·대화 두 인물·전투 무대가 가로 화면을 전제로 짜여 있다).
+   2) 안전 영역: 바탕 그림은 화면 끝까지, 단추·HUD·대사 상자는 노치와 홈 막대 안쪽(--sa-*)에.
+   3) 휴대폰 가로(높이 500 이하): 장면마다 줄인 배치. 본문 글자는 15px까지, 누르는 것은 44px까지(아트 바이블 7절 휴대폰 예외). */
+
+/* ── 세로 안내 ── */
+.rotate-overlay { display: none; }
+@media (orientation: portrait) and (pointer: coarse), (orientation: portrait) and (max-width: 600px) {
+  .rotate-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    display: grid; place-items: center;
+    padding: calc(24px + var(--sa-t)) calc(20px + var(--sa-r)) calc(24px + var(--sa-b)) calc(20px + var(--sa-l));
+    background: radial-gradient(ellipse at 50% 38%, #A15A24 0%, #7A3E14 55%, #3F1C08 100%);
+  }
+  #app { visibility: hidden; }
+}
+.rotate-card {
+  width: min(420px, 100%);
+  display: grid; justify-items: center; gap: 10px;
+  padding-block: 8px; text-align: center;
+  background: var(--paper);
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, .5));
+}
+:root.ui-panel .rotate-card { background: var(--paper) center / calc(100% - 2 * var(--ring)) calc(100% - 2 * var(--ring)) no-repeat border-box; }
+.rotate-card p { margin: 0; }
+.rotate-title { font-family: var(--font-title); font-size: 30px; line-height: 1.3; color: var(--wood-dark); }
+.rotate-text { font-size: 20px; line-height: 1.5; color: var(--ink); }
+/* 세로 휴대폰 그림이 옆으로 눕는다(움직임 줄이기면 누운 모습만) */
+.rotate-icon { position: relative; display: grid; place-items: center; width: 120px; height: 120px; }
+.rotate-icon::before {
+  content: ''; position: absolute; inset: 6px; border-radius: 50%;
+  border: 4px dashed rgba(138, 94, 42, .45);
+}
+.rotate-phone {
+  position: relative; width: 46px; height: 78px; box-sizing: border-box;
+  border: 5px solid var(--wood-dark); border-radius: 10px;
+  background: linear-gradient(#FFF3C8, var(--brass-light));
+  animation: rotate-turn 2.4s ease-in-out infinite;
+}
+.rotate-phone::after { content: ''; position: absolute; left: 50%; bottom: 3px; width: 12px; height: 3px; margin-left: -6px; border-radius: 2px; background: var(--wood-dark); }
+@keyframes rotate-turn { 0%, 25% { rotate: 0deg; } 55%, 100% { rotate: -90deg; } }
+@media (prefers-reduced-motion: reduce) { .rotate-phone { animation: none; rotate: -90deg; } }
+
+/* ── 전체 화면 단추 아이콘(그림 없이 SVG): 켜면 네 귀퉁이가 안으로 꺾인다 ── */
+.icon-fs { display: grid; place-items: center; }
+.icon-fs .fs-icon { width: 40px; height: 40px; overflow: visible; }
+.fs-icon path { fill: none; stroke: var(--wood-dark); stroke-width: 5px; stroke-linecap: round; stroke-linejoin: round; }
+:root.ui-btn-icon .fs-icon path { stroke: var(--parchment); filter: drop-shadow(0 0 1px var(--ink)) drop-shadow(0 1px 0 var(--ink)); }
+.fs-icon .close { display: none; }
+.fs-toggle[aria-pressed='true'] .fs-icon .open { display: none; }
+.fs-toggle[aria-pressed='true'] .fs-icon .close { display: inline; }
+
+/* ── 터치 기기: 키보드 글쇠 배지는 뜻이 없어 감춘다 ── */
+@media (pointer: coarse) {
+  .btn-icon > .key-badge { display: none; }
+}
+
+/* ── 아이폰 사파리: 홈 화면에 추가 안내(처음 화면, 한 번만) ── */
+.ios-tip {
+  position: absolute; z-index: 2;
+  left: calc(16px + var(--sa-l)); bottom: calc(16px + var(--sa-b));
+  width: min(360px, calc(50vw - 180px - var(--sa-l)));
+  display: grid; gap: 8px; justify-items: start;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .45));
+  animation: rise-in 300ms 300ms ease-out both;
+}
+.ios-tip p { margin: 0; }
+.ios-tip-title { font-family: var(--font-title); font-size: 19px; line-height: 1.3; color: var(--wood-dark); }
+.ios-tip-how { font-size: 16px; line-height: 1.45; }
+.ios-tip-close { justify-self: end; min-width: 120px; }
+/* 공유 단추 모양(네모에서 위로 나가는 화살표) */
+.ios-share { position: relative; display: inline-block; width: 16px; height: 18px; margin: 0 2px; vertical-align: -3px; }
+.ios-share::before { content: ''; position: absolute; left: 1px; right: 1px; bottom: 0; height: 11px; border: 2px solid var(--hero); border-top: 0; border-radius: 0 0 3px 3px; }
+.ios-share::after { content: ''; position: absolute; left: 7px; top: 0; width: 2px; height: 12px; background: var(--hero); box-shadow: -3px 3px 0 -1px var(--hero), 3px 3px 0 -1px var(--hero); }
+
+/* ── 안전 영역: 화면 가장자리에 붙은 부품을 안쪽으로 ── */
+.select-scene { padding: calc(20px + var(--sa-t)) calc(16px + var(--sa-r)) calc(20px + var(--sa-b)) calc(16px + var(--sa-l)); }
+.hud { padding: calc(8px + var(--sa-t)) calc(12px + var(--sa-r)) 0 calc(12px + var(--sa-l)); height: calc(88px + var(--sa-t)); }
+.touch-pad { left: calc(16px + var(--sa-l)); bottom: calc(16px + var(--sa-b)); }
+.touch-act { right: calc(16px + var(--sa-r)); bottom: calc(16px + var(--sa-b)); }
+.toast { bottom: calc(24px + var(--sa-b)); max-width: calc(100% - 32px - var(--sa-l) - var(--sa-r)); white-space: normal; text-align: center; }
+.dialogue-box { left: calc(24px + var(--sa-l)); right: calc(24px + var(--sa-r)); bottom: calc(16px + var(--sa-b)); }
+.battle-mhp { top: calc(12px + var(--sa-t)); right: calc(24px + var(--sa-r)); }
+.battle-combo { top: calc(14px + var(--sa-t)); right: calc(480px + var(--sa-r)); }
+.battle-bottom { padding: 16px calc(24px + var(--sa-r)) calc(12px + var(--sa-b)) calc(24px + var(--sa-l)); }
+.battle-status { left: calc(24px + var(--sa-l)); }
+.end-scene { padding: calc(24px + var(--sa-t)) calc(16px + var(--sa-r)) calc(24px + var(--sa-b)) calc(16px + var(--sa-l)); }
+.worldmap-scene { padding: calc(16px + var(--sa-t)) calc(16px + var(--sa-r)) calc(16px + var(--sa-b)) calc(16px + var(--sa-l)); }
+.ending-scene[data-part='pouch'] { padding: calc(12px + var(--sa-t)) calc(16px + var(--sa-r)) calc(12px + var(--sa-b)) calc(16px + var(--sa-l)); }
+.quiz-scene { padding: calc(16px + var(--sa-t)) calc(16px + var(--sa-r)) calc(16px + var(--sa-b)) calc(16px + var(--sa-l)); }
+.overlay, .word-card-overlay { padding: var(--sa-t) var(--sa-r) var(--sa-b) var(--sa-l); }
+
+/* ──── 휴대폰 가로(높이 500 이하) ──── */
+@media (max-height: 500px) {
+  /* 공통 부품: 단추·리본·명판을 한 단계 줄인다 */
+  .btn { --bt: 18px; --br: 26px; --bb: 12px; --bl: 26px; --btn-stroke: 3px; min-height: 48px; padding: 0 18px; font-size: 21px; line-height: 18px; }
+  .btn-lg { min-height: 56px; line-height: 26px; }
+  .btn-sm { --bt: 16px; --br: 22px; --bb: 12px; --bl: 22px; min-height: 46px; font-size: 19px; line-height: 18px; }
+  .btn-icon { width: 54px; height: 58px; font-size: 16px; line-height: 16px; }
+  .btn-icon > .name { height: 16px; }
+  :root.ui-btn-icon .btn-icon { border-image-width: 15px; border-width: 4px 3px; -webkit-text-stroke: 2.5px var(--ink); }
+  .btn-icon .icon { width: 32px; height: 32px; }
+  .icon-sound .sound-icon, .icon-fs .fs-icon { width: 30px; height: 30px; }
+  .ribbon { min-height: 40px; font-size: 19px; }
+  .hint { max-width: 330px; }
+  .hint-body { padding: 4px 8px; }
+  .hint-line { font-size: 16px; line-height: 1.45; }
+  .hint-em { font-size: 17px; -webkit-text-stroke-width: 4px; }
+
+  /* 타이틀: 로고 위, 메뉴는 아래에 붙인다 */
+  .title-logo { top: max(10px, var(--sa-t)); width: min(420px, 58vw, 92dvh); font-size: 52px; }
+  .title-menu { top: auto; bottom: calc(14px + var(--sa-b)); width: 280px; gap: 10px; }
+  .title-menu .btn { font-size: 28px; letter-spacing: 1px; }
+  .title-sys { top: calc(10px + var(--sa-t)); right: calc(12px + var(--sa-r)); gap: 8px; }
+  .title-notice { bottom: auto; top: calc(10px + var(--sa-t)); left: calc(12px + var(--sa-l)); transform: none; max-width: calc(50vw - 230px); font-size: 16px; }
+  .ios-tip { left: calc(12px + var(--sa-l)); bottom: calc(12px + var(--sa-b)); width: min(320px, calc(50vw - 160px - var(--sa-l))); padding-inline: 4px; }
+  .ios-tip-title { font-size: 17px; }
+  .ios-tip-how { font-size: 15px; }
+  .ios-tip-close { min-width: 100px; }
+
+  /* 이름·모습 고르기: 왼쪽에 제목·이름·단추, 오른쪽에 모습 카드 둘 */
+  .select-scene {
+    --card-h: clamp(160px, min(calc(100dvh - 96px - var(--sa-t) - var(--sa-b)), calc((100vw - 450px - var(--sa-l) - var(--sa-r)) / 1.5)), 290px);
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-auto-rows: auto;
+    align-content: center; justify-items: center; column-gap: 20px; row-gap: 8px;
+    padding: calc(8px + var(--sa-t)) calc(16px + var(--sa-r)) calc(8px + var(--sa-b)) calc(16px + var(--sa-l));
+  }
+  .select-scene > * { grid-column: 1; }
+  .select-scene > .title-bg { grid-column: auto; }
+  .select-scene > .avatar-cards { grid-column: 2; grid-row: 1 / span 6; align-self: center; margin: 0; gap: 16px; }
+  .select-continue { grid-template-columns: minmax(0, 1fr); }
+  .select-title { width: 300px; height: 56px; font-size: 28px; line-height: 36px; -webkit-text-stroke-width: 5px; }
+  .select-name { width: 100%; max-width: 400px; min-height: 0; }
+  .select-name-inner { gap: 2px; padding: 0 4px; }
+  .select-name-row { flex-direction: column; align-items: stretch; gap: 2px; }
+  .title-label { align-self: flex-start; }
+  .title-input { flex: none; width: 100%; max-width: none; }
+  .title-label { font-size: 20px; }
+  .title-input { min-height: 44px; font-size: 20px; padding: 0 12px; }
+  .title-help { font-size: 15px; }
+  .title-error { font-size: 16px; }
+  .avatar-ribbon { bottom: 8px; min-width: 110px; font-size: 19px; -webkit-text-stroke-width: 3px; padding-inline: 36px; }
+  .avatar-badge { top: -10px; right: -10px; width: 40px; height: 40px; }
+  .avatar-badge .icon-check { transform: scale(.8); }
+  .avatar-art { border-radius: 90px 90px 10px 10px; }
+  .select-actions { gap: 16px; margin-top: 4px; padding-top: 0; }
+  .select-back { width: 120px; }
+  .select-go { width: 170px; }
+  .select-actions .btn { font-size: 24px; }
+  .saved-names { gap: 8px; }
+  .select-notfound, .title-confirm { font-size: 17px; gap: 4px; }
+
+  /* 탐험 HUD: 메달 60 · 두루마리 · 낱말 명판 · 도감/할 일 54×58. 소리·전체 화면은 HUD 아래 오른쪽 세로 묶음(48×48) */
+  .hud { height: calc(66px + var(--sa-t)); padding: calc(6px + var(--sa-t)) calc(8px + var(--sa-r)) 0 calc(8px + var(--sa-l)); gap: 6px; }
+  .hud-medallion.medallion { width: 60px; height: 60px; border-width: 3px; }
+  :root.ui-medallion .hud-medallion { background: radial-gradient(circle at center, var(--parchment-deep) 0 20px, transparent 21px); }
+  :root.ui-medallion .hud-face-clip, :root.ui-medallion .hud-initial { inset: 9px; }
+  .hud-initial { font-size: 26px; }
+  :root.ui-medallion .hud-initial { font-size: 20px; }
+  .hud-companions { margin-top: 14px; gap: 3px; }
+  .hud-companion.medallion { width: 36px; height: 36px; border-width: 2px; }
+  :root.ui-medallion .hud-companion.medallion { background: radial-gradient(circle at center, var(--parchment-deep) 0 12px, transparent 13px); }
+  :root.ui-medallion .hud-companion-clip, :root.ui-medallion .hud-companion-initial { inset: 5px; }
+  .hud-companion-initial { font-size: 18px; }
+  :root.ui-medallion .hud-companion-initial { font-size: 15px; }
+  .hud-task { --bt: 10px; --br: 30px; --bb: 10px; --bl: 12px; max-width: 360px; min-width: 120px; min-height: 46px; margin: 7px 0 0 -30px; gap: 6px; font-size: 15px; line-height: 18px; }
+  .hud-dot { width: 11px; height: 11px; margin-left: 26px; }
+  .hud-companions:not(:empty) + .hud-task { margin-left: 0; }
+  .hud-companions:not(:empty) + .hud-task .hud-dot { margin-left: 2px; }
+  .hud-words { --bt: 10px; --br: 10px; --bb: 10px; --bl: 12px; height: 58px; gap: 8px; font-size: 15px; line-height: 18px; }
+  .hud-count-lead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .hud-bag { gap: 4px; }
+  .hud-bag li { width: 34px; height: 34px; border-radius: 6px; }
+  .bag-item { width: 24px; height: 24px; font-size: 15px; }
+  .hud-sys { top: calc(72px + var(--sa-t)); right: calc(8px + var(--sa-r)); gap: 6px; }
+  .hud-sys > .hud-button { width: 48px; height: 48px; }
+  .hud-sys > .hud-button > .name { display: none; }
+  @media (min-width: 1181px) { .hud-sys { position: absolute; flex-direction: column; } }
+  .toast { bottom: calc(12px + var(--sa-b)); padding: 8px 16px; font-size: 17px; }
+  /* 터치 조작: 십자 3×48, 말하기 76 */
+  .touch-pad { left: calc(12px + var(--sa-l)); bottom: calc(10px + var(--sa-b)); grid-template: repeat(3, 48px) / repeat(3, 48px); }
+  :root.ui-btn-wood .touch-controls button { --tw: 14px 18px 9px 18px; }
+  .touch-dir { font-size: 18px; }
+  .touch-act { right: calc(12px + var(--sa-r)); bottom: calc(10px + var(--sa-b)); width: 80px; height: 76px; font-size: 18px; }
+  :root.ui-btn-wood .touch-controls .touch-act { --tw: 20px 24px 13px 24px; }
+
+  /* 대화: 상자 높이 118, 글자 19 */
+  .bust { --bust-h: min(84dvh, 42vw); bottom: 40px; }
+  .bust-hero { left: calc(3vw + var(--sa-l)); }
+  .bust-npc { right: calc(3vw + var(--sa-r)); }
+  .dialogue-box { --bt: 20px; --br: 20px; --bb: 20px; --bl: 20px; left: calc(12px + var(--sa-l)); right: calc(12px + var(--sa-r)); bottom: calc(8px + var(--sa-b)); height: 108px; }
+  :root.ui-dialogue .dialogue-box { --inset: 20px; --ring: 6px; border-image-width: 28px; }
+  .dialogue-box::before { inset: calc(7px - var(--inset)); }
+  .dialogue-text { padding: 2px 6px 0; font-size: 19px; line-height: 1.5; }
+  .name-tag { top: calc(-20px - var(--inset)); min-width: 130px; min-height: 40px; padding: 0 40px; font-size: 19px; -webkit-text-stroke-width: 4px; }
+  :root.ui-ribbon .name-tag, :root.ui-ribbon .word-card-title { padding: 0 44px; }
+  :root.ui-ribbon .name-tag {
+    background:
+      radial-gradient(circle at 32px 50%, #FFE9B8 0 2px, #C9963F 3px 5px, #5A3A12 6px 7px, transparent 8px),
+      radial-gradient(circle at calc(100% - 32px) 50%, #FFE9B8 0 2px, #C9963F 3px 5px, #5A3A12 6px 7px, transparent 8px),
+      linear-gradient(rgba(255, 255, 255, .26), rgba(255, 255, 255, 0) 46%, rgba(0, 0, 0, .3)),
+      var(--speaker-color, var(--wood));
+  }
+  :root.ui-ribbon .name-tag::before { left: 26px; right: 26px; top: 5px; bottom: 5px; }
+  .name-tag[data-side='hero'] { left: calc(20px - var(--inset)); }
+  .name-tag[data-side='npc'] { right: calc(20px - var(--inset)); }
+  .dialogue-arrow { right: 10px; bottom: 4px; width: 22px; height: 18px; }
+
+  /* 뜻풀이 카드 */
+  .word-card { --bt: 20px; --br: 20px; --bb: 20px; --bl: 20px; width: min(560px, 76vw); }
+  :root.ui-panel .word-card { --inset: 20px; border-image-width: 28px; }
+  .word-card-body { gap: 6px; padding: 26px 20px 6px; }
+  .word-card-title { top: calc(-20px - var(--inset)); min-width: 200px; padding: 0 44px; font-size: 21px; -webkit-text-stroke-width: 4px; }
+  :root.ui-ribbon .word-card-title {
+    background:
+      radial-gradient(circle at 32px 50%, #FFE9B8 0 2px, #C9963F 3px 5px, #5A3A12 6px 7px, transparent 8px),
+      radial-gradient(circle at calc(100% - 32px) 50%, #FFE9B8 0 2px, #C9963F 3px 5px, #5A3A12 6px 7px, transparent 8px),
+      linear-gradient(rgba(255, 255, 255, .26), rgba(255, 255, 255, 0) 46%, rgba(0, 0, 0, .3)),
+      var(--speaker-color);
+  }
+  .word-card-word { font-size: 32px; -webkit-text-stroke-width: 5px; }
+  .word-card-meaning { font-size: 18px; line-height: 1.4; }
+  .word-card-example { font-size: 16px; line-height: 1.4; }
+  .word-card .btn { margin-top: 2px; min-width: 130px; min-height: 48px; }
+
+  /* 도감·할 일: 한 줄 머리(제목 · 탭 · 닫기), 낱말 2×5, 아래 상세 */
+  .overlay-panel { --bt: 18px; --br: 18px; --bb: 18px; --bl: 18px; --ring: 5px; width: calc(100% - 16px); max-height: calc(100% - 12px); }
+  :root.ui-panel .overlay-panel { border-image-width: 26px; }
+  .overlay-panel > * { margin-inline: 6px; }
+  .overlay-head { margin-top: 0; }
+  .overlay-title { --bt: 10px; --br: 10px; --bb: 10px; --bl: 10px; min-width: 0; font-size: 22px; line-height: 28px; padding-inline: 12px; }
+  :root.ui-panel .overlay-title { padding-inline: 16px; }
+  .overlay-head .btn { min-width: 76px; }
+  .codex .overlay-panel { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 8px; row-gap: 8px; }
+  .codex .overlay-head { display: contents; }
+  .codex .overlay-title { grid-column: 1; grid-row: 1; }
+  .codex .codex-close { grid-column: 3; grid-row: 1; }
+  .codex .codex-tabs { grid-column: 2; grid-row: 1; justify-content: center; flex-wrap: nowrap; gap: 6px; margin: 0; }
+  .codex .codex-body { grid-column: 1 / -1; }
+  .codex-tab { min-width: 54px; padding-inline: 12px; }
+  .codex-body { gap: 8px; }
+  .codex-grid { gap: 6px; }
+  .codex-card { --bt: 10px; --br: 10px; --bb: 10px; --bl: 10px; --ring: 2px; min-height: 48px; flex-direction: row; gap: 6px; }
+  :root.ui-card .codex-card { padding: 0 2px; }
+  :root .codex-card.frame-card.selected { border-radius: 8px; }
+  .codex-word { font-size: 17px; line-height: 1.15; }
+  .codex-q.coin { width: 28px; height: 28px; font-size: 17px; }
+  .codex-card.unknown .codex-meaning { font-size: 15px; }
+  .codex-detail { --bt: 12px; --br: 12px; --bb: 12px; --bl: 12px; min-height: 0; }
+  .codex-detail > p { margin: 0 8px 2px; }
+  .codex-detail > p:first-child { margin-top: 0; }
+  .detail-word { font-size: 22px; }
+  .detail-meaning { font-size: 17px; line-height: 1.35; }
+  .detail-example { font-size: 16px; }
+  .detail-from { font-size: 15px; }
+  .task-goal { margin-top: 8px; gap: 8px; font-size: 18px; line-height: 1.35; }
+  .task-goal-label { font-size: 15px; padding: 0 10px; }
+  .task-list { margin-block: 8px 4px; gap: 6px; }
+  .task-row { --bt: 10px; --br: 10px; --bb: 10px; --bl: 10px; min-height: 46px; font-size: 17px; }
+  .task-row .icon-check { width: 24px; height: 24px; }
+
+  /* 전투: 무대(남은 높이) + 아래 묶음(말풍선 + 6px + 보기). 주인공·몬스터 크기는 무대 높이(cqh)에 맞춘다 */
+  .battle-stage { container-type: size; }
+  .battle-hero { --hero-h: min(120cqh, 40vw); left: calc(3% + var(--sa-l)); }
+  .battle-hero-face { font-size: 40px; }
+  .battle-monster { --mon-h: min(66cqh, 30vw); --mon-cy: calc(46px + var(--sa-t) + min(66cqh, 30vw) / 2); left: calc(66% - var(--mon-h) / 2); }
+  .mode-review .battle-monster { --mon-h: calc(min(66cqh, 30vw) * .7); }
+  .battle-mhp { top: calc(6px + var(--sa-t)); right: calc(12px + var(--sa-r)); width: 268px; height: 40px; gap: 8px; font-size: 18px; --bt: 10px; --br: 10px; --bb: 10px; --bl: 10px; }
+  .hp-cells { gap: 3px; margin-right: 2px; }
+  .hp-cell, :root.ui-hp-cell .hp-cell:not(.lost) { width: 21px; height: 14px; border-radius: 5px; }
+  :root.ui-hp-cell .hp-cell:not(.lost) { border-width: 0 6px; border-image-width: 0 6px; }
+  .light-left { font-size: 18px; }
+  .battle-combo { top: calc(6px + var(--sa-t)); right: calc(290px + var(--sa-r)); min-width: 0; height: 40px; padding-inline: 14px; font-size: 18px; --bt: 10px; --br: 10px; --bb: 10px; --bl: 10px; }
+  .battle-bottom { gap: 6px; padding: 12px calc(12px + var(--sa-r)) calc(6px + var(--sa-b)) calc(12px + var(--sa-l)); }
+  .battle-status { left: calc(12px + var(--sa-l)); top: -48px; min-width: 0; height: 40px; gap: 8px; font-size: 18px; --bt: 10px; --br: 10px; --bb: 10px; --bl: 10px; }
+  .hearts { gap: 2px; font-size: 21px; }
+  :root.ui-heart-full .heart.full, :root.ui-heart-empty .heart.empty { width: 22px; height: 22px; }
+  .heart.crack::before, .heart.crack::after { font-size: 21px; }
+  .practice-tag { font-size: 16px; padding: 0 8px; }
+  .battle-question { --bt: 14px; --br: 14px; --bb: 14px; --bl: 14px; --ring: 4px; min-height: 52px; font-size: 18px; line-height: 1.4; }
+  .battle-prompt { padding: 0 8px; }
+  .battle-who { --bt: 7px; --br: 7px; --bb: 7px; --bl: 7px; top: -2px; left: 30px; height: 28px; font-size: 16px; }
+  .battle-type { top: -2px; right: 28px; height: 28px; padding: 0 12px; font-size: 16px; border-width: 2px; -webkit-text-stroke-width: 3px; }
+  .battle-tail { left: calc(var(--tail-x, 70%) - 24px); top: -16px; width: 48px; height: 44px; }
+  .battle-blank { min-width: 80px; border-bottom-width: 3px; }
+  .final-cue { left: calc(250px + var(--sa-l)); right: calc(12px + var(--sa-r)); bottom: calc(100% + 4px); padding: 4px 12px; font-size: 15px; line-height: 1.35; border-width: 2px; }
+  .battle-option { --bt: 12px; --br: 12px; --bb: 12px; --bl: 12px; --ring: 3px; font-size: 16px; line-height: 1.3; }
+  .opt-num.coin { width: 28px; height: 28px; font-size: 16px; left: 6px; }
+  .opt-text { margin: 0 30px 0 40px; }
+  .opt-mark { right: 4px; width: 28px; height: 28px; line-height: 28px; }
+  .battle-option.right .opt-mark::before { inset: 3px; border-width: 5px; box-shadow: 0 0 0 2px var(--ink), inset 0 0 0 2px var(--ink); }
+  .battle-option.wrong .opt-mark::before, .battle-option.wrong .opt-mark::after { left: 3px; top: 12px; width: 22px; height: 5px; }
+  .opt-say { right: 40px; top: -12px; padding: 2px 8px 3px; font-size: 15px; }
+  .opts-blank { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .opts-blank .battle-option { height: 50px; font-size: 20px; }
+  .opts-blank .opt-text { margin: 0 4px 0 30px; }
+  .opts-blank .opt-mark { top: 2px; right: 2px; translate: none; }
+  .opts-meaning { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .opts-meaning .battle-option { --bt: 10px; --br: 10px; --bb: 10px; --bl: 10px; min-height: 46px; }
+  .opts-usage { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .opts-usage .battle-option { --bt: 10px; --br: 10px; --bb: 10px; --bl: 10px; min-height: 46px; font-size: 15px; line-height: 19px; }
+  .battle-feedback { bottom: 6px; width: min(560px, 80%); }
+  .battle-feedback-body { gap: 4px; padding: 0 6px; }
+  .battle-answer { font-size: 18px; }
+  .x-mark { font-size: 22px; }
+  .battle-meaning { font-size: 16px; line-height: 1.4; }
+  .battle-next { min-width: 110px; }
+  .battle-win { min-width: min(420px, 80vw); min-height: 64px; font-size: 26px; }
+
+  /* 게임 오버·클리어 */
+  .end-scene { padding: calc(8px + var(--sa-t)) calc(12px + var(--sa-r)) calc(8px + var(--sa-b)) calc(12px + var(--sa-l)); }
+  .end-panel { --bt: 18px; --br: 18px; --bb: 18px; --bl: 18px; --ring: 5px; }
+  .end-body { gap: 8px; padding: 2px 8px 0; }
+  .end-title { font-size: 26px; }
+  .end-text { font-size: 17px; }
+  .end-actions { gap: 12px; }
+  /* 패널은 화면 안에: 낱말 카드 목록만 패널 안에서 넘긴다(제목과 단추는 늘 보인다) */
+  .end-panel { max-height: calc(100dvh - 16px - var(--sa-t) - var(--sa-b)); display: flex; flex-direction: column; }
+  .end-body { min-height: 0; grid-template-rows: auto minmax(0, 1fr) auto; }
+  .clear-cards { gap: 6px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 2px; grid-auto-rows: max-content; }
+  .clear-card { --bt: 10px; --br: 10px; --bb: 10px; --bl: 10px; gap: 2px; min-height: 0; }
+  .clear-word { font-size: 18px; }
+  .clear-meaning { font-size: 15px; line-height: 1.3; }
+
+  /* 세계 지도: 지도 상자는 남은 높이에, 아래 카드는 한 줄 */
+  .worldmap-scene { --card-h: 74px; --gap: 8px; padding: calc(6px + var(--sa-t)) calc(12px + var(--sa-r)) calc(6px + var(--sa-b)) calc(12px + var(--sa-l)); }
+  .world-frame { width: min(100%, calc((100dvh - var(--card-h) - var(--gap) - 12px - var(--sa-t) - var(--sa-b) - 32px) * 16 / 9 + 32px)); }
+  .world-ring { width: 34px; height: 34px; }
+  .mark-done .world-ring, .mark-next .world-ring, .mark-far .world-ring { border-width: 4px; }
+  .world-ring .icon-check { width: 22px; height: 22px; }
+  .world-ring .icon-check::before { left: 7px; top: 1px; width: 7px; height: 14px; border-width: 0 4px 4px 0; }
+  .world-place { translate: -50% -17px; }
+  .world-name { margin-top: 2px; font-size: 16px; line-height: 19px; -webkit-text-stroke-width: 4px; }
+  .world-hero-art { transform: scale(.7); transform-origin: 50% 100%; }
+  .world-hero-pin { transform: scale(.75); transform-origin: 50% 100%; }
+  .world-card { --bt: 16px; --br: 16px; --bb: 16px; --bl: 16px; gap: 14px; width: min(760px, 100%); }
+  .world-title { font-size: 21px; line-height: 26px; }
+  .world-card .world-travel { font-size: 16px; line-height: 22px; }
+
+  /* 엔딩: 마지막 말 */
+  .ending-scene[data-part='message'] { gap: 12px; padding-top: max(16px, 9dvh, var(--sa-t)); }
+  .ending-card { --bt: 20px; --br: 20px; --bb: 20px; --bl: 20px; --ring: 6px; width: min(680px, 100%); }
+  :root.ui-panel .ending-card { border-image-width: 28px; }
+  .ending-card-body { padding: 30px 16px; }
+  .ending-card-body::before { top: 8px; }
+  .ending-card-body::after { bottom: 8px; }
+  p.ending-message { font-size: 26px; }
+  .ending-actions { min-height: 48px; }
+  .ending-next { min-width: 150px; }
+
+  /* 말빛 주머니: 제목 → 막 다섯 줄(패널 안에서 위아래로 넘김) → 아래 상세 띠와 "마무리 퀴즈" */
+  .ending-scene[data-part='pouch'] { padding: calc(6px + var(--sa-t)) calc(10px + var(--sa-r)) calc(6px + var(--sa-b)) calc(10px + var(--sa-l)); }
+  .pouch { --bt: 16px; --br: 16px; --bb: 16px; --bl: 16px; --ring: 4px; gap: 6px; height: 100%; max-height: calc(100dvh - 12px - var(--sa-t) - var(--sa-b)); grid-template-rows: auto minmax(0, 1fr); }
+  .pouch-title, .credits-title { --bt: 10px; --br: 10px; --bb: 10px; --bl: 10px; font-size: 21px; line-height: 28px; padding-inline: 24px; -webkit-text-stroke-width: 4px; }
+  :root.ui-panel .pouch-title.frame-plate, :root.ui-panel .credits-title.frame-plate { padding-inline: 24px; }
+  .pouch-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 6px; padding: 0; min-height: 0; }
+  .pouch-acts { gap: 5px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 2px 4px 4px; align-items: start; }
+  .pouch-act { padding: 4px 3px; gap: 4px; }
+  .pouch-acts { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .pouch-head { position: sticky; top: -6px; z-index: 1; padding: 2px 0 3px; border-radius: 8px; background: #F3E6C8; box-shadow: 0 2px 0 rgba(138, 94, 42, .25); }
+  .pouch-act-no { font-size: 15px; }
+  .pouch-act-name { font-size: 17px; }
+  .pouch-cards { gap: 3px; }
+  .pouch .codex-card { --bt: 8px; --br: 8px; --bb: 8px; --bl: 8px; min-height: 44px; }
+  .pouch .codex-word { font-size: 16px; }
+  .pouch .codex-q.coin { width: 24px; height: 24px; font-size: 15px; }
+  .pouch-side { grid-template-rows: none; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+  .pouch-detail { --bt: 10px; --br: 10px; --bb: 10px; --bl: 10px; flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: flex-start; column-gap: 10px; row-gap: 0; height: 66px; overflow-y: auto; text-align: left; }
+  .codex-detail.pouch-detail > p { margin: 0 4px; }
+  .pouch-detail .detail-word { align-self: baseline; font-size: 20px; padding: 0 4px; }
+  .pouch-detail .detail-meaning { font-size: 16px; }
+  .pouch-detail .detail-example { font-size: 15px; }
+  .pouch-detail .detail-from { margin-top: 0; padding-top: 0; border-top: 0; font-size: 15px; }
+  .pouch-detail .pouch-hint { margin: auto; }
+  .pouch-next { width: auto; min-width: 150px; }
+
+  /* 만든 이 */
+  .credits { --bt: 20px; --br: 20px; --bb: 20px; --bl: 20px; --ring: 6px; gap: 8px; width: min(640px, 100%); max-height: calc(100dvh - 16px - var(--sa-t) - var(--sa-b)); }
+  :root.ui-panel .credits { border-image-width: 28px; }
+  .credits-roll { gap: 8px; padding: 2px 12px; }
+  .credit-title { font-size: 18px; }
+  .credit-line { font-size: 16px; line-height: 1.4; }
+  p.ending-thanks { font-size: 20px; padding-top: 8px; }
+
+  /* 마무리 퀴즈 */
+  .quiz-scene { padding: calc(6px + var(--sa-t)) calc(10px + var(--sa-r)) calc(6px + var(--sa-b)) calc(10px + var(--sa-l)); }
+  .quiz { --bt: 18px; --br: 18px; --bb: 18px; --bl: 18px; --ring: 5px; gap: 8px; width: min(900px, 100%); }
+  :root.ui-panel .quiz { border-image-width: 26px; }
+  .quiz > * { margin-inline: 4px; }
+  .quiz-head { gap: 12px; flex-wrap: nowrap; }
+  .quiz-steps { order: 0; flex-basis: auto; gap: 5px; }
+  .quiz-feedback { flex-direction: row; align-items: center; }
+  .quiz .opts-blank { grid-template-columns: 1fr 1fr; }
+  .quiz-title { --bt: 10px; --br: 10px; --bb: 10px; --bl: 10px; font-size: 20px; line-height: 28px; padding-inline: 20px; -webkit-text-stroke-width: 4px; }
+  :root.ui-panel .quiz-title.frame-plate { padding-inline: 20px; }
+  .quiz-steps { gap: 7px; }
+  .quiz-step { width: 14px; height: 14px; }
+  .quiz-count { font-size: 19px; }
+  .quiz-question { --bt: 14px; --br: 14px; --bb: 14px; --bl: 14px; gap: 2px; min-height: 60px; padding-top: 14px; }
+  :root.ui-panel .quiz-question { padding-top: 6px; }
+  .quiz-type { height: 28px; padding: 0 14px; font-size: 16px; border-width: 2px; -webkit-text-stroke-width: 3px; }
+  :root.ui-panel .quiz-type { top: -14px; }
+  .quiz-prompt { font-size: 18px; line-height: 1.4; padding: 0 8px; }
+  .quiz-clue { font-size: 16px; line-height: 1.35; padding: 0 8px; }
+  .quiz-area { gap: 8px; }
+  .quiz-jamo { gap: 10px; }
+  .quiz-tile { width: 48px; height: 48px; font-size: 28px; border-width: 2px; border-radius: 10px; }
+  .quiz-write { gap: 10px; }
+  .quiz-input { height: 48px; font-size: 22px; width: min(320px, 50vw); }
+  .quiz-input::placeholder { font-size: 16px; }
+  .quiz-submit { min-width: 100px; }
+  .quiz .opts-blank .battle-option { height: 48px; font-size: 20px; }
+  .quiz .opts-blank .opt-text { margin: 0 30px 0 36px; }
+  .quiz .opts-blank .opt-mark { top: 50%; right: 4px; translate: 0 -50%; }
+  .quiz-feedback { --bt: 12px; --br: 12px; --bb: 12px; --bl: 12px; min-height: 52px; gap: 10px; padding-inline: 10px; }
+  .quiz-hint { font-size: 16px; }
+  .quiz-verdict { font-size: 19px; gap: 6px; }
+  .quiz-meaning { font-size: 16px; line-height: 1.35; }
+  .quiz-typed { font-size: 15px; }
+  .quiz-next { min-width: 120px; }
+  .quiz-mark { width: 24px; height: 24px; }
+  .quiz-mark.right::before { inset: 2px; border-width: 4px; }
+  .quiz-mark.wrong::before, .quiz-mark.wrong::after { left: 2px; top: 9px; width: 20px; height: 5px; }
+  .quiz-score { font-size: 26px; margin: 0; }
+  .quiz-scene[data-phase='result'] .quiz { max-height: calc(100dvh - 12px - var(--sa-t) - var(--sa-b)); gap: 6px; }
+  .quiz-scene[data-phase='result'] .quiz-score { font-size: 24px; }
+  .quiz-cheer { font-size: 16px; }
+  .quiz-results { gap: 4px 8px; grid-auto-rows: max-content; }
+  .quiz-result { --bt: 8px; --br: 8px; --bb: 8px; --bl: 8px; min-height: 44px; }
+  .quiz-result-word { font-size: 18px; }
+  .quiz-result-meaning { padding-left: 34px; font-size: 15px; }
+  .quiz-actions .btn { min-width: 140px; }
+}
+
+/* 좁은 휴대폰(폭 760 이하): 낱말 보기 넷은 2×2(긴 낱말이 카드 안에 들어가게) */
+@media (max-height: 500px) and (max-width: 760px) {
+  .opts-blank { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .opts-blank .battle-option { height: 46px; }
+  .quiz-steps { gap: 3px; }
+  .quiz-step { width: 12px; height: 12px; }
+  .quiz-title { padding-inline: 14px; }
 }
