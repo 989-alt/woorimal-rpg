@@ -35,12 +35,19 @@ async function talk(page, target) {
   await page.keyboard.press('Space');
 }
 
+// 말을 걸고 대화가 열린 것을 본 뒤 끝까지 넘긴다(대화가 열리기 전에 탐험 화면을 보고 끝났다고 여기지 않게).
+async function talkDialogue(page, target) {
+  await talk(page, target);
+  await page.waitForSelector('[data-scene="dialogue"]');
+  await finishDialogue(page);
+}
+
 // 꼬마 안개 앞에서 복습전을 열어 세 문제를 맞히고 탐험으로 돌아온다(진짜 길: 다온의 부탁을 받은 상태).
 async function beatSmall(page) {
-  await talk(page, 'dodam'); await finishDialogue(page);
+  await talkDialogue(page, 'dodam');
   await talk(page, '우물'); await page.waitForSelector('.toast:not([hidden])');
-  await talk(page, 'dodam'); await finishDialogue(page);
-  await talk(page, 'daon'); await finishDialogue(page);
+  await talkDialogue(page, 'dodam');
+  await talkDialogue(page, 'daon');
   await page.evaluate(() => window.__test.teleportTo('small'));
   await page.keyboard.press('Space');
   await page.waitForSelector('[data-scene="battle"][data-phase="ask"] .battle-option');
@@ -139,7 +146,7 @@ test('할 일 두루마리와 할 일 창(Q)은 늘 지금 할 일 한 가지를
   const errors = collectErrors(page);
   await open(page);
   assert.equal(await page.locator('.hud-task').innerText(), '도담 할머니에게 말을 걸어 보자');
-  await talk(page, 'dodam'); await finishDialogue(page);
+  await talkDialogue(page, 'dodam');
   assert.equal(await page.locator('.hud-task').innerText(), '우물에서 물을 길어 오자');
   await page.keyboard.press('KeyQ');
   await page.waitForSelector('.tasks');
@@ -150,9 +157,9 @@ test('할 일 두루마리와 할 일 창(Q)은 늘 지금 할 일 한 가지를
 
 // 숨은 낱말이 화면에 보이고 부탁이 쉬는 자리(발밑 화살표가 흔들리지 않는 자리)를 만든다.
 async function atJar(page) {
-  await talk(page, 'dodam'); await finishDialogue(page);
+  await talkDialogue(page, 'dodam');
   await talk(page, '우물'); await page.waitForSelector('.toast:not([hidden])');
-  await talk(page, 'gardener'); await finishDialogue(page); // 텃밭 아저씨가 알려 준 뒤에야 장독대가 반짝인다
+  await talkDialogue(page, 'gardener'); // 텃밭 아저씨가 알려 준 뒤에야 장독대가 반짝인다
   await page.evaluate(() => window.__test.teleportTo('장독대'));
   await page.waitForSelector('[data-scene="explore"]');
   await page.waitForLoadState('networkidle');

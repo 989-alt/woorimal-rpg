@@ -55,9 +55,21 @@ export function checkChosung(input, word) {
 }
 
 // ── 문제 만들기 ─────────────────────────
-function meaningQuestion(w, words, rng) {
+// 그 낱말과 뜻이 가까운 낱말들(그 낱말 포함)
+const nearOf = (id, close) => [id, ...close.filter((g) => g.includes(id)).flat()];
+
+// 오답 뜻 셋: 정답 낱말과 뜻이 가까운 낱말의 뜻은 빼고, 오답끼리도 뜻이 가까운 것은 하나만
+function meaningQuestion(w, words, rng, close) {
+  const blocked = new Set(nearOf(w.id, close));
   const seen = new Set([w.meaning]);
-  const wrong = shuffle(words.filter((x) => x.id !== w.id), rng).map((x) => x.meaning).filter((m) => !seen.has(m) && seen.add(m)).slice(0, 3);
+  const wrong = [];
+  for (const x of shuffle(words.filter((y) => !blocked.has(y.id)), rng)) {
+    if (wrong.length === 3) break;
+    if (blocked.has(x.id) || seen.has(x.meaning)) continue;
+    seen.add(x.meaning);
+    wrong.push(x.meaning);
+    nearOf(x.id, close).forEach((id) => blocked.add(id));
+  }
   const options = shuffle([w.meaning, ...wrong], rng);
   return { type: 'meaning', word: w.id, prompt: `'${w.word}'의 뜻은?`, options, answer: options.indexOf(w.meaning) };
 }
@@ -70,7 +82,7 @@ function chosungQuestion(w) {
 function situationQuestion(w, words, rng, situations, close) {
   const s = situations.find((x) => x.word === w.id);
   if (!s) throw new Error(`상황 빈칸 문장이 없는 낱말: ${w.id}`);
-  const near = new Set(close.find((g) => g.includes(w.id)) ?? []);
+  const near = new Set(nearOf(w.id, close));
   const pool = shuffle(words.filter((x) => x.id !== w.id && !near.has(x.id)), rng);
   const wrong = pool.slice(0, 3);
   if (!wrong.some((x) => x.act !== w.act)) wrong[2] = pool.find((x) => x.act !== w.act);
@@ -83,7 +95,7 @@ export function buildQuiz(words, rng, situations = REVIEW_SITUATIONS, close = CL
   const picked = shuffle(words, rng).slice(0, QUIZ_SIZE);
   const types = shuffle(Object.entries(QUIZ_TYPES).flatMap(([t, n]) => Array(n).fill(t)), rng);
   return picked.map((w, i) => (
-    types[i] === 'meaning' ? meaningQuestion(w, words, rng)
+    types[i] === 'meaning' ? meaningQuestion(w, words, rng, close)
       : types[i] === 'chosung' ? chosungQuestion(w)
       : situationQuestion(w, words, rng, situations, close)
   ));

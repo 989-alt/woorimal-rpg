@@ -7,6 +7,8 @@ import { launchBrowser, finishDialogue } from './browser.mjs';
 import { openGame, atEndingExit, answerQuiz, boot } from './play.mjs';
 import { walkToExit } from './helpers.mjs';
 import { WORDS } from '../../data/words.js';
+import { buildQuiz } from '../../js/rules/review-quiz.js';
+import { makeRng } from '../../js/rules/rng.js';
 
 let server, browser;
 before(async () => {
@@ -158,6 +160,41 @@ test('터치: 초성 문제는 화면 입력란과 "확인" 단추로 답하고,
     await page.locator('.battle-option').nth(q.answerIndex).tap();
     await page.locator('.quiz-next').tap();
   }
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('결과 화면 1024×768 가장 나쁜 때(10개 모두 틀림, 뜻이 가장 긴 10문제): 쪽은 스크롤되지 않고 목록만 패널 안에서 스크롤된다', async () => {
+  // 씨앗 1~2000 가운데 결과에 나올 뜻 글자 수가 가장 많은 퀴즈
+  let worst = { seed: 0, len: 0 };
+  for (let seed = 1; seed <= 2000; seed++) {
+    const len = buildQuiz(WORDS, makeRng(seed)).reduce((n, q) => n + meaningOf(q.word).length, 0);
+    if (len > worst.len) worst = { seed, len };
+  }
+  const { page, errors } = await openGame(browser, server, { size: { width: 1024, height: 768 } });
+  await page.evaluate((seed) => window.__test.openQuiz(seed), worst.seed);
+  const asked = await answerQuiz(page, { wrong: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] });
+  assert.equal(asked.every((q) => !q.ok), true);
+  assert.equal(await page.locator('.quiz-score').textContent(), '10문제 중 0개 맞힘');
+  assert.equal(await page.locator('.quiz-result-meaning').count(), 10);
+  const fit = await page.evaluate(() => {
+    const scene = document.querySelector('[data-scene="review-quiz"]');
+    const panel = document.querySelector('.quiz').getBoundingClientRect();
+    const btn = [...document.querySelectorAll('.quiz-actions .btn')].map((b) => b.getBoundingClientRect());
+    return {
+      page: document.documentElement.scrollHeight <= innerHeight && document.documentElement.scrollWidth <= innerWidth,
+      scene: scene.scrollHeight <= scene.clientHeight,
+      panel: panel.top >= 0 && panel.bottom <= innerHeight,
+      buttons: btn.every((r) => r.top >= 0 && r.bottom <= innerHeight),
+    };
+  });
+  assert.deepEqual(fit, { page: true, scene: true, panel: true, buttons: true });
+  // 마지막 카드는 목록을 스크롤해 볼 수 있다
+  const last = page.locator('.quiz-result').last();
+  await last.scrollIntoViewIfNeeded();
+  const box = await last.boundingBox();
+  assert.ok(box.y >= 0 && box.y + box.height <= 768, JSON.stringify(box));
+  assert.equal(await page.evaluate(() => document.documentElement.scrollTop + document.querySelector('[data-scene="review-quiz"]').scrollTop), 0, '쪽과 장면은 그대로');
   assert.deepEqual(errors, []);
   await page.close();
 });

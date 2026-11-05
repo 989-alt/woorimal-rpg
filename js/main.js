@@ -147,6 +147,8 @@ if (new URLSearchParams(location.search).get('test') === '1') {
       state = enterNextChapter(acquireWords(state, chapterWords(chapterOf(act, state.chapter)), '검사'), act);
       router.show('explore');
     },
+    // 마무리 퀴즈를 정한 씨앗으로 연다(끝나면 처음 화면). 같은 씨앗 → 같은 10문제.
+    openQuiz: (seed) => router.show('review-quiz', { next: 'title', seed }),
     answerIndex: () => battleProbe()?.answerIndex() ?? -1,
     // 마무리 퀴즈의 지금 문제: { phase, qn, type, word, answerIndex, answerText }
     quiz: () => reviewQuizProbe()?.snapshot() ?? null,

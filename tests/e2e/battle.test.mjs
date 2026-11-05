@@ -268,14 +268,28 @@ test('움직임 줄이기: 맞혀도 날아가기·파동·빛줄기 없이, 흔
 test('공격 연출: 맞히면 낱말이 날아가고 금빛 파동이 생겼다가 0.8초 안에 지워진다, 모든 움직임은 0.8초 이하', async () => {
   const { page, errors } = await openNewGame();
   await startBattle(page, 'boss', 9);
+  // 효과 조각마다 붙은 순간에 그 움직임의 길이(Web Animations: delay + duration + endDelay = endTime)를 재고,
+  // 지워졌는지와 다음 문제가 열리기 전에 지워졌는지를 적는다. 벽시계로 재지 않는다(바쁜 기계에서 타이머가 늦게 와도 흔들리지 않게).
   await page.evaluate(() => {
+    const KINDS = ['fx-word-fly', 'fx-ring', 'fx-spark'];
     window.__fx = {};
-    const seen = (el, c, t) => { const k = c; if (el.classList?.contains(k) && !(k in window.__fx)) window.__fx[k] = { added: t, removed: null }; };
+    const scene = document.querySelector('[data-scene="battle"]');
+    const asking = () => scene.dataset.phase === 'ask' && !scene.querySelector('.battle-option[aria-disabled]');
     new MutationObserver((list) => {
-      const t = performance.now();
       for (const m of list) {
-        m.addedNodes.forEach((n) => ['fx-word-fly', 'fx-ring', 'fx-spark'].forEach((c) => seen(n, c, t)));
-        m.removedNodes.forEach((n) => { for (const c of ['fx-word-fly', 'fx-ring', 'fx-spark']) if (n.classList?.contains(c) && window.__fx[c] && !window.__fx[c].removed) window.__fx[c].removed = t; });
+        m.addedNodes.forEach((n) => KINDS.forEach((c) => {
+          if (!n.classList?.contains(c)) return;
+          const ends = n.getAnimations().map((a) => a.effect.getComputedTiming().endTime);
+          const f = (window.__fx[c] ??= { count: 0, removed: 0, life: 0, removedWhileAsking: 0 });
+          f.count++;
+          f.life = Math.max(f.life, ...ends);
+          f.animated = (f.animated ?? true) && ends.length > 0;
+        }));
+        m.removedNodes.forEach((n) => KINDS.forEach((c) => {
+          if (!n.classList?.contains(c) || !window.__fx[c]) return;
+          window.__fx[c].removed++;
+          if (asking()) window.__fx[c].removedWhileAsking++;
+        }));
       }
     }).observe(document.querySelector('.battle-fx'), { childList: true });
   });
@@ -289,8 +303,11 @@ test('공격 연출: 맞히면 낱말이 날아가고 금빛 파동이 생겼다
   await page.waitForSelector('[data-phase="ask"] .battle-option:not([aria-disabled])');
   const fx = await page.evaluate(() => window.__fx);
   for (const c of ['fx-word-fly', 'fx-ring', 'fx-spark']) {
-    assert.ok(fx[c]?.removed, `${c}는 지워진다`);
-    assert.ok(fx[c].removed - fx[c].added <= 800, `${c} 수명 ${fx[c].removed - fx[c].added}ms`);
+    assert.ok(fx[c]?.count > 0, `${c}가 생긴다`);
+    assert.equal(fx[c].animated, true, `${c}는 움직임이 붙은 채 생긴다`);
+    assert.ok(fx[c].life > 0 && fx[c].life <= 800, `${c} 움직임 길이 ${fx[c].life}ms`);
+    assert.equal(fx[c].removed, fx[c].count, `${c}는 모두 지워진다`);
+    assert.equal(fx[c].removedWhileAsking, 0, `${c}는 다음 문제가 열리기 전에 지워진다`);
   }
   assert.equal(await page.locator('.battle-fx > *').count(), 0, '연출이 끝나면 효과 층이 비어 있다');
   assert.deepEqual(errors, []);

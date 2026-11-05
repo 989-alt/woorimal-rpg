@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
 import { launchBrowser, dialogueStep } from './browser.mjs';
 import { openGame, state, continueAs, atEndingExit, answerQuiz } from './play.mjs';
-import { walkToExit } from './helpers.mjs';
+import { walkToExit, KEYS } from './helpers.mjs';
 import { ACTS } from '../../data/acts/index.js';
 import ENDING from '../../data/ending.js';
 
@@ -51,6 +51,14 @@ const exitIsOpen = (page) => page.evaluate(async () => {
   const { actOfChapter } = await import('/data/acts/index.js');
   const st = window.__test.state();
   return exitOpen(st, actOfChapter(st.chapter).chapters.find((c) => c.id === st.chapter));
+});
+
+// 지금 장 지도에 서 있는 인물 id(보이는 인물 규칙 그대로)
+const visibleNpcIds = (page) => page.evaluate(async () => {
+  const { visibleNpcs } = await import('/js/rules/quests.js');
+  const { actOfChapter } = await import('/data/acts/index.js');
+  const st = window.__test.state();
+  return visibleNpcs(st, actOfChapter(st.chapter).chapters.find((c) => c.id === st.chapter)).map((n) => n.id);
 });
 
 test('5-2 출구 → 엔딩 보기 → 장면 8개 → 마지막 말 → 말빛 주머니 50장 → 마무리 퀴즈 → 만든 이 → 처음 화면, 그 뒤 이어하기', async () => {
@@ -159,9 +167,12 @@ test('5-2 출구 → 엔딩 보기 → 장면 8개 → 마지막 말 → 말빛 
   const s = await state(page);
   assert.equal(s.chapter, '5-2');
   assert.equal(await exitIsOpen(page), true);
-  await page.evaluate(() => window.__test.teleportTo('narae')); // 꼭대기에 나래가 서 있다
-  await page.waitForSelector('[data-scene="explore"] canvas');
-  await walkToExit(page);
+  // 출구 안쪽 한 칸에서 출구를 보고 선다(출구 칸에 서 있어 비켜 섰다 다시 들어설 필요가 없다)
+  const ch52 = ACTS[4].chapters[1];
+  assert.deepEqual(s.pos, { x: ch52.exit.x - 1, y: ch52.exit.y });
+  assert.equal(s.facing, ch52.exit.dir);
+  assert.deepEqual(await visibleNpcIds(page), ch52.npcs.map((n) => n.id), '꼭대기에 나래가 서 있다');
+  await page.keyboard.press(KEYS[ch52.exit.dir]);
   await page.waitForSelector('[data-scene="clear"]');
   await page.getByRole('button', { name: '엔딩 보기' }).click();
   await page.waitForSelector('[data-scene="dialogue"][data-ready]');
