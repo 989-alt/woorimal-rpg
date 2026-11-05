@@ -16,7 +16,7 @@ import {
 } from '../ui/battle-layout.js';
 import { HIT_MS, playHit, playMiss } from '../ui/battle-fx.js';
 import { ASSETS } from '../../data/assets.js';
-import { setArt } from '../ui/images.js';
+import { setArt, loadImage } from '../ui/images.js';
 
 const HEARTS = 5;
 const HP = 6;
@@ -98,6 +98,10 @@ export const battle = {
     setArt(f.hero, ASSETS.battleHero[avatar], 'battle-hero-img art');
     // 복습전의 꼬마 안개도 막 몬스터 그림을 쓴다(작게, 이름표는 꼬마 안개 그대로)
     setArt(f.monster, ASSETS.monster[act.id], 'battle-monster-img art');
+    // 세로로 긴 몬스터 그림(5막 탑 높이의 무리)은 상자를 아래로 늘린다(폭·위끝은 그대로, 아랫부분은 묶음 뒤)
+    loadImage(ASSETS.monster[act.id]).then((img) => {
+      if (img && img.naturalHeight > img.naturalWidth) f.monster.classList.add('tall');
+    });
     let options = null; // { el, buttons }
     const drawHud = (fx = {}) => drawFrame(f, {
       ...fx,

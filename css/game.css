@@ -1066,7 +1066,10 @@ canvas, img {
   box-shadow: 0 3px 8px rgba(0, 0, 0, .35);
 }
 /* 숄 밝힘: 몬스터 상자 가운데에 하늘색 빛이 1초 동안 조금 밝아진다(금빛 아님) */
-.battle-monster.shawl-lit { --shawl-x: 50%; --shawl-y: 58%; }
+.battle-monster { --shawl-x: 50%; --shawl-y: 58%; }
+/* 세로 그림(5막 보스 1440×2160): 폭·위끝은 그대로, 아래로 1.5배. 숄 자리는 그림 속 숄 가운데(상자 기준 백분율) */
+.battle-monster.tall { height: calc(var(--mon-h) * 1.5); border-radius: 0; --shawl-x: 51%; --shawl-y: 56%; }
+.battle-monster.tall::after { border-radius: 0; }
 .battle-monster.shawl-lit::after {
   content: '';
   position: absolute;

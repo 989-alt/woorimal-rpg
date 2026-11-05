@@ -151,6 +151,34 @@ test('복습전: 막 몬스터 그림을 보스의 70%로, 이름표는 꼬마 �
   await page.close();
 });
 
+// 5막 보스(1440×2160): 세로 그림이면 상자가 아래로 1.5배 길어지고(폭·위끝 그대로), 아랫부분은 묶음 뒤로 간다.
+// 숄 빛 자리(--shawl-x·--shawl-y, 그림 속 숄 가운데)는 묶음 위에 보여야 마지막 '나래' 문제에서 숄이 밝아지는 것이 보인다.
+test('5막 보스: 세로 그림, 상자 380×570, 숄 자리는 묶음 위, 보기를 가리지 않음', async () => {
+  const { page, errors } = await open('f');
+  await page.evaluate(() => window.__test.goChapter('5-2'));
+  await page.waitForSelector('[data-scene="explore"] .hud');
+  await battle(page, 'boss');
+  await page.waitForSelector('.battle-monster.tall img.battle-monster-img');
+  assert.match(await page.locator('.battle-monster.tall img').getAttribute('src'), /monster_act5\.webp/);
+  const mon = await box(page, '.battle-monster.tall');
+  near(mon.width, 380, 8, '몬스터 상자 폭');
+  near(mon.height, 570, 12, '몬스터 상자 높이');
+  near(mon.y, 64, 4, '몬스터 상자 위끝(정사각 상자와 같은 자리)');
+  const shawl = await page.evaluate(() => {
+    const cs = getComputedStyle(document.querySelector('.battle-monster.tall'));
+    return { x: parseFloat(cs.getPropertyValue('--shawl-x')), y: parseFloat(cs.getPropertyValue('--shawl-y')) };
+  });
+  assert.ok(shawl.x > 0 && shawl.x < 100 && shawl.y > 0 && shawl.y < 100, `숄 자리 ${JSON.stringify(shawl)}`);
+  const sx = mon.x + (mon.width * shawl.x) / 100;
+  const sy = mon.y + (mon.height * shawl.y) / 100;
+  const bottom = await box(page, '.battle-bottom');
+  assert.ok(sy < bottom.y, `숄 자리 y ${sy.toFixed(0)} < 묶음 위끝 ${bottom.y.toFixed(0)}`);
+  assert.ok(sx > 683 && sx < 1366, `숄 자리 x ${sx.toFixed(0)}`);
+  assert.ok(await optionsUncovered(page), '보기가 가려지지 않는다');
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
 test('타이틀: 로고 상자 폭 600, 이름은 h1 글자, 메뉴 단추 340×76·첫 단추 위끝 약 470', async () => {
   const page = await browser.newPage({ viewport: { width: 1366, height: 768 } });
   const errors = collectErrors(page);
