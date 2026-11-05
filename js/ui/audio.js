@@ -53,6 +53,14 @@ export function musicFor(scene, params = {}, state = null) {
 
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
 
+// 풀어 둔 음악 가운데 내려놓을 것. 음악 한 곡은 풀면 수십 MB라, 지금 나는 곡과 곧 날 곡(바라는 곡)만 남긴다.
+// cached: 풀어 두었거나 푸는 중인 경로들, musicPaths: 음악 파일 경로들, keep: 남길 경로들(null은 건너뜀). 효과음은 건드리지 않는다.
+export function musicToRelease(cached, musicPaths, keep) {
+  const music = new Set(musicPaths);
+  const kept = new Set(keep.filter(Boolean));
+  return [...cached].filter((p) => music.has(p) && !kept.has(p));
+}
+
 // 저장된 글(JSON) → { on, volume }. 깨졌거나 없으면 기본값.
 export function parsePref(raw) {
   let p = null;
@@ -230,7 +238,7 @@ function fetchBytes(path) {
 function decode(path, { retry = false } = {}) {
   if (!path || !ac) return Promise.resolve(null);
   if (!buffers.has(path)) {
-    buffers.set(path, fetchBytes(path).then((buf) => {
+    const job = fetchBytes(path).then((buf) => {
       if (!buf) return null;
       // 옛 Safari는 promise를 돌려주지 않는다: 콜백 꼴로 부른다
       return new Promise((resolve) => {
@@ -240,10 +248,12 @@ function decode(path, { retry = false } = {}) {
         } catch { resolve(null); }
       });
     }).then((ab) => {
+      if (buffers.get(path) !== job) return ab; // 푸는 사이 내려놓은 음악: 붙들지 않는다
       if (ab) ready.set(path, ab);
       else if (retry) { bytes.delete(path); buffers.delete(path); } // 다음 장면에서 한 번 더 받아 본다
       return ab;
-    }));
+    });
+    buffers.set(path, job);
   }
   return buffers.get(path);
 }
@@ -270,6 +280,18 @@ function markPlaying() {
   if (typeof document === 'undefined') return;
   if (playing) document.documentElement.dataset.music = playing.key;
   else delete document.documentElement.dataset.music;
+}
+
+// 더는 나지 않는 음악의 풀린 소리를 놓는다(받아 둔 파일은 남겨 다시 풀 수 있게 한다).
+// 사라지며 작아지는 곡은 재생 중인 소리 노드가 끝날 때까지 붙들고 있다가 놓는다.
+function releaseMusic() {
+  const keep = [musicPath(playing?.key), musicPath(pref.on ? wantMusic : null)];
+  for (const p of musicToRelease(buffers.keys(), Object.values(ASSETS.audio?.music ?? {}), keep)) {
+    buffers.delete(p);
+    const buf = ready.get(p);
+    ready.delete(p);
+    if (buf) regions.delete(buf);
+  }
 }
 
 function fadeOutMusic() {
@@ -302,6 +324,7 @@ function startMusic(key, buf) {
   fadeOutMusic();
   playing = { key, src, gain };
   markPlaying();
+  releaseMusic();
 }
 
 // 바라는 음악과 지금 나는 음악을 맞춘다. 꺼져 있으면 음악을 멈춘다(켜면 다시 처음부터).
@@ -310,10 +333,10 @@ function syncMusic() {
   const key = pref.on ? wantMusic : null;
   if ((playing?.key ?? null) === key) { musicToken++; return; }
   const token = ++musicToken;
-  if (!key) { fadeOutMusic(); return; }
+  if (!key) { fadeOutMusic(); releaseMusic(); return; }
   decode(musicPath(key), { retry: true }).then((buf) => {
-    if (token !== musicToken || !ac) return; // 그사이 다른 음악을 바랐다
-    if (!buf) { fadeOutMusic(); return; } // 못 받았으면 조용히
+    if (token !== musicToken || !ac) { releaseMusic(); return; } // 그사이 다른 음악을 바랐다
+    if (!buf) { fadeOutMusic(); releaseMusic(); return; } // 못 받았으면 조용히
     try { startMusic(key, buf); } catch { /* 소리가 게임을 막지 않는다 */ }
   });
 }

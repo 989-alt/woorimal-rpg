@@ -9,7 +9,7 @@ import { ACTS } from '../data/acts/index.js';
 import {
   musicFor, parsePref, loadPref, savePref, prefOfSave, withSoundPref, allowSfx, edgeTrim, questSfx, gateOpened,
   DEFAULT_PREF, PREF_KEY, SFX_GAP_MS, SYNTH, initAudio, playMusic, sfx, setSoundOn, toggleSound, isSoundOn,
-  useSavePref, useGlobalPref, audioProbe, isSoundKey,
+  useSavePref, useGlobalPref, audioProbe, isSoundKey, musicToRelease,
 } from '../js/ui/audio.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -197,4 +197,16 @@ test('node(브라우저 아님)에서 진짜 소리 모드를 바라도 조용�
   toggleSound();
   toggleSound();
   assert.equal(audioProbe().mode, 'off');
+});
+
+test('musicToRelease: 풀어 둔 음악은 지금 곡과 바라는 곡만 남기고, 효과음은 놓지 않는다', () => {
+  const music = Object.values(ASSETS.audio.music);
+  const sfxPaths = Object.values(ASSETS.audio.sfx);
+  assert.ok(music.length >= 3);
+  const [a, b, c] = music;
+  const cached = [a, b, c, ...sfxPaths];
+  assert.deepEqual(musicToRelease(cached, music, [b, null]), [a, c]);
+  assert.deepEqual(musicToRelease(cached, music, [b, c]), [a]);
+  assert.deepEqual(musicToRelease(cached, music, [null, null]), [a, b, c]);
+  assert.deepEqual(musicToRelease(new Map(cached.map((p) => [p, 1])).keys(), music, [a]), [b, c]);
 });
