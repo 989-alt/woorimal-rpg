@@ -23,7 +23,7 @@ export const ASSETS = {
     flower: 'assets/pixel/npc_flower.png',
     northgate: 'assets/pixel/npc_northgate.png',
     narae: 'assets/pixel/npc_narae.png', woodcutter: 'assets/pixel/npc_woodcutter.png', miru: 'assets/pixel/npc_miru.png', yeoul: 'assets/pixel/npc_yeoul.png', skygran: 'assets/pixel/npc_skygran.png', ferryman: 'assets/pixel/npc_ferryman.png', // 3막
-    tea: null, garam: null, signpost: null, keeper: null, traveler: null, // 4막
+    tea: 'assets/pixel/npc_tea.png', garam: 'assets/pixel/npc_garam.png', signpost: 'assets/pixel/npc_signpost.png', keeper: 'assets/pixel/npc_keeper.png', traveler: 'assets/pixel/npc_traveler.png', // 4막
     greykid: null, // 5막
   },
   // 물건 아이콘 48×48 (물건 id)
