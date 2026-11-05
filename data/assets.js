@@ -27,7 +27,7 @@ export const ASSETS = {
     greykid: null, // 5막
   },
   // 물건 아이콘 48×48 (물건 id)
-  items: { water: 'assets/pixel/icon_water.png', firewood: 'assets/pixel/icon_firewood.png', letter: 'assets/pixel/icon_letter.png', 'price-board': 'assets/pixel/icon_price-board.png', weight: 'assets/pixel/icon_weight.png', bundle: 'assets/pixel/icon_bundle.png', 'trail-ribbon': null, lunchbox: null, 'rain-bowl': null, 'warm-tea': null, 'pine-twigs': null, 'bundle-strap': null, bell: null, 'light-shard': null, lullaby: null },
+  items: { water: 'assets/pixel/icon_water.png', firewood: 'assets/pixel/icon_firewood.png', letter: 'assets/pixel/icon_letter.png', 'price-board': 'assets/pixel/icon_price-board.png', weight: 'assets/pixel/icon_weight.png', bundle: 'assets/pixel/icon_bundle.png', 'trail-ribbon': 'assets/pixel/icon_trail-ribbon.png', lunchbox: 'assets/pixel/icon_lunchbox.png', 'rain-bowl': 'assets/pixel/icon_rain-bowl.png', 'warm-tea': null, 'pine-twigs': null, 'bundle-strap': null, bell: null, 'light-shard': null, lullaby: null },
   // 꼬마 몬스터 도트 48×96(발이 맨 아래 줄)·보스 도트 96×96(2×2칸, 발이 보스 칸 아래 줄 가운데) (막 번호)
   small: { 1: 'assets/pixel/monster_small_act1.png', 2: 'assets/pixel/monster_small_act2.png', 3: 'assets/pixel/monster_small_act3.png', 4: null, 5: null },
   bossPixel: { 1: 'assets/pixel/monster_boss_act1.png', 2: 'assets/pixel/monster_boss_act2.png', 3: 'assets/pixel/monster_boss_act3.png', 4: null, 5: null },
