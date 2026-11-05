@@ -1,0 +1,13 @@
+{
+ "model": "gpt-image-2-5-flare-text-to-image",
+ "input": {
+  "prompt": "16px pixel art game sprites, three small characters standing side by side facing the viewer (front view) for a top-down 3/4 RPG, each about 16 pixels wide and 24 pixels tall, 2.5 heads tall, crisp hard-edged pixels, limited palette, 1px darker-hue outlines (never black), light from the upper left.\nLeft: a girl adventurer with a single high ponytail, indigo-blue (#3B5BA5) short cape jacket, small cream pouch on her right hip.\nMiddle: a boy adventurer with short dark-brown hair, the same indigo-blue cape jacket and cream pouch on his right hip.\nRight: an elderly grandmother with a silver-grey bun sticking up above her head, plum-purple (#8E4A7A) shawl, holding a wooden staff taller than her head.\nWide even spacing between the three characters, no text.",
+  "aspect_ratio": "3:2",
+  "resolution": "1K",
+  "background": "transparent"
+ },
+ "taskId": "f153fd5eb431c6ec6f2896e43e77a3c2",
+ "credits": 6.0,
+ "costTime": 97,
+ "source_url": "https://tempfile.aiquickdraw.com/images/chatgpt/file_0000000056cc8210ae570d4f946edc10.png"
+}

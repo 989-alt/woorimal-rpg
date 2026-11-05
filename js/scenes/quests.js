@@ -1,0 +1,72 @@
+// 할 일: 이 장의 부탁, 숨은 낱말, (막의 마지막 장이면) 그림자.
+import { actOfChapter } from '../../data/acts/index.js';
+import { questList, actCleared, actDoneText } from '../rules/quests.js';
+import { nextGoal } from '../rules/guide.js';
+import { mountOverlay } from '../ui/overlay.js';
+
+const LABEL = { locked: '?', open: '받기 전', active: '하는 중', ready: '돌아가서 알리기', done: '완료' };
+
+function row(title, label, done) {
+  const li = document.createElement('li');
+  li.className = `task-row frame-plate${done ? ' done' : ''}`;
+  li.tabIndex = 0;
+  const name = document.createElement('span');
+  name.className = 'task-title';
+  name.textContent = title;
+  const st = document.createElement('span');
+  st.className = 'task-stage';
+  if (done) {
+    const check = document.createElement('span');
+    check.className = 'task-check icon icon-check';
+    check.setAttribute('aria-hidden', 'true');
+    st.append(check);
+  }
+  st.append(label);
+  li.append(name, st);
+  return li;
+}
+
+export function openTasks(root, state, chapter, { onClose, focusAfter } = {}) {
+  const el = document.createElement('div');
+  el.className = 'overlay tasks';
+  const panel = document.createElement('div');
+  panel.className = 'overlay-panel frame-panel';
+  const head = document.createElement('div');
+  head.className = 'overlay-head';
+  const title = document.createElement('h2');
+  title.className = 'overlay-title frame-plate';
+  title.textContent = `할 일: ${chapter.title}`;
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'btn btn-wood btn-sm tasks-close';
+  closeBtn.textContent = '닫기';
+  head.append(title, closeBtn);
+
+  const goal = document.createElement('p'); // 늘 맨 위: 지금 할 일 한 가지(HUD 두루마리와 같은 글)
+  goal.className = 'task-goal';
+  const goalLabel = document.createElement('span');
+  goalLabel.className = 'task-goal-label';
+  goalLabel.textContent = '지금 할 일';
+  goal.append(goalLabel, nextGoal(state, chapter).text);
+
+  const list = document.createElement('ul');
+  list.className = 'task-list';
+  for (const q of questList(state, chapter)) {
+    list.appendChild(row(q.stage === 'locked' ? '?' : q.title, LABEL[q.stage], q.stage === 'done'));
+  }
+  const found = !!state.hiddenFound?.[chapter.id];
+  list.appendChild(row(`숨은 낱말: ${found ? '찾음' : '못 찾음'}`, '', false));
+  const act = actOfChapter(chapter.id);
+  const { chapters } = act;
+  if (chapters[chapters.length - 1].id === chapter.id) {
+    const cleared = actCleared(state, act);
+    list.appendChild(row(cleared ? actDoneText(act) : '그림자를 물리쳐라', cleared ? '완료' : '', cleared));
+  }
+
+  panel.append(head, goal, list);
+  el.appendChild(panel);
+  const close = mountOverlay(root, el, { label: '할 일', onClose, focusAfter });
+  closeBtn.addEventListener('click', close);
+  closeBtn.focus();
+  return close;
+}

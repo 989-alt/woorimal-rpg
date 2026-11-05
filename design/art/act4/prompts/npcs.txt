@@ -1,0 +1,12 @@
+Pixel art character sprites for a top-down 3/4 view RPG, detailed pixel art, 48 pixels per tile. Five people of a cozy fantasy mountain pass, each standing still facing the viewer (front view), arranged in an exact grid of 3 columns and 2 rows with wide gaps, the last cell (bottom right) left empty, each figure centred in its cell, all feet on the same baseline in a row. Proportions 2.5 heads tall (not baby-like chibi). The reference image shows people of the same world: draw all five in exactly that pixel style and size.
+Top row, left to right:
+1. A tea house woman, middle-aged and warm, hair tied back in a low bun, bare head, a plain muted brown-beige dress with a long cream apron, holding a round clay teapot in both hands in front of her.
+2. Garam, a shy boy about 11 years old, a little hunched with his shoulders drawn in and his head slightly lowered, short dark hair, bare head (no hat), a very thick knitted scarf wound several times up to his chin, a plain oatmeal-coloured coat.
+3. A signpost grandfather, old and a bit thin but upright, short white hair and a short white beard, bare head, muted grey-brown work clothes, holding a wooden mallet in one hand and a small blank wooden sign board tucked under the other arm.
+Bottom row, left to right:
+4. A rest-shelter keeper man, sturdy and broad-chested, short dark hair and stubble, bare head, a thick shaggy fur vest over a plain shirt, rolled sleeves, solid boots, standing firmly with fists at his sides.
+5. A travelling grandmother, small and brisk, grey hair in a short braid, bare head (no hat), a plain light earth-coloured coat, a small backpack on her back with its straps visible on her shoulders, muddy brown boots.
+6. (empty cell, nothing drawn)
+Everyone wears nothing on their head (no hats, caps or bandanas) and only two low-saturation earthy colours each (beige, oatmeal, brown, grey-brown). No blue, no sky blue, no purple, no orange, no gold on anyone. Simple shapes, child-friendly.
+Style: crisp hard-edged pixels, no blur, no anti-aliasing, limited palette, 1px darker-hue outlines (never black), soft cel shading, light from the upper left.
+Solid flat magenta (#FF00FF) background everywhere, no ground shadows, no text, no numbers, no labels, no grid lines.

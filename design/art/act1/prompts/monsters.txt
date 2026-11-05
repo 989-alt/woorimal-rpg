@@ -1,0 +1,6 @@
+Pixel art monster sprites for a top-down 3/4 view RPG, detailed pixel art, 48 pixels per tile, child-friendly, lonely and sad rather than scary.
+Two fog creatures side by side with a wide gap, both standing on the same baseline, facing the viewer:
+Left: a small fog creature, clearly taller than wide (about 2 to 3 proportion), shaped like a soft faceless round grey blob with a round head on top, sloping drooping shoulders like a sad little hunched figure, and a wide soft base that melts into a few short wisps at the bottom.
+Right: a big fog lump, the same kind of faceless creature but much bigger and wider (square proportion), a heavy round head sunk into big drooping shoulders, a soft rounded body, base melting into short wisps.
+Both: desaturated grey only (#B9BBBE light, #8A8D91 mid, #5E6266 dark), large simple soft shapes with smooth cel shading, lighter on the upper left, no eyes, no mouth, no face, no outline, the outer edge broken up with a fine checkerboard dither, no loose floating bits.
+Solid flat magenta (#FF00FF) background everywhere, no ground shadows, no text.

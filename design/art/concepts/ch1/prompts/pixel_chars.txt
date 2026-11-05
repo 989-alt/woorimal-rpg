@@ -1,0 +1,5 @@
+16px pixel art game sprites, three small characters standing side by side facing the viewer (front view) for a top-down 3/4 RPG, each about 16 pixels wide and 24 pixels tall, 2.5 heads tall, crisp hard-edged pixels, limited palette, 1px darker-hue outlines (never black), light from the upper left.
+Left: a girl adventurer with a single high ponytail, indigo-blue (#3B5BA5) short cape jacket, small cream pouch on her right hip.
+Middle: a boy adventurer with short dark-brown hair, the same indigo-blue cape jacket and cream pouch on his right hip.
+Right: an elderly grandmother with a silver-grey bun sticking up above her head, plum-purple (#8E4A7A) shawl, holding a wooden staff taller than her head.
+Wide even spacing between the three characters, no text.

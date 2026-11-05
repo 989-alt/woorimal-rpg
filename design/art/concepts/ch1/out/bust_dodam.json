@@ -1,0 +1,12 @@
+{
+ "model": "gpt-image-2-5-flare-text-to-image",
+ "input": {
+  "prompt": "Modern anime illustration with soft cel shading (two tones plus one gentle gradient), delicate hair highlights, large expressive eyes, light coming from the upper left, child-friendly, modest and practical clothing, no bloom, no bokeh, no text, no logos.\nUpper-body bust portrait cropped from the top of the head to the waist, a kind elderly grandmother storyteller with silver-grey hair gathered in a neat low bun, warm wrinkles and gentle eyes, wearing a plum-purple (#8E4A7A) knitted shawl over a simple cosy cream dress (modern fantasy village clothing, not a traditional costume), holding a wooden walking staff whose top is carved into a small curled scroll, warm welcoming smile, facing three-quarters toward the viewer's left.\nPlain flat solid magenta (#FF00FF) background with no shadows or gradients.",
+  "aspect_ratio": "3:4",
+  "resolution": "2K"
+ },
+ "taskId": "a9052d677f5a7cdd5355c78ddba995fc",
+ "credits": 10.0,
+ "costTime": 50,
+ "source_url": "https://tempfile.aiquickdraw.com/gpt-image-2-5/1793755689674-h6ifokh6e1m.png"
+}

@@ -1,0 +1,8 @@
+{
+ "npcs": { "src": "npcs_a1_cut.png", "grid": [3, 2], "ids": ["tea", "garam", "signpost", "keeper", "traveler", null] },
+ "monsters": { "src": "monsters_a1_cut.png", "order": ["small", "boss"] },
+ "icons": { "src": "icons_a1_cut.png", "grid": [3, 1], "ids": ["warm-tea", "pine-twigs", "bundle-strap"] },
+ "height": { "tea": 68, "garam": 60, "signpost": 66, "keeper": 74, "traveler": 64 },
+ "keep": {},
+ "outline": {}
+}

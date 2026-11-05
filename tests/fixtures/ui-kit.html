@@ -1,0 +1,72 @@
+<!doctype html>
+<!-- UI 부품 견본: 두 CSS를 읽고 loadUiKit()을 부른 뒤 부품을 하나씩 늘어놓는다(tests/e2e/ui-kit.test.mjs). 뿌리 기준 경로를 쓰려고 base를 둔다. -->
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UI 견본</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/ui-kit.css">
+  <link rel="stylesheet" href="css/game.css">
+  <style>
+    body { overflow: auto; height: auto; min-height: 100%; background: var(--wood-dark); }
+    main { display: grid; gap: 24px; padding: 24px; grid-template-columns: repeat(3, 1fr); align-items: start; }
+    section { display: grid; gap: 16px; justify-items: start; padding: 12px; background: rgba(255, 255, 255, .08); }
+    h2 { margin: 0; color: #fff; font-size: 18px; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .demo-box { width: 280px; min-height: 120px; }
+  </style>
+</head>
+<body>
+  <main>
+    <section>
+      <h2>틀</h2>
+      <div class="frame-panel demo-box"><p>패널 틀입니다.</p></div>
+      <div class="frame-plate demo-box" style="min-height: 64px; width: 280px"><p>명판</p></div>
+      <div class="frame-card demo-box" style="min-height: 96px"><p>카드</p></div>
+      <div class="frame-scroll demo-box" style="width: 420px; min-height: 60px"><p style="margin:0">● 우물에서 물 길어 오기</p></div>
+    </section>
+    <section>
+      <h2>대화 틀 · 리본</h2>
+      <div class="frame-dialogue demo-box" style="width: 420px; min-height: 150px"><p>고운돋움으로 쓴 대사 한 줄입니다.</p></div>
+      <div class="ribbon" style="--speaker-color: #3B5BA5; --speaker-ink: #fff">하늘</div>
+      <div class="ribbon" style="--speaker-color: #A9C9D6; --speaker-ink: #2B2622">나래</div>
+    </section>
+    <section>
+      <h2>단추</h2>
+      <div class="row">
+        <button type="button" class="btn btn-green" id="b-green">처음부터</button>
+        <button type="button" class="btn btn-wood" id="b-wood">이어하기</button>
+      </div>
+      <div class="row">
+        <button type="button" class="btn btn-green btn-lg">시작하기</button>
+        <button type="button" class="btn btn-wood btn-sm">뒤로</button>
+        <button type="button" class="btn btn-wood" disabled id="b-disabled">못 누름</button>
+      </div>
+      <div class="row">
+        <button type="button" class="btn-icon" id="b-icon"><span class="icon icon-book"></span><span class="name">도감</span><span class="key-badge">E</span></button>
+        <button type="button" class="btn-icon"><span class="icon icon-scroll"></span><span class="name">할 일</span><span class="key-badge">Q</span></button>
+      </div>
+    </section>
+    <section>
+      <h2>메달 · 동전 · 아이콘</h2>
+      <div class="row">
+        <div class="medallion"><canvas width="66" height="66"></canvas></div>
+        <span class="coin">1</span><span class="coin">2</span>
+        <span class="icon icon-check"></span>
+      </div>
+      <div class="row">
+        <span class="hearts"><span class="heart full">♥</span><span class="heart full">♥</span><span class="heart empty">♥</span></span>
+        <span class="hp-cells"><i class="hp-cell"></i><i class="hp-cell"></i><i class="hp-cell lost"></i></span>
+      </div>
+      <p style="margin:0; color:#fff; font-family: var(--font-title); font-size: 28px">주아 글꼴 보기 낱말</p>
+      <p style="margin:0; color:#fff; font-size: 20px">고운돋움 글꼴 대사입니다.</p>
+    </section>
+  </main>
+  <script type="module">
+    import { loadUiKit } from '/js/ui/ui-kit.js';
+    window.__kit = loadUiKit();
+  </script>
+</body>
+</html>

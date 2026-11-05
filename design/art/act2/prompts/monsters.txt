@@ -1,0 +1,6 @@
+Pixel art monster sprites for a top-down 3/4 view RPG, detailed pixel art, 48 pixels per tile, child-friendly, lonely and sad rather than scary. The reference image shows two fog creatures of the same world: match their pixel style, grey shading and dithered edges exactly.
+Two shadow creatures side by side with a wide gap, both standing on the same baseline, facing the viewer:
+Left: a small price shadow, clearly taller than wide (about 2 to 3 proportion), a faceless soft grey little figure like a small child silhouette with drooping shoulders, hugging one small hand scale (a little balance with two pans) to its chest, its base melting into a few short wisps.
+Right: a big price-blurring shadow, much bigger and wider (square proportion): a lumpy cluster of faceless grey shopkeeper silhouettes in apron shapes merged into one heavy drooping mass, leaning to one side, with a big balance scale that tilts and melts down one side, the base melting into short wisps.
+Both: desaturated grey only (#B9BBBE light, #8A8D91 mid, #5E6266 dark), large simple soft shapes with smooth cel shading, lighter on the upper left, no eyes, no mouth, no face, no teeth, no claws, no outline, the outer edge broken up with a fine checkerboard dither, no loose floating bits.
+Solid flat magenta (#FF00FF) background everywhere, no ground shadows, no text.

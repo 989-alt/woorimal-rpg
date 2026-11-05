@@ -1,0 +1,19 @@
+{
+ "model": "gpt-image-2-5-flare-image-to-image",
+ "input": {
+  "prompt": "In-game exploration screen mockup, full-screen 16:9. Keep the reference pixel-art village map exactly: the same top-down pixel art of the red round-roofed cottage, the blue round-roofed cottage, the clothesline, the clay jars, the well at the bottom, the sandy paths, the grandmother and the girl near the red cottage with the white \"!\" marker, the grey shadow figure and the boy on the right. Extend the map so it fills the entire screen edge to edge: no beige page, no margin, no card border around the map. Remove the old flat HUD bar and the old buttons and the old hint bubble.\n\nOverlay a new HUD floating over the map, all at the top edge:\n1. Top-left: a round portrait medallion (carved wood ring with brass trim and a green gem at the bottom) showing the pixel-art girl hero's face, joined on its right to a cream parchment scroll banner with rolled wooden ends (a quest tracker). On the scroll: a small leaf-green dot and the text \"우물에서 물 길어 오기\".\n2. Top-right: a carved-wood framed bar with the text \"이 장의 낱말 0/5\" followed by three empty square item slots (recessed dark-wood sockets with a dashed cream outline, nothing inside).\n3. Right of that, two large square glossy icon buttons with carved wood frames: the first shows an open book icon with the label \"도감\" under it and a keycap badge \"E\" in its corner; the second shows a rolled checklist scroll icon with the label \"할 일\" under it and a keycap badge \"Q\" in its corner.\nNothing else is on screen. The HUD covers only the top strip; the map stays clearly visible.\n\nUI KIT (use the same kit on every element): an original, cheerful, chunky 2D fantasy RPG interface for 12-year-old children. Panels are framed in rounded, carved honey-brown wood (#A8714A with #6B4426 shadows) with a thin polished antique-brass trim line (#C9963F) and small leaf-shaped brass corner ornaments; tiny round gem studs at the corners in leaf green (#5FAE5A) and clear water blue (#3FA7C9). Panel interiors are smooth warm cream parchment (#FBF5E6) with dark brown ink text (#2B2622). Buttons are glossy and bevelled: rounded shape, soft white highlight along the top, darker lip along the bottom, a thin brass rim. Small square keycap badges are cream with a dark brown letter and a darker bottom edge, like a physical keyboard key. Korean text is crisp, large, perfectly spelled, in a clean rounded sans-serif; every Korean string appears exactly once, exactly as written below, and there is no other text anywhere. Soft drop shadows fall down-right because the warm morning light comes from the upper left. Bright, warm, light colours; friendly and polished like a finished commercial game. No sound, settings, chat, currency, level, experience or map icons. No real brand logos, no watermark.",
+  "aspect_ratio": "16:9",
+  "resolution": "2K",
+  "input_urls": [
+   "https://tempfile.redpandaai.co/kieai/631937/woorimal/1793786198967-v98umxct65i.jpg"
+  ]
+ },
+ "refs": {
+  "02-explore-1-1-1366x768.jpg": "https://tempfile.redpandaai.co/kieai/631937/woorimal/1793786198967-v98umxct65i.jpg"
+ },
+ "taskId": "562d2fb748d514f81ad01f8fab170213",
+ "credits": 10.0,
+ "costTime": 30,
+ "source_url": "https://tempfile.aiquickdraw.com/gpt-image-2-5/1793786229878-7aiv31zgm5q.png",
+ "output": "ui-02-explore.webp (converted from PNG, quality 88)"
+}

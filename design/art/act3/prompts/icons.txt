@@ -1,0 +1,6 @@
+Pixel art item icons for an RPG inventory, detailed pixel art, each icon about 48 by 48 pixels, three icons in a row with wide even gaps, each centred in its own third of the image, the same size. The reference image shows icons of the same world: match their pixel style, size and outlines exactly.
+Left: a trail ribbon, a short strip of white cloth and a strip of light yellow-green cloth tied together in a simple knot with two loose ends hanging down, no blue.
+Middle: a lunch box, a small square wooden lunch box wrapped in a plain cloth tied in a knot on top, muted beige and brown cloth.
+Right: a rain bowl, a round unglazed brown clay bowl seen slightly from above, holding a little clear rainwater inside, plain with no pattern.
+Style: crisp hard-edged pixels, no blur, no anti-aliasing, limited palette, 1px darker-hue outlines (never black), soft cel shading, light from the upper left, cozy fantasy forest and creek, child-friendly.
+Solid flat magenta (#FF00FF) background everywhere, no ground shadows, no text, no letters, no numbers, no labels.

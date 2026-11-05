@@ -1,0 +1,47 @@
+name: pages
+# 게임 파일만 골라 gh-pages 브랜치로 내보낸다.
+# 저장소 Settings → Pages → Source: Deploy from a branch, gh-pages / (root) 로 한 번 설정하면
+# https://989-alt.github.io/woorimal-rpg/ 에서 열린다.
+on:
+  push:
+    branches: [main, claude/gracious-thompson-8cti4h]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: 게임 파일만 모으기
+        run: |
+          mkdir -p site
+          cp index.html site/
+          cp -r css js data site/
+          if [ -d assets ]; then cp -r assets site/; fi
+          touch site/.nojekyll
+      - name: gh-pages 브랜치로 올리기
+        run: |
+          cd site
+          git init -q -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "deploy ${GITHUB_SHA::7} from ${GITHUB_REF_NAME}"
+          # GitHub가 잠깐 500을 내는 일이 있어 몇 번 다시 시도한다
+          for wait in 2 4 8 16 0; do
+            git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" gh-pages && exit 0
+            [ "$wait" = 0 ] && exit 1
+            echo "push failed; retrying in ${wait}s"; sleep "$wait"
+          done

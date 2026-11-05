@@ -1,0 +1,6 @@
+Pixel art item icons for an RPG inventory, detailed pixel art, each icon about 48 by 48 pixels, three icons in a row with wide even gaps, each centred in its own third of the image, the same size. The reference image shows icons of the same world: match their pixel style, size and outlines exactly.
+Left: a cup of warm tea, a small round handleless cream clay tea cup seen slightly from above, filled with amber-brown tea, with three or four small separate white pixel dots rising above it as steam (only dots, no wisps, no glow).
+Middle: a bundle of pine twigs, a small bunch of short green pine twigs with needles, tied around the middle with a twist of straw rope.
+Right: a mended bundle strap, a short coiled brown leather strap with a small plain buckle, one place along it neatly stitched together with visible cream-coloured stitches; only brown leather and cream thread, no orange, no blue, no sky blue.
+Style: crisp hard-edged pixels, no blur, no anti-aliasing, limited palette, 1px darker-hue outlines (never black), soft cel shading, light from the upper left, cozy fantasy mountain pass, child-friendly.
+Solid flat magenta (#FF00FF) background everywhere, no ground shadows, no text, no letters, no numbers, no labels.

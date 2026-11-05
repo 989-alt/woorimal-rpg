@@ -1,0 +1,19 @@
+{
+ "model": "gpt-image-2-5-flare-image-to-image",
+ "input": {
+  "prompt": "Quiz battle screen mockup, full-screen 16:9. Keep the reference illustration exactly: the desaturated grey village stage with fog at the edges, the girl hero with the brown ponytail and indigo cape on the left reaching out her hand, and the soft round faceless grey fog creature on the right. The stage stays grey; only the girl and the UI have colour. Remove all the old flat UI.\n\nNew UI, in three layers:\n1. Stage, top right above the creature: a carved-wood and brass nameplate reading \"안개 덩이\" joined to a health bar of 6 separate segments: 5 filled slate grey, the last one empty with a dashed outline.\n2. Just above the question box on the left: a small carved-wood plate reading \"하늘\" followed by five round red hearts.\n3. A stack attached to the bottom edge of the screen, with no empty gap between its parts:\n a) A wide question box shaped like a speech bubble with a small tail pointing up toward the fog creature: carved honey-wood frame with brass trim, cream parchment inside. A small tab on its top-left reads \"안개 덩이\"; a small green tab on its top-right reads \"빈칸 채우기\". Inside, one line of large dark text: \"늦잠을 잔 형은 가방을 메고 ______ 집을 나섰다.\"\n b) Directly under it (a narrow 12-pixel gap), a row of four equal, chunky, glossy option cards with carved wood frames and cream faces, each with a round brass coin badge holding a number on its left and a large bold Korean word in the centre: badge \"1\" with \"오롯이\", badge \"2\" with \"곰비임비\", badge \"3\" with \"부리나케\", badge \"4\" with \"얼추\".\nNo other text, no menus.\n\nUI KIT (use the same kit on every element): an original, cheerful, chunky 2D fantasy RPG interface for 12-year-old children. Panels are framed in rounded, carved honey-brown wood (#A8714A with #6B4426 shadows) with a thin polished antique-brass trim line (#C9963F) and small leaf-shaped brass corner ornaments; tiny round gem studs at the corners in leaf green (#5FAE5A) and clear water blue (#3FA7C9). Panel interiors are smooth warm cream parchment (#FBF5E6) with dark brown ink text (#2B2622). Buttons are glossy and bevelled: rounded shape, soft white highlight along the top, darker lip along the bottom, a thin brass rim. Small square keycap badges are cream with a dark brown letter and a darker bottom edge, like a physical keyboard key. Korean text is crisp, large, perfectly spelled, in a clean rounded sans-serif; every Korean string appears exactly once, exactly as written below, and there is no other text anywhere. Soft drop shadows fall down-right because the warm morning light comes from the upper left. Bright, warm, light colours; friendly and polished like a finished commercial game. No sound, settings, chat, currency, level, experience or map icons. No real brand logos, no watermark.",
+  "aspect_ratio": "16:9",
+  "resolution": "2K",
+  "input_urls": [
+   "https://tempfile.redpandaai.co/kieai/631937/woorimal/1793786198957-dq2vrg4gqu6.jpg"
+  ]
+ },
+ "refs": {
+  "08-boss-battle-blank-1366x768.jpg": "https://tempfile.redpandaai.co/kieai/631937/woorimal/1793786198957-dq2vrg4gqu6.jpg"
+ },
+ "taskId": "6ec4833de8c0f368c3aee94c3ec4133f",
+ "credits": 10.0,
+ "costTime": 28,
+ "source_url": "https://tempfile.aiquickdraw.com/gpt-image-2-5/1793786228309-o3wjv52mr3q.png",
+ "output": "ui-04-boss-battle.webp (converted from PNG, quality 88)"
+}

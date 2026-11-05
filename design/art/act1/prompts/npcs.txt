@@ -1,0 +1,13 @@
+Pixel art character sprites for a top-down 3/4 view RPG, detailed pixel art, 48 pixels per tile. Six villagers of a cozy fantasy village, each standing still facing the viewer (front view), arranged in an exact grid of 3 columns and 2 rows with wide gaps, each figure centred in its cell, all feet on the same baseline in a row. Proportions 2.5 heads tall (not baby-like chibi). The reference image shows the grandmother: keep her look for figure 1 but make her 2.5 heads tall, and draw the other five in the same pixel style.
+Top row, left to right:
+1. An elderly grandmother, small and slightly stooped, silver-grey hair in a round bun sticking up high above her head, plum-purple (#8E4A7A) knitted shawl over a dark dress, holding a wooden staff with a curled spiral top that is taller than her head, in her left hand (on the viewer's right).
+2. A village child about 9 years old, short brown hair, warm beige (#C9A97E) tunic and shorts, brown shoes, cheerful.
+3. A gardener man, short tousled brown hair, bare head, brown (#7A5C48) work clothes with rolled sleeves, holding a small garden hoe (long wooden handle, small flat rectangular blade at a right angle at the bottom, not a sickle).
+Bottom row, left to right:
+4. A plump baker man, short neat brown hair, bare head, cream (#EDE6D6) apron over a light brown shirt.
+5. A laundry woman, brown hair tied back low, beige (#C9A97E) dress with sleeves rolled up, holding a small woven laundry basket with folded cloth at her hip.
+6. An old grandfather, short white beard, bald with white hair at the sides, brown (#7A5C48) long vest over a cream shirt, leaning on a plain wooden walking stick.
+Villagers wear nothing on their heads (no hats, caps or bandanas). Modern cozy village clothes, simple shapes, low-saturation colours, no blue, no orange, no purple except the grandmother's shawl, child-friendly.
+Style: crisp hard-edged pixels, no blur, no anti-aliasing, limited palette, 1px darker-hue outlines (never black), soft cel shading, light from the upper left.
+Solid flat magenta (#FF00FF) background everywhere, no ground shadows, no text, no numbers, no labels, no grid lines.
+# 기록: 처음 생성(7a64117a…)은 텃밭 아저씨 두건·빵집 아저씨 모자가 있던 이전 문장으로 만들었고, 두 사람은 npcs_bare.txt(c56a525b…)로 다시 그렸다.

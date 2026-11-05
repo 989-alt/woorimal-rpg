@@ -1,0 +1,78 @@
+{
+ "chestnut_base": {
+  "src": "bust_chestnut_base_a1",
+  "quality": 85
+ },
+ "chestnut_joy": {
+  "src": "bust_chestnut_joy_a1",
+  "quality": 85,
+  "iou_head": 0.9932,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ },
+ "flower_base": {
+  "src": "bust_flower_base_a1",
+  "quality": 85
+ },
+ "flower_joy": {
+  "src": "bust_flower_joy_a1",
+  "quality": 85,
+  "iou_head": 0.9944,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ },
+ "fruit_base": {
+  "src": "bust_fruit_base_a1",
+  "quality": 85
+ },
+ "fruit_joy": {
+  "src": "bust_fruit_joy_a1",
+  "quality": 85,
+  "iou_head": 0.9966,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ },
+ "guard_base": {
+  "src": "bust_guard_base_a1",
+  "quality": 85
+ },
+ "guard_joy": {
+  "src": "bust_guard_joy_a1",
+  "quality": 85,
+  "iou_head": 0.9954,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ },
+ "haesol_base": {
+  "src": "bust_haesol_base_a1",
+  "quality": 85
+ },
+ "haesol_pout": {
+  "src": "bust_haesol_pout_a1",
+  "quality": 85,
+  "iou_head": 0.9883,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ },
+ "haesol_surprise": {
+  "src": "bust_haesol_surprise_a1",
+  "quality": 85,
+  "iou_head": 0.9954,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ },
+ "northgate_base": {
+  "src": "bust_northgate_base_a1",
+  "quality": 85
+ },
+ "shopper_base": {
+  "src": "bust_shopper_base_a2",
+  "quality": 85
+ }
+}

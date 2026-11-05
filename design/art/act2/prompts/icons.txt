@@ -1,0 +1,6 @@
+Pixel art item icons for an RPG inventory, detailed pixel art, each icon about 48 by 48 pixels, three icons in a row with wide even gaps, each centred in its own third of the image, the same size. The reference image shows icons of the same world: match their pixel style, size and outlines exactly.
+Left: a blank wooden price sign board on a short wooden handle, plain wood with nothing written on it.
+Middle: a small round iron weight for a balance scale, dark grey-brown metal with a little knob on top.
+Right: a round cloth bundle tied at the top with brown cord, cream and brown cloth, no orange.
+Style: crisp hard-edged pixels, no blur, no anti-aliasing, limited palette, 1px darker-hue outlines (never black), soft cel shading, light from the upper left, cozy fantasy market town, child-friendly.
+Solid flat magenta (#FF00FF) background everywhere, no ground shadows, no text, no letters, no numbers, no labels.

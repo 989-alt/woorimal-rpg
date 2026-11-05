@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>말빛 한울 1장 시안</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap">
+<style>
+  :root {
+    --hanji: #FBF5E6; --ink: #2B2622; --border: #5A4636; --gold: #F2C14E; --gold-l: #FFE7A3;
+    --green: #5FAE5A; --grey1: #B9BBBE; --grey2: #8A8D91; --grey3: #5E6266; --heart: #E0584F;
+    --hero: #3B5BA5; --dodam: #8E4A7A;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: #d9d2c3; font-family: 'Gowun Dodum', sans-serif; color: var(--ink); }
+  .screen { width: 1366px; height: 768px; position: relative; overflow: hidden; background: var(--hanji); }
+  .panel { background: var(--hanji); border: 2px solid var(--border); border-radius: 12px; }
+  .title-font { font-family: 'Jua', sans-serif; }
+  .word { background: linear-gradient(transparent 60%, var(--gold) 60%); padding: 0 2px; }
+
+  /* 탐험 */
+  #explore .stage { position: absolute; left: 107px; top: 60px; width: 1152px; height: 648px; overflow: hidden; border-radius: 4px; }
+  #explore .stage img.map { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+  #explore .hud { position: absolute; left: 107px; top: 6px; width: 1152px; height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-size: 20px; }
+  #explore .hud .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--green); margin-right: 8px; }
+  #explore .hud .btns span { display: inline-block; margin-left: 10px; padding: 6px 12px; border: 2px solid var(--border); border-radius: 10px; font-size: 18px; }
+  #explore .sprite { position: absolute; image-rendering: pixelated; }
+  #explore .bubble { position: absolute; width: 30px; height: 26px; background: #fff; border: 3px solid var(--ink); border-radius: 8px; font: 18px/18px 'Jua'; text-align: center; }
+
+  /* 대화 */
+  #dialogue .bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  #dialogue .bust { position: absolute; bottom: 0; height: 640px; }
+  #dialogue .box { position: absolute; left: 30%; right: 2%; bottom: 24px; height: 220px; padding: 40px 36px 24px; font-size: 26px; line-height: 1.6; }
+  #dialogue .name { position: absolute; left: 24px; top: -22px; padding: 4px 18px; font: 24px 'Jua'; border-left: 6px solid var(--dodam); }
+  #dialogue .card { position: absolute; left: 50%; top: 90px; transform: translateX(-50%); width: 420px; padding: 28px; text-align: center; border: 3px solid var(--gold); box-shadow: 0 0 40px var(--gold-l); }
+  #dialogue .card .w { font: 40px 'Jua'; }
+  #dialogue .card .m { font-size: 22px; margin-top: 10px; }
+  #dialogue .card .tag { font: 20px 'Jua'; color: var(--border); margin-bottom: 6px; }
+
+  /* 전투 */
+  #battle { background: linear-gradient(180deg, #8A8D91 0%, #B9BBBE 55%, #EADBB8 55%, #F6E7C6 100%); }
+  #battle .monster { position: absolute; left: 50%; top: 40px; transform: translateX(-50%); height: 380px; }
+  #battle .hp { position: absolute; left: 50%; top: 22px; transform: translateX(-50%); display: flex; gap: 4px; padding: 6px; }
+  #battle .hp i { width: 44px; height: 16px; border-radius: 4px; background: var(--grey3); }
+  #battle .hp i.off { background: var(--grey1); }
+  #battle .hearts { position: absolute; left: 60px; top: 446px; font-size: 32px; letter-spacing: 6px; color: var(--heart); }
+  #battle .q { position: absolute; left: 60px; right: 60px; top: 500px; padding: 18px 24px; font-size: 26px; }
+  #battle .choices { position: absolute; left: 60px; right: 60px; top: 590px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  #battle .choices div { height: 64px; display: flex; align-items: center; padding: 0 20px; font-size: 24px; }
+  #battle .choices b { font-family: 'Jua'; margin-right: 14px; color: var(--border); }
+  #battle .bust { position: absolute; left: 20px; bottom: 270px; height: 200px; }
+
+  .b3 { background:#6f7378; }
+  .b3 .stage { position:absolute; left:0; top:0; width:1366px; height:768px; overflow:hidden; }
+  .b3 .stage .bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 30%; filter: grayscale(.85) brightness(.85) blur(2px); }
+  .b3 .stage .fog { position:absolute; inset:0; background: radial-gradient(ellipse at 62% 45%, transparent 38%, rgba(94,98,102,.8) 100%); }
+  .b3 .stage .fog.hurt { background: radial-gradient(ellipse at 50% 50%, transparent 18%, rgba(70,73,77,.95) 75%); }
+  .b3 .monster { position:absolute; left:760px; top:40px; height:380px; }
+  .b3 .mhp { position:absolute; left:770px; top:14px; display:flex; gap:5px; padding:5px 10px; align-items:center; font:20px 'Jua'; }
+  .b3 .mhp i { width:38px; height:14px; border-radius:4px; background:var(--grey3); }
+  .b3 .mhp i.off { background:transparent; border:2px dashed var(--grey2); }
+  .b3 .mhp i.crack { background: linear-gradient(115deg, var(--grey3) 45%, var(--gold-l) 47%, var(--gold) 52%, transparent 54%); box-shadow:0 0 12px var(--gold); }
+  .b3 .hero { position:absolute; left:110px; top:60px; height:520px; }
+  .b3 .status { position:absolute; left:24px; top:-58px; padding:6px 16px; display:flex; gap:14px; align-items:center; font:22px 'Jua'; }
+  .b3 .status .h { font-size:28px; letter-spacing:3px; color:var(--heart); }
+  .b3 .status .h s { text-decoration:none; color:var(--grey3); }
+  .b3 .combo { position:absolute; left:330px; top:24px; padding:5px 14px; font:22px 'Jua'; border-color:var(--gold); }
+  .b3 .beam { position:absolute; left:420px; top:250px; width:430px; height:16px; transform: rotate(-12deg); transform-origin:left center;
+      background: linear-gradient(90deg, rgba(255,231,163,0), var(--gold-l) 30%, #fff 60%, var(--gold) 100%); border-radius:8px; box-shadow:0 0 28px 10px rgba(242,193,78,.55); }
+  .b3 .spark { position:absolute; width:10px; height:10px; border-radius:50%; background:var(--gold-l); box-shadow:0 0 12px var(--gold); }
+  .b3 .q { position:relative; min-height:76px; padding:18px 28px 14px; font-size:28px; line-height:1.5; }
+  .b3 .q:before { content:''; position:absolute; left:930px; top:-22px; border:11px solid transparent; border-bottom:14px solid var(--border); }
+  .b3 .q .who { position:absolute; left:20px; top:-18px; padding:2px 12px; font:18px 'Jua'; background:var(--hanji); border:2px solid var(--border); border-radius:8px; }
+  .b3 .blank { display:inline-block; min-width:110px; border-bottom:4px solid var(--gold); text-align:center; }
+  .b3 .blank.fill { background: linear-gradient(transparent 55%, var(--gold) 55%); border-bottom-color:transparent; }
+  .b3 .ans { position:relative; }
+  .b3 .ans .opt { position:relative; padding:0 20px 0 64px; display:flex; align-items:center; font-size:24px; box-shadow:0 5px 0 var(--border); }
+  .b3 .ans .opt b { position:absolute; left:18px; width:32px; height:32px; border-radius:50%; background:var(--border); color:var(--hanji); font:20px/32px 'Jua'; text-align:center; }
+  .b3 .ans .opt.pick { border:3px solid var(--gold); box-shadow:0 0 20px var(--gold-l), 0 5px 0 var(--border); transform:translateY(-6px); }
+  .b3 .ans .opt.wrong { border:3px solid var(--grey3); background:#e4e4e4; }
+  .b3 .ans .opt.right { border:3px solid var(--gold); }
+  .b3 .ans .opt .mark { position:absolute; right:18px; font:30px 'Jua'; }
+  .b3 .row4 { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; } .b3 .row4 .opt { height:110px; font:32px 'Jua'; justify-content:center; padding:0; }
+  .b3 .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; } .b3 .grid2 .opt { height:72px; }
+  .b3 .col1 { display:grid; gap:8px; } .b3 .col1 .opt { height:48px; font-size:22px; box-shadow:0 3px 0 var(--border); }
+  .b3 .tag { position:absolute; right:20px; top:-18px; padding:2px 12px; font:18px 'Jua'; background:var(--hanji); border:2px solid var(--border); border-radius:8px; }
+  .b3 .bottom { position:absolute; left:0; right:0; bottom:0; padding:22px 40px 22px; display:flex; flex-direction:column; gap:12px; background:#6f7378; box-shadow:0 -6px 18px rgba(0,0,0,.25); }
+</style>
+</head>
+<body>
+<section class="screen b3" id="b3a"><div class="stage"><img class="bg" src="../out/bg_ch1.png" alt=""><div class="fog"></div></div><img class="monster" src="../out/monster_ch1_cut3.png" alt=""><div class="mhp panel">안개 덩이 <i></i><i></i><i></i><i class="crack"></i><i class="off"></i><i class="off"></i></div><img class="hero" src="../out/bust_hero_f_cut.png" alt=""><div class="combo panel">연속 3번 맞힘!</div><div class="beam"></div><div class="spark" style="left:880px;top:150px"></div><div class="spark" style="left:930px;top:210px"></div><div class="spark" style="left:860px;top:250px;width:6px;height:6px"></div><div class="bottom"><div class="status panel">하늘 <span class="h">♥♥♥♥<s>♥</s></span></div><div class="q panel"><span class="who">안개 덩이</span>"준비가 <span class="blank fill">얼추</span> 끝났으니, 이제 떠나도 되겠구나."<div class="tag">빈칸 채우기</div></div><div class="ans row4"><div class="opt panel pick"><b>1</b>얼추</div><div class="opt panel"><b>2</b>손사래</div><div class="opt panel"><b>3</b>어스름</div><div class="opt panel"><b>4</b>매무새</div></div></div></section>
+<section class="screen b3" id="b3b"><div class="stage"><img class="bg" src="../out/bg_ch1.png" alt=""><div class="fog"></div></div><img class="monster" src="../out/monster_ch1_cut3.png" alt=""><div class="mhp panel">안개 덩이 <i></i><i></i><i></i><i></i><i class="off"></i><i class="off"></i></div><img class="hero" src="../out/bust_hero_f_cut.png" alt=""><div class="bottom"><div class="status panel">하늘 <span class="h">♥♥♥♥<s>♥</s></span></div><div class="q panel"><span class="who">안개 덩이</span>"<span class="blank fill" style="min-width:0">해거름</span>"은 무슨 뜻일까?<div class="tag">뜻 고르기</div></div><div class="ans grid2"><div class="opt panel"><b>1</b>해가 서쪽으로 넘어갈 무렵</div><div class="opt panel"><b>2</b>아침밥을 먹은 뒤부터 점심 전까지</div><div class="opt panel"><b>3</b>해가 막 떠오르는 때</div><div class="opt panel"><b>4</b>하던 일을 잠깐 멈출 수 있는 틈</div></div></div></section>
+<section class="screen b3" id="b3c"><div class="stage"><img class="bg" src="../out/bg_ch1.png" alt=""><div class="fog hurt"></div></div><img class="monster" src="../out/monster_ch1_cut3.png" alt=""><div class="mhp panel">안개 덩이 <i></i><i></i><i></i><i></i><i class="off"></i><i class="off"></i></div><img class="hero" src="../out/bust_hero_f_cut.png" alt=""><div class="bottom"><div class="status panel">하늘 <span class="h">♥♥♥<s>♥♥</s></span></div><div class="q panel" ><span class="who">안개 덩이</span>"손사래"를 알맞게 쓴 문장은?<div class="tag">알맞은 문장 고르기</div></div><div class="ans col1"><div class="opt panel wrong"><b>1</b>배가 고파서 손사래를 먹었다.<span class="mark">×</span></div><div class="opt panel right"><b>2</b>칭찬을 듣자 동생은 쑥스러워 손사래를 쳤다.<span class="mark">○</span></div><div class="opt panel"><b>3</b>손사래가 내려서 우산을 챙겼다.</div><div class="opt panel"><b>4</b>할아버지가 손사래로 밭을 갈았다.</div></div></div></section>
+</body>
+</html>

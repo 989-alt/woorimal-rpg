@@ -1,0 +1,8 @@
+{
+ "npcs": { "src": "npcs_a1_cut.png", "grid": [4, 2], "ids": ["haesol", "fruit", "guard", "shopper", "chestnut", "flower", "northgate", null] },
+ "monsters": { "src": "monsters_a1_cut.png", "order": ["small", "boss"] },
+ "icons": { "src": "icons_a1_cut.png", "grid": [3, 1], "ids": ["price-board", "weight", "bundle"] },
+ "height": { "haesol": 84, "fruit": 70, "guard": 74, "shopper": 62, "chestnut": 64, "flower": 62, "northgate": 68 },
+ "keep": { "haesol": "haesol" },
+ "outline": {}
+}

@@ -1,0 +1,7 @@
+{
+ "greyUnmix": ["greykid"],
+ "colorFaces": ["greykid_color"],
+ "framed": ["greykid_color"],
+ "fit": { "greykid": 0.86 },
+ "lift": { "greykid": 0.14 }
+}

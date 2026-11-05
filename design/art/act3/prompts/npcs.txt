@@ -1,0 +1,12 @@
+Pixel art character sprites for a top-down 3/4 view RPG, detailed pixel art, 48 pixels per tile. Six people of a cozy fantasy forest and creek, each standing still facing the viewer (front view), arranged in an exact grid of 3 columns and 2 rows with wide gaps, each figure centred in its cell, all feet on the same baseline in a row. Proportions 2.5 heads tall (not baby-like chibi). The reference image shows people of the same world: draw all six in exactly that pixel style and size.
+Top row, left to right:
+1. Narae, a girl about 12 years old with long straight silvery-grey hair down her back, a calm little smile, a plain pale dress, and a very long pale sky-blue shawl (#A9C9D6) around her shoulders that streams back and out to both sides like a pair of folded wings: the two shawl ends flare out wide beside her body, past her elbows, making a wing-shaped silhouette, each end edged with a small white feather pattern. The inside of the shawl is one shade darker (#7FA3B3) and its outline is a darker blue-grey (#5D7F8E).
+2. A woodcutter man, broad shoulders, short dark hair and short beard, bare head, dark brown work jacket, thick leather work gloves, a small hand axe handle tucked at his waist.
+3. Miru, a boy about 10 years old, short brown hair, bare head, plain light shirt, trousers with patches on the knees, holding a woven basket of green herbs.
+Bottom row, left to right:
+4. Yeoul, a girl about 11 years old, short bob-cut dark hair, bare head (no hat), plain shirt and short trousers, holding a long thin fishing rod upright.
+5. A weather grandmother, small and a little bent, short curly white hair, bare head, round glasses, muted brown dress and shawl, one arm raised pointing up at the sky.
+6. A ferryman, tall and lean, short grey-brown hair, bare head (no hat), dark brown jacket and rolled-up trousers, holding a long wooden oar upright beside him.
+Villagers wear nothing on their heads (no hats, caps or bandanas) and only two low-saturation earthy colours each. Only Narae wears pale sky blue; no blue, no purple, no orange, no gold on anyone else. Simple shapes, child-friendly.
+Style: crisp hard-edged pixels, no blur, no anti-aliasing, limited palette, 1px darker-hue outlines (never black), soft cel shading, light from the upper left.
+Solid flat magenta (#FF00FF) background everywhere, no ground shadows, no text, no numbers, no labels, no grid lines.

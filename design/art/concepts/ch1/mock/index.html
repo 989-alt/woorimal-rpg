@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>말빛 한울 1장 시안</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap">
+<style>
+  :root {
+    --hanji: #FBF5E6; --ink: #2B2622; --border: #5A4636; --gold: #F2C14E; --gold-l: #FFE7A3;
+    --green: #5FAE5A; --grey1: #B9BBBE; --grey2: #8A8D91; --grey3: #5E6266; --heart: #E0584F;
+    --hero: #3B5BA5; --dodam: #8E4A7A;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: #d9d2c3; font-family: 'Gowun Dodum', sans-serif; color: var(--ink); }
+  .screen { width: 1366px; height: 768px; position: relative; overflow: hidden; background: var(--hanji); }
+  .panel { background: var(--hanji); border: 2px solid var(--border); border-radius: 12px; }
+  .title-font { font-family: 'Jua', sans-serif; }
+  .word { background: linear-gradient(transparent 60%, var(--gold) 60%); padding: 0 2px; }
+
+  /* 탐험 */
+  #explore .stage { position: absolute; left: 107px; top: 60px; width: 1152px; height: 648px; overflow: hidden; border-radius: 4px; }
+  #explore .stage img.map { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+  #explore .hud { position: absolute; left: 107px; top: 6px; width: 1152px; height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-size: 20px; }
+  #explore .hud .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--green); margin-right: 8px; }
+  #explore .hud .btns span { display: inline-block; margin-left: 10px; padding: 6px 12px; border: 2px solid var(--border); border-radius: 10px; font-size: 18px; }
+  #explore .sprite { position: absolute; image-rendering: pixelated; }
+  #explore .bubble { position: absolute; width: 30px; height: 26px; background: #fff; border: 3px solid var(--ink); border-radius: 8px; font: 18px/18px 'Jua'; text-align: center; }
+
+  /* 대화 */
+  #dialogue .bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  #dialogue .bust { position: absolute; bottom: 0; height: 640px; }
+  #dialogue .box { position: absolute; left: 30%; right: 2%; bottom: 24px; height: 220px; padding: 40px 36px 24px; font-size: 26px; line-height: 1.6; }
+  #dialogue .name { position: absolute; left: 24px; top: -22px; padding: 4px 18px; font: 24px 'Jua'; border-left: 6px solid var(--dodam); }
+  #dialogue .card { position: absolute; left: 50%; top: 90px; transform: translateX(-50%); width: 420px; padding: 28px; text-align: center; border: 3px solid var(--gold); box-shadow: 0 0 40px var(--gold-l); }
+  #dialogue .card .w { font: 40px 'Jua'; }
+  #dialogue .card .m { font-size: 22px; margin-top: 10px; }
+  #dialogue .card .tag { font: 20px 'Jua'; color: var(--border); margin-bottom: 6px; }
+
+  /* 전투 */
+  #battle { background: linear-gradient(180deg, #8A8D91 0%, #B9BBBE 55%, #EADBB8 55%, #F6E7C6 100%); }
+  #battle .monster { position: absolute; left: 50%; top: 40px; transform: translateX(-50%); height: 380px; }
+  #battle .hp { position: absolute; left: 50%; top: 22px; transform: translateX(-50%); display: flex; gap: 4px; padding: 6px; }
+  #battle .hp i { width: 44px; height: 16px; border-radius: 4px; background: var(--grey3); }
+  #battle .hp i.off { background: var(--grey1); }
+  #battle .hearts { position: absolute; left: 60px; top: 446px; font-size: 32px; letter-spacing: 6px; color: var(--heart); }
+  #battle .q { position: absolute; left: 60px; right: 60px; top: 500px; padding: 18px 24px; font-size: 26px; }
+  #battle .choices { position: absolute; left: 60px; right: 60px; top: 590px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  #battle .choices div { height: 64px; display: flex; align-items: center; padding: 0 20px; font-size: 24px; }
+  #battle .choices b { font-family: 'Jua'; margin-right: 14px; color: var(--border); }
+  #battle .bust { position: absolute; left: 20px; bottom: 270px; height: 200px; }
+</style>
+</head>
+<body>
+<section class="screen" id="explore">
+  <div class="hud panel"><div><span class="dot"></span>할머니의 부탁: 말빛 주머니 받기</div><div>이 장의 낱말 <b>3/10</b><span class="btns"><span>도감 E</span><span>퀘스트 Q</span></span></div></div>
+  <div class="stage"><img class="map" src="../out/map.png" alt=""></div>
+  <img class="sprite" src="../out/px_dodam.png" style="left:470px; top:300px; height:96px">
+  <div class="bubble" style="left:492px; top:262px">…</div>
+  <img class="sprite" src="../out/px_hero_f.png" style="left:640px; top:420px; height:96px">
+</section>
+
+<section class="screen" id="dialogue">
+  <img class="bg" src="../out/bg_ch1.png" alt="">
+  <img class="bust" src="../out/bust_hero_f_cut.png" style="left:-20px" alt="">
+  <img class="bust" src="../out/bust_dodam_cut.png" style="right:40px" alt="">
+  <div class="box panel"><span class="name panel title-font">도담 할머니</span>새벽 <span class="word">어스름</span>부터 너를 기다렸단다, 하늘아.<br>이 주머니를 오롯이 너에게 맡기마.</div>
+  <div class="card panel"><div class="tag">새 낱말을 찾았다!</div><div class="w">어스름</div><div class="m">해 뜨기 전이나 해 진 뒤의<br>조금 어둑한 때</div></div>
+</section>
+
+<section class="screen" id="battle">
+  <div class="hp panel"><i></i><i></i><i></i><i></i><i class="off"></i><i class="off"></i></div>
+  <img class="monster" src="../out/monster_ch1_cut3.png" alt="">
+  <div class="hearts">♥♥♥♥♡</div>
+  <div class="q panel">"준비가 ___ 끝났으니, 이제 떠나도 되겠구나."</div>
+  <div class="choices"><div class="panel"><b>1</b>얼추</div><div class="panel"><b>2</b>손사래</div><div class="panel"><b>3</b>어스름</div><div class="panel"><b>4</b>매무새</div></div>
+</section>
+</body>
+</html>

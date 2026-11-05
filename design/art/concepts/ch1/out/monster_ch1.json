@@ -1,0 +1,12 @@
+{
+ "model": "gpt-image-2-5-flare-text-to-image",
+ "input": {
+  "prompt": "Anime illustration of a small creature made of grey fog: a round soft blob with drooping shoulders, completely faceless (no eyes, no mouth, no teeth), its lower edge melting and dissolving into wisps, a few tiny grey particles drifting off it, lonely and sad rather than scary, desaturated grey (#B9BBBE to #5E6266), no outline, soft edges, light from the upper left, child-friendly.\nPlain flat solid magenta (#FF00FF) background with no shadows or gradients.",
+  "aspect_ratio": "1:1",
+  "resolution": "2K"
+ },
+ "taskId": "1542ff381e29ef0238120107437316ca",
+ "credits": 10.0,
+ "costTime": 180,
+ "source_url": "https://tempfile.aiquickdraw.com/gpt-image-2-5/1793755819556-voaoonagmun.png"
+}
