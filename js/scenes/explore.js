@@ -1,7 +1,7 @@
 // 탐험 장면: 칸 맵을 걷고, 인물에게 말을 걸고, 물건을 조사한다.
 import { actOfChapter } from '../../data/acts/index.js';
 import { parseMap, step, facingTarget } from '../explore/grid.js';
-import { computeView, ART } from '../explore/scale.js';
+import { computeView, ART, TILE } from '../explore/scale.js';
 import { bindInput, createTouchControls, isCoarsePointer } from '../explore/input.js';
 import { drawExplore, cameraFor, animKey, inViewWorld } from '../explore/render.js';
 import { nextGlide, drawnPos, glideEnd, createPace } from '../explore/motion.js';
@@ -243,11 +243,13 @@ export const explore = {
       const top = el.getBoundingClientRect().top;
       const hudBottom = hud.el.getBoundingClientRect().bottom - top;
       if (hudBottom > 0) box.insetTop = hudBottom / k;
-      // 십자와 그 오른쪽 달리기 버튼은 한 덩어리로 잰다: 따로 재면 십자 밖으로 밀린 주인공이 달리기 버튼 밑에 설 수 있다.
+      // 달리기 버튼(십자 오른쪽 아래 줄)은 십자 왼끝부터 달리기 버튼 오른끝까지의 띠로 잰다. 띠 위끝은 버튼보다 한 칸 위:
+      // 카메라는 겹친 높이 한 칸에 걸쳐 서서히 밀므로, 주인공이 버튼에 닿을 때는 이미 버튼 오른쪽까지 다 밀려 있다.
+      // (버튼만 따로 재면 십자 밖으로 밀린 주인공이 버튼 위쪽 가장자리 밑에 걸칠 수 있다.)
       const rectOf = (sel) => el.querySelector(sel)?.getBoundingClientRect();
       const pad = rectOf('.touch-pad'), run = rectOf('.touch-run');
-      const padRun = pad && run ? new DOMRect(pad.left, Math.min(pad.top, run.top), Math.max(pad.right, run.right) - pad.left, Math.max(pad.bottom, run.bottom) - Math.min(pad.top, run.top)) : pad;
-      const rects = [padRun, rectOf('.touch-act'), ...[...el.querySelectorAll('.hud-sys')].map((n) => n.getBoundingClientRect())]
+      const strip = pad && run ? new DOMRect(pad.left, run.top - TILE * k, run.right - pad.left, run.height + TILE * k) : null;
+      const rects = [pad, strip, rectOf('.touch-act'), ...[...el.querySelectorAll('.hud-sys')].map((n) => n.getBoundingClientRect())]
         .filter((r) => r && r.width > 0 && r.top - top >= hudBottom - 1); // HUD 줄 안에 있는 단추 묶음은 HUD가 이미 덮는다
       box.avoid = rects.map((r) => ({ x: r.left / k, y: (r.top - top) / k, w: r.width / k, h: r.height / k }));
     }
