@@ -15,6 +15,7 @@ const TYPES = {
   '.webp': 'image/webp',
   '.woff2': 'font/woff2',
   '.mp3': 'audio/mpeg',
+  '.webmanifest': 'application/manifest+json',
 };
 
 export function startServer(port = 0) {

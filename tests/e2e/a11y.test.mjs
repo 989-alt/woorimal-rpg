@@ -3,6 +3,7 @@
 //  - 보이는 button·[role=button]·[role=radio]·[role=tab]의 상자 48×48 이상
 //  - Tab으로 초점을 옮긴 요소의 outline이 3px solid rgb(59, 91, 165)
 // UI 그림이 있을 때와 assets/ui/** 를 막았을 때(대체 모습) 모두 지킨다.
+// 휴대폰 가로(844×390, 터치)도 같은 흐름으로 훑는다. 휴대폰만 예외: 글자 15px 이상, 누르는 것 44×44 이상(아트 바이블 7절).
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
@@ -23,9 +24,9 @@ const SELECTOR = (e) => {
 };
 
 // 한 화면을 훑는다. 문제가 있으면 문장 목록으로 돌려준다.
-async function scan(page, label, { tabs = 14 } = {}) {
+async function scan(page, label, { tabs = 14, minFont = 18, minTarget = 48 } = {}) {
   await page.evaluate(() => document.fonts.ready);
-  const found = await page.evaluate(() => {
+  const found = await page.evaluate(([minFont, minTarget]) => {
     const out = { small: [], tiny: [] };
     const sel = (e) => {
       const id = e.id ? `#${e.id}` : '';
@@ -46,18 +47,18 @@ async function scan(page, label, { tabs = 14 } = {}) {
       if (own && shown(e)) {
         const fs = parseFloat(getComputedStyle(e).fontSize);
         // font-size 0은 그림이 대신하는 글자(하트 ♥ 대체 글자)라서 눈에 보이는 글자가 아니다
-        if (fs > 0 && fs < 18) out.small.push(`${sel(e)} ${fs}px "${e.textContent.trim().slice(0, 12)}"`);
+        if (fs > 0 && fs < minFont) out.small.push(`${sel(e)} ${fs}px "${e.textContent.trim().slice(0, 12)}"`);
       }
       if (e.matches('button, [role="button"], [role="radio"], [role="tab"]') && shown(e)) {
         const r = e.getBoundingClientRect();
-        if (Math.round(r.width) < 48 || Math.round(r.height) < 48) out.tiny.push(`${sel(e)} ${Math.round(r.width)}x${Math.round(r.height)}`);
+        if (Math.round(r.width) < minTarget || Math.round(r.height) < minTarget) out.tiny.push(`${sel(e)} ${Math.round(r.width)}x${Math.round(r.height)}`);
       }
     }
     return out;
-  });
+  }, [minFont, minTarget]);
   const problems = [
-    ...found.small.map((s) => `${label}: 글자 18px 미만 ${s}`),
-    ...found.tiny.map((s) => `${label}: 누르는 것이 48px 미만 ${s}`),
+    ...found.small.map((s) => `${label}: 글자 ${minFont}px 미만 ${s}`),
+    ...found.tiny.map((s) => `${label}: 누르는 것이 ${minTarget}px 미만 ${s}`),
   ];
   // Tab 초점 고리
   await page.evaluate(() => document.activeElement?.blur?.());
@@ -82,8 +83,10 @@ async function scan(page, label, { tabs = 14 } = {}) {
   return problems;
 }
 
-async function newPage(blocked) {
-  const page = await browser.newPage({ viewport: { width: 1366, height: 768 } });
+async function newPage(blocked, phone = false) {
+  const page = await browser.newPage(phone
+    ? { viewport: { width: 844, height: 390 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true }
+    : { viewport: { width: 1366, height: 768 } });
   const errors = collectErrors(page, blocked ? { allow: /\/assets\/ui\// } : {});
   if (blocked) await page.route('**/assets/ui/**', (r) => r.abort());
   await page.goto(server.url + '/?test=1');
@@ -116,11 +119,17 @@ async function battle(page, mode, seed = 7) {
   await page.waitForSelector('[data-phase="ask"] .battle-option');
 }
 
-for (const blocked of [false, true]) {
-  test(`접근성 훑기 1366×768 (${blocked ? 'UI 그림 막음' : 'UI 그림 있음'})`, async () => {
-    const { page, errors } = await newPage(blocked);
+const RUNS = [
+  { name: '1366×768 (UI 그림 있음)', blocked: false, phone: false },
+  { name: '1366×768 (UI 그림 막음)', blocked: true, phone: false },
+  { name: '844×390 휴대폰(터치, 글자 15px·누름 44px)', blocked: false, phone: true },
+];
+for (const { name, blocked, phone } of RUNS) {
+  test(`접근성 훑기 ${name}`, async () => {
+    const { page, errors } = await newPage(blocked, phone);
     const problems = [];
-    const check = async (label, opts) => { await settle(page); problems.push(...(await scan(page, label, opts))); };
+    const limits = phone ? { minFont: 15, minTarget: 44 } : {};
+    const check = async (label, opts) => { await settle(page); problems.push(...(await scan(page, label, { ...limits, ...opts }))); };
 
     // 타이틀 → 모습 고르기 → 탐험
     await page.waitForSelector('[data-scene="title"]');
@@ -132,9 +141,9 @@ for (const blocked of [false, true]) {
       b.style.cssText = 'position:fixed;left:0;top:0;width:20px;height:20px;font-size:10px;outline:none;z-index:99';
       document.body.prepend(b);
     });
-    const caught = await scan(page, '카나리아', { tabs: 3 });
-    assert.equal(caught.filter((p) => /글자 18px 미만/.test(p)).length, 1, caught.join('\n'));
-    assert.equal(caught.filter((p) => /48px 미만/.test(p)).length, 1, caught.join('\n'));
+    const caught = await scan(page, '카나리아', { tabs: 6, ...limits });
+    assert.equal(caught.filter((p) => /글자 \d+px 미만/.test(p)).length, 1, caught.join('\n'));
+    assert.equal(caught.filter((p) => /\d+px 미만 button#canary/.test(p) && /누르는 것/.test(p)).length, 1, caught.join('\n'));
     assert.equal(caught.filter((p) => /초점 고리/.test(p)).length, 1, caught.join('\n'));
     await page.evaluate(() => document.getElementById('canary').remove());
     await check('타이틀');
