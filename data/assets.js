@@ -59,7 +59,7 @@ export const ASSETS = {
     // 4막
     tea: { base: 'assets/illust/bust_tea_base.webp', joy: 'assets/illust/bust_tea_joy.webp' },
     garam: { base: 'assets/illust/bust_garam_base.webp', joy: 'assets/illust/bust_garam_joy.webp' },
-    signpost: { base: null, joy: null },
+    signpost: { base: 'assets/illust/bust_signpost_base.webp', joy: 'assets/illust/bust_signpost_joy.webp' },
     keeper: { base: null, joy: null },
     traveler: { base: null, joy: null },
     // 5막
