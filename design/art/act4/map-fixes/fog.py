@@ -2,7 +2,7 @@
 # 모두 그 맵의 색표 안에서만 칠한다(안개는 잿빛 3단, 4막 색표에 들어 있다).
 import json, subprocess
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 FOG = ['#B9BBBE', '#8A8D91', '#5E6266']
 BAYER4 = np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]) / 16 + 1 / 32
@@ -16,7 +16,13 @@ def load(src, ch):
 
 
 def idx(pal, h):
-    return next(i for i in range(len(pal) // 3) if '#%02X%02X%02X' % tuple(pal[i*3:i*3+3]) == h.upper())
+    """그림 색표에서 h의 번호. 없으면(줄인 그림이 아직 안 쓴 맵 색표 색) 색표 끝에 더한다."""
+    n = len(pal) // 3
+    for i in range(n):
+        if '#%02X%02X%02X' % tuple(pal[i*3:i*3+3]) == h.upper():
+            return i
+    pal += [int(h[1:3], 16), int(h[3:5], 16), int(h[5:7], 16)]
+    return n
 
 
 def walk_mask(rows, ex, T, passage=True):
@@ -81,6 +87,25 @@ def round_notches(a, rows, T, r=11):
                     tile[ring] = src[ring]
 
 
+def worn(a, pal, walk, pts, T, light, dark, width=0.9, dens=0.13, seed=8):
+    """넓은 맨땅에 사람들이 밟아 다진 자국: pts(칸 단위 꺾은선)를 따라 너비 width칸 띠 안에 어두운 흙색 잔점을 더 촘촘히,
+    띠 가장자리로 갈수록 성기게. 밝은 흙색 위에만, 걸을 수 있는 칸 안에만 찍는다."""
+    H, W = a.shape
+    yy, xx = np.mgrid[0:H, 0:W] / T
+    d = np.full((H, W), 1e9)
+    for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+        vx, vy = x1 - x0, y1 - y0
+        t = np.clip(((xx - x0) * vx + (yy - y0) * vy) / (vx * vx + vy * vy), 0, 1)
+        d = np.minimum(d, np.hypot(xx - x0 - t * vx, yy - y0 - t * vy))
+    n = smooth_noise(H, W, 30, seed)
+    p = dens * np.clip(1 - d / width, 0, 1) ** 0.7 * (0.5 + n)
+    rng = np.random.default_rng(seed)
+    hit = (rng.random((H, W)) < p) & walk & (a == light)
+    a[hit] = dark
+    hit2 = np.zeros_like(hit); hit2[:, 1:] = hit[:, :-1]   # 옆으로 2px짜리도 섞는다
+    a[hit2 & (rng.random((H, W)) < 0.5) & walk & (a == light)] = dark
+
+
 def smooth_noise(H, W, cell, seed):
     rng = np.random.default_rng(seed)
     g = rng.random((H // cell + 3, W // cell + 3))
@@ -115,7 +140,7 @@ def streaks(H, W, seed, cx=150, cy=22):
 
 def fog(a, pal, walk, f, seed=3, fade=20, cell=2, top=0.78):
     """안개(막힌 곳에만): 세기 f에 옆으로 흐르는 줄무늬를 곱해 Bayer 디더링으로 덮는다. 가장 짙은 곳도 top(0.78)까지라
-    밑의 바위·나무 모양이 비친다. 덮는 점은 밑그림이 밝으면 밝은 잿빛, 어두우면 가운데 잿빛이라 안개가 비쳐 보인다.
+    밑의 바위·나무 모양이 비친다. 덮는 점은 밑그림(9px 상자로 고른 밝기)이 밝으면 밝은 잿빛, 어두우면 가운데 잿빛이라 안개가 비쳐 보인다.
     걸을 수 있는 칸에서 fade px 안은 엷어진다."""
     H, W = a.shape
     d = dist_from(walk, fade + 1)
@@ -127,6 +152,7 @@ def fog(a, pal, walk, f, seed=3, fade=20, cell=2, top=0.78):
     on = (dens > th) & ~walk
     p = np.array(pal[:len(pal) // 3 * 3]).reshape(-1, 3)
     lum = (p[a] * [0.3, 0.59, 0.11]).sum(axis=2)
+    lum = np.array(Image.fromarray(np.clip(lum, 0, 255).astype(np.uint8)).filter(ImageFilter.BoxBlur(4))).astype(float)  # 밝기 덩어리로
     light, mid = idx(pal, FOG[0]), idx(pal, FOG[1])
     a[on & (lum >= 95)] = light
     a[on & (lum < 95)] = mid
