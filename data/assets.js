@@ -22,7 +22,7 @@ export const ASSETS = {
     chestnut: 'assets/pixel/npc_chestnut.png',
     flower: 'assets/pixel/npc_flower.png',
     northgate: 'assets/pixel/npc_northgate.png',
-    narae: null, woodcutter: null, miru: null, yeoul: null, skygran: null, ferryman: null, // 3막
+    narae: 'assets/pixel/npc_narae.png', woodcutter: 'assets/pixel/npc_woodcutter.png', miru: 'assets/pixel/npc_miru.png', yeoul: 'assets/pixel/npc_yeoul.png', skygran: 'assets/pixel/npc_skygran.png', ferryman: 'assets/pixel/npc_ferryman.png', // 3막
     tea: null, garam: null, signpost: null, keeper: null, traveler: null, // 4막
     greykid: null, // 5막
   },
