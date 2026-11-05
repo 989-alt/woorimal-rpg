@@ -55,6 +55,24 @@ test('layout-guide: 512x384 and tile colours follow the 1-1 grid', () => {
   assert.equal(at(map.smallMonster.x, map.smallMonster.y), '5E6266');
 });
 
+test('layout-guide world: 512x288, 다섯 곳 원의 가운데 색이 정해진 색', async () => {
+  const { WORLD } = await import('../data/world.js');
+  const dir = mkdtempSync(join(tmpdir(), 'lgw-'));
+  const out = join(dir, 'w.png');
+  execFileSync('node', ['tools/layout-guide.mjs', 'world', out]);
+  const png = decodePng(readFileSync(out));
+  assert.deepEqual([png.w, png.h], [512, 288]);
+  const want = { 1: 'D9A55B', 2: 'E0584F', 3: '3FA7C9', 4: 'B9BBBE', 5: '5E6266' };
+  for (const p of WORLD.places) {
+    assert.equal(rgbPixel(png, Math.round(p.x / 3), Math.round(p.y / 3)), want[p.act], p.name);
+  }
+  // 바탕: 아래 왼쪽은 밝은 초록, 위 오른쪽은 회색
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(rgbPixel(png, 2, 285).slice(i, i + 2), 16));
+  assert.ok(g > r && g > b, `아래 왼쪽은 초록: ${rgbPixel(png, 2, 285)}`);
+  const [r2, g2, b2] = [0, 2, 4].map((i) => parseInt(rgbPixel(png, 509, 2).slice(i, i + 2), 16));
+  assert.ok(Math.max(r2, g2, b2) - Math.min(r2, g2, b2) < 16, `위 오른쪽은 회색: ${rgbPixel(png, 509, 2)}`);
+});
+
 test('pixelize: <=32 colours and alpha only 0/255', (t) => {
   if (!existsSync(VENV_PY)) return t.skip(`sprite-gen venv python missing (${VENV_PY})`);
   const dir = mkdtempSync(join(tmpdir(), 'px-'));

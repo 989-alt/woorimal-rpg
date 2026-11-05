@@ -221,24 +221,41 @@ for (const size of [{ width: 1366, height: 768 }, { width: 1024, height: 768 }])
   });
 }
 
-test('지도 그림(ASSETS.worldmap)이 있으면 그림을 깔고 임시 지도를 감춘다, 없는 주소면 오류 없이 임시 지도', async () => {
+test('지도 그림(ASSETS.worldmap)이 있으면 그림을 깐다, 없는 주소면 오류 없이 바탕색만(임시 그림 없음)', async () => {
   const { page, errors } = await openGame(browser, server);
   await atActEnd(page);
   assert.equal(await page.evaluate((u) => window.__test.setAsset('worldmap', u), MISSING), false);
   await toWorldMap(page);
   assert.equal(await page.locator('.world-map.has-art').count(), 0);
-  assert.equal(await page.locator('.world-deco').isVisible(), true);
+  assert.equal(await page.locator('.world-map svg:not(.world-roads)').count(), 0, '임시 그림(SVG)은 없다');
+  assert.notEqual(await page.locator('.world-map').evaluate((e) => getComputedStyle(e).backgroundImage), 'none', '바탕색은 남는다');
+  assert.equal(await page.locator('.world-place').count(), 5);
 
   assert.equal(await page.evaluate((u) => window.__test.setAsset('worldmap', u), FIXTURE), true);
   await page.evaluate(() => window.__test.patchState({})); // 탐험으로 돌아가 다시 지도를 연다
   await toWorldMapAgain(page);
   await page.waitForSelector('.world-map.has-art .world-map-img');
-  assert.equal(await page.locator('.world-deco').isVisible(), false);
+  assert.equal(await page.locator('.world-map').evaluate((e) => getComputedStyle(e).backgroundImage), 'none');
   assert.equal(await page.locator('.world-place').count(), 5, '표시는 그림 위에도 있다');
   await page.evaluate(() => window.__test.setAsset('worldmap', null));
   assert.deepEqual(errors.filter((e) => !e.includes('missing_404')), []);
   await page.close();
 });
+
+for (const avatar of ['m', 'f']) {
+  test(`세계 지도의 주인공은 고른 모습(${avatar})의 걷기 도트다`, async () => {
+    const { page, errors } = await openGame(browser, server, { avatar });
+    await atActEnd(page);
+    await toWorldMap(page);
+    await page.waitForSelector('.world-hero.has-art img.world-hero-art');
+    const src = await page.locator('.world-hero.has-art img.world-hero-art').getAttribute('src');
+    assert.match(src, new RegExp(`walk_hero_${avatar}\\.png`));
+    assert.doesNotMatch(src, new RegExp(`walk_hero_${avatar === 'm' ? 'f' : 'm'}`));
+    assert.equal(await page.locator('.world-hero-pin').isVisible(), false, '그림이 있으면 핀은 숨는다');
+    assert.deepEqual(errors, []);
+    await page.close();
+  });
+}
 
 async function toWorldMapAgain(page) {
   await walkToExit(page); // 출구에 들어서며 저장된 자리는 출구 안쪽 한 칸이다

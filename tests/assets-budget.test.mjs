@@ -150,7 +150,7 @@ test(`UI 키트: assets/ui 합계 ${UI_TOTAL_MAX / KB}KB 이하`, () => {
   assert.ok(total <= UI_TOTAL_MAX, `assets/ui ${total}B > ${UI_TOTAL_MAX}B`);
 });
 
-test('맵: 64색 이하, 크기 = 칸 수 × 48', () => {
+test('맵: 64색 이하, 크기 = 칸 수 × 48 (세계 지도도 64색 이하)', () => {
   for (const act of ACTS) {
     for (const ch of act.chapters) {
       const path = ASSETS.maps[ch.id];
@@ -159,6 +159,10 @@ test('맵: 64색 이하, 크기 = 칸 수 × 48', () => {
       assert.ok(info.palette > 0 && info.palette <= 64, `${path} ${info.palette}색`);
       assert.deepEqual([info.w, info.h], [ch.map.rows[0].length * 48, ch.map.rows.length * 48], path);
     }
+  }
+  if (ASSETS.worldmap) {
+    const info = pngInfo(head(ASSETS.worldmap));
+    assert.ok(info.palette > 0 && info.palette <= 64, `${ASSETS.worldmap} ${info.palette}색`);
   }
 });
 
@@ -201,6 +205,18 @@ test(`장마다 ${CHAPTER_MAX / MB}MB 이하(주인공 모습 하나)`, () => {
         const other = avatar === 'f' ? '_m' : '_f';
         assert.deepEqual(paths.filter((p) => p.includes(`hero${other}`)), [], `${ch.id} ${avatar}`);
       }
+    }
+  }
+});
+
+// 막의 마지막 장에서는 세계 지도도 미리 받는다(js/ui/images.js preloadChapter).
+test(`1~4막 마지막 장 + 세계 지도 미리 받기 ${CHAPTER_MAX / MB}MB 이하`, () => {
+  for (const act of ACTS.slice(0, 4)) {
+    const ch = act.chapters[act.chapters.length - 1];
+    for (const avatar of ['f', 'm']) {
+      const total = sum([...chapterPaths(act, ch, avatar), ASSETS.worldmap].filter(Boolean));
+      console.log(`# chapter ${ch.id} (${avatar}) + worldmap ${mb(total)} MB`);
+      assert.ok(total <= CHAPTER_MAX, `${ch.id} (${avatar}) + 세계 지도 ${mb(total)}MB`);
     }
   }
 });
