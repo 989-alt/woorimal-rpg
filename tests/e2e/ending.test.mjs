@@ -8,6 +8,7 @@ import { openGame, state, continueAs, atEndingExit, answerQuiz } from './play.mj
 import { walkToExit, KEYS } from './helpers.mjs';
 import { ACTS } from '../../data/acts/index.js';
 import ENDING from '../../data/ending.js';
+import { endingBg } from '../../data/assets.js';
 
 let server, browser;
 before(async () => {
@@ -105,7 +106,12 @@ test('5-2 출구 → 엔딩 보기 → 장면 8개 → 마지막 말 → 말빛 
     const still = sceneOf(i) === ENDING.scenes.length - 1;
     assert.equal(l.still, still, `${i}째 줄 still`);
     if (still) assert.equal(l.busts, 0, `${i}째 줄: 한 장 그림에는 상반신이 없다`);
-    if (sceneOf(i) !== 0) assert.equal(l.bg, null, `${i}째 줄: 그림이 없으면 임시 바탕`);
+    if (sceneOf(i) !== 0) {
+      // 그림이 있으면 그 그림, 없으면 임시 바탕(null). 그림은 막마다 차례로 들어온다.
+      const want = endingBg(ENDING.scenes[sceneOf(i)].bg);
+      if (want) assert.ok(l.bg?.endsWith(want), `${i}째 줄 바탕: ${l.bg} ≠ ${want}`);
+      else assert.equal(l.bg, null, `${i}째 줄: 그림이 없으면 임시 바탕`);
+    }
   }
   assert.ok(seen.some((l) => !l.still && l.busts > 0), '다른 장면에는 상반신이 보인다');
 
