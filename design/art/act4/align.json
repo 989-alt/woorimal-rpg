@@ -1,4 +1,40 @@
 {
+ "garam_base": {
+  "src": "bust_garam_base_a1",
+  "quality": 85
+ },
+ "garam_joy": {
+  "src": "bust_garam_joy_a1",
+  "quality": 85,
+  "iou_head": 0.9947,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ },
+ "keeper_base": {
+  "src": "bust_keeper_base_a1",
+  "quality": 85
+ },
+ "keeper_joy": {
+  "src": "bust_keeper_joy_a1",
+  "quality": 85,
+  "iou_head": 0.9971,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ },
+ "signpost_base": {
+  "src": "bust_signpost_base_a1",
+  "quality": 85
+ },
+ "signpost_joy": {
+  "src": "bust_signpost_joy_a1",
+  "quality": 85,
+  "iou_head": 0.9951,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ },
  "tea_base": {
   "src": "bust_tea_base_a1",
   "quality": 85
@@ -7,6 +43,18 @@
   "src": "bust_tea_joy_a1",
   "quality": 85,
   "iou_head": 0.9943,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ },
+ "traveler_base": {
+  "src": "bust_traveler_base_a1",
+  "quality": 85
+ },
+ "traveler_joy": {
+  "src": "bust_traveler_joy_a1",
+  "quality": 85,
+  "iou_head": 0.9934,
   "scale": 1.0,
   "dx": 0,
   "dy": 0

@@ -58,7 +58,7 @@ export const ASSETS = {
     ferryman: { base: 'assets/illust/bust_ferryman_base.webp', joy: 'assets/illust/bust_ferryman_joy.webp' },
     // 4막
     tea: { base: 'assets/illust/bust_tea_base.webp', joy: 'assets/illust/bust_tea_joy.webp' },
-    garam: { base: null, joy: null },
+    garam: { base: 'assets/illust/bust_garam_base.webp', joy: 'assets/illust/bust_garam_joy.webp' },
     signpost: { base: null, joy: null },
     keeper: { base: null, joy: null },
     traveler: { base: null, joy: null },
