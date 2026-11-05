@@ -57,7 +57,7 @@ export const ASSETS = {
     skygran: { base: 'assets/illust/bust_skygran_base.webp', joy: 'assets/illust/bust_skygran_joy.webp' },
     ferryman: { base: 'assets/illust/bust_ferryman_base.webp', joy: 'assets/illust/bust_ferryman_joy.webp' },
     // 4막
-    tea: { base: null, joy: null },
+    tea: { base: 'assets/illust/bust_tea_base.webp', joy: 'assets/illust/bust_tea_joy.webp' },
     garam: { base: null, joy: null },
     signpost: { base: null, joy: null },
     keeper: { base: null, joy: null },

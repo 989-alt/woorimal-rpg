@@ -1,0 +1,14 @@
+{
+ "tea_base": {
+  "src": "bust_tea_base_a1",
+  "quality": 85
+ },
+ "tea_joy": {
+  "src": "bust_tea_joy_a1",
+  "quality": 85,
+  "iou_head": 0.9943,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ }
+}
