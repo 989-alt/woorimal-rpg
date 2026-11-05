@@ -1,0 +1,7 @@
+{
+ "monsters": { "src": "monsters_a1_cut.png", "order": ["npc:greykid", "small", "boss"] },
+ "icons": { "src": "icons_a1_cut.png", "grid": [3, 1], "ids": ["bell", "light-shard", "lullaby"] },
+ "height": { "greykid": 52 },
+ "keep": { "light-shard": "gold" },
+ "outline": {}
+}

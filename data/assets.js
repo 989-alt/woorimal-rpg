@@ -24,13 +24,13 @@ export const ASSETS = {
     northgate: 'assets/pixel/npc_northgate.png',
     narae: 'assets/pixel/npc_narae.png', woodcutter: 'assets/pixel/npc_woodcutter.png', miru: 'assets/pixel/npc_miru.png', yeoul: 'assets/pixel/npc_yeoul.png', skygran: 'assets/pixel/npc_skygran.png', ferryman: 'assets/pixel/npc_ferryman.png', // 3막
     tea: 'assets/pixel/npc_tea.png', garam: 'assets/pixel/npc_garam.png', signpost: 'assets/pixel/npc_signpost.png', keeper: 'assets/pixel/npc_keeper.png', traveler: 'assets/pixel/npc_traveler.png', // 4막
-    greykid: null, // 5막
+    greykid: 'assets/pixel/npc_greykid.png', // 5막
   },
   // 물건 아이콘 48×48 (물건 id)
   items: { water: 'assets/pixel/icon_water.png', firewood: 'assets/pixel/icon_firewood.png', letter: 'assets/pixel/icon_letter.png', 'price-board': 'assets/pixel/icon_price-board.png', weight: 'assets/pixel/icon_weight.png', bundle: 'assets/pixel/icon_bundle.png', 'trail-ribbon': 'assets/pixel/icon_trail-ribbon.png', lunchbox: 'assets/pixel/icon_lunchbox.png', 'rain-bowl': 'assets/pixel/icon_rain-bowl.png', 'warm-tea': 'assets/pixel/icon_warm-tea.png', 'pine-twigs': 'assets/pixel/icon_pine-twigs.png', 'bundle-strap': 'assets/pixel/icon_bundle-strap.png', bell: null, 'light-shard': null, lullaby: null },
   // 꼬마 몬스터 도트 48×96(발이 맨 아래 줄)·보스 도트 96×96(2×2칸, 발이 보스 칸 아래 줄 가운데) (막 번호)
-  small: { 1: 'assets/pixel/monster_small_act1.png', 2: 'assets/pixel/monster_small_act2.png', 3: 'assets/pixel/monster_small_act3.png', 4: 'assets/pixel/monster_small_act4.png', 5: null },
-  bossPixel: { 1: 'assets/pixel/monster_boss_act1.png', 2: 'assets/pixel/monster_boss_act2.png', 3: 'assets/pixel/monster_boss_act3.png', 4: 'assets/pixel/monster_boss_act4.png', 5: null },
+  small: { 1: 'assets/pixel/monster_small_act1.png', 2: 'assets/pixel/monster_small_act2.png', 3: 'assets/pixel/monster_small_act3.png', 4: 'assets/pixel/monster_small_act4.png', 5: 'assets/pixel/monster_small_act5.png' },
+  bossPixel: { 1: 'assets/pixel/monster_boss_act1.png', 2: 'assets/pixel/monster_boss_act2.png', 3: 'assets/pixel/monster_boss_act3.png', 4: 'assets/pixel/monster_boss_act4.png', 5: 'assets/pixel/monster_boss_act5.png' },
   // 대화 상반신: 인물 × 표정. 표정 그림이 없으면 base로 대신한다.
   busts: {
     hero_f: { base: 'assets/illust/bust_hero_f_base.webp', surprise: 'assets/illust/bust_hero_f_surprise.webp', joy: 'assets/illust/bust_hero_f_joy.webp' },
