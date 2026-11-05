@@ -10,5 +10,13 @@
   "scale": 1.0,
   "dx": 0,
   "dy": 0
+ },
+ "narae_light": {
+  "src": "bust_narae_light_a1",
+  "quality": 85,
+  "iou_head": 0.9951,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
  }
 }
