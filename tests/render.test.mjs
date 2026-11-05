@@ -273,3 +273,19 @@ test('drawExplore: 막 보스를 이기면 보스 자리에는 아무것도 그�
   assert.equal(drawsBoss(base), true);
   assert.equal(drawsBoss({ ...base, clearedActs: [1] }), false);
 });
+
+test('cameraFor: 화면을 덮는 부품(터치 십자·말하기) 밑으로 주인공이 들어가면 카메라를 옆으로 민다', () => {
+  const map = { w: 32, h: 24 };
+  const view = { w: 467, h: 216 };
+  const pad = { x: 6, y: 130, w: 80, h: 80 }; // 왼쪽 아래
+  const talk = { x: 416, y: 168, w: 44, h: 42 }; // 오른쪽 아래
+  const plain = cameraFor(map, { x: 1, y: 22 }, view, 36);
+  assert.equal(plain.x, 0); // 맵 왼쪽 끝에 붙는다
+  const c = cameraFor(map, { x: 1, y: 22 }, view, 36, [pad, talk]);
+  assert.equal(c.y, plain.y);
+  assert.ok(1 * 16 - c.x >= pad.x + pad.w - 1e-9, '주인공 왼쪽 끝이 십자 오른쪽 끝 밖');
+  const r = cameraFor(map, { x: 30, y: 22 }, view, 36, [pad, talk]);
+  assert.ok(30 * 16 + 16 - r.x <= talk.x + 1e-9, '주인공 오른쪽 끝이 말하기 단추 왼쪽 밖');
+  // 부품과 위아래로 겹치지 않으면 그대로
+  assert.deepEqual(cameraFor(map, { x: 1, y: 1 }, view, 36, [pad, talk]), cameraFor(map, { x: 1, y: 1 }, view, 36));
+});

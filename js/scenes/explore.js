@@ -218,11 +218,24 @@ export const explore = {
       // 1:1이면 도트를 또렷하게, 줄여 보일 때는 부드럽게(최근접으로 줄이면 선이 끊긴다)
       canvas.style.imageRendering = v.factor === 1 ? 'pixelated' : 'auto';
       scale = v.factor;
-      box = { w: v.viewW, h: v.viewH, insetTop: HUD_INSET / (v.factor * ART) };
+      box = { w: v.viewW, h: v.viewH, insetTop: HUD_INSET / (v.factor * ART), avoid: [] };
+      measureCover();
       // 그리는 코드는 세계 좌표(칸 16)를 그대로 쓴다
       g.setTransform(ART, 0, 0, ART, 0, 0);
       g.imageSmoothingEnabled = false;
     };
+    // 화면 위 부품이 덮는 곳(세계 단위): HUD 아래끝(크기마다 높이가 다르다)과, 터치 조작·HUD 아래 단추.
+    // 카메라는 주인공을 HUD 아래에 두고, 주인공이 덮는 부품 밑으로 들어가면 옆으로 밀어 낸다(render.js cameraFor).
+    function measureCover() {
+      const k = scale * ART;
+      const top = el.getBoundingClientRect().top;
+      const hudBottom = hud.el.getBoundingClientRect().bottom - top;
+      if (hudBottom > 0) box.insetTop = hudBottom / k;
+      const rects = [...el.querySelectorAll('.touch-pad, .touch-act, .hud-sys')]
+        .map((n) => n.getBoundingClientRect())
+        .filter((r) => r.width > 0 && r.top - top >= hudBottom - 1); // HUD 줄 안에 있는 단추 묶음은 HUD가 이미 덮는다
+      box.avoid = rects.map((r) => ({ x: r.left / k, y: (r.top - top) / k, w: r.width / k, h: r.height / k }));
+    }
     fit();
     window.addEventListener('resize', fit);
 
@@ -285,7 +298,7 @@ export const explore = {
       if (overlay && drawn?.size === size) return;
       const heroAt = drawnPos(glide, state.pos, time); // 상태 자리와 다른 곳으로 옮겨진 때(순간이동·불러오기)는 미끄러지지 않는다
       const moving = !!glide && glide.to.x === state.pos.x && glide.to.y === state.pos.y && time < glideEnd(glide) + WALK_TAIL_MS;
-      const camera = cameraFor(map, heroAt, box, box.insetTop);
+      const camera = cameraFor(map, heroAt, box, box.insetTop, box.avoid);
       const arrow = tipTarget() ?? guideArrow; // 첫 인물 화살표와 길잡이 화살표는 같은 화살표다
       const flashNpc = !still && flash && time < flash.until ? flash.npcId : null; // 움직임 줄이기에서는 깜박이지 않는다
       const view = { map, state, chapter, camera, view: box, time, tipTarget: arrow, flashNpc, still, moving, heroAt };
@@ -299,7 +312,7 @@ export const explore = {
       shot = { camera, heroAt };
       if (window.__test) { // 검사용: 마지막으로 그려진 주인공 자리와 카메라·배율
         window.__test.heroAt = heroAt;
-        window.__test.view = { camera, factor: scale, viewW: box.w, viewH: box.h, insetTop: box.insetTop };
+        window.__test.view = { camera, factor: scale, viewW: box.w, viewH: box.h, insetTop: box.insetTop, avoid: box.avoid };
       }
       drawn = { state, size, anim, arrow };
       if (first) { // 첫 그림이 나온 뒤에야 앵커가 정해진다
@@ -379,6 +392,7 @@ export const explore = {
 
     const unbind = bindInput(window, { move, act, codex: showCodex, tasks: showTasks });
     const removeTouch = isCoarsePointer() ? createTouchControls(stage, { move, act }) : () => {};
+    fit(); // 터치 조작이 붙은 뒤 덮는 곳을 다시 잰다
 
     return () => {
       leaving = true;
@@ -390,6 +404,7 @@ export const explore = {
       unbind();
       removeTouch();
       toast.dispose();
+      hud.dispose();
       window.removeEventListener('resize', fit);
       el.remove();
     };

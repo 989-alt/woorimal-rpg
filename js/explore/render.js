@@ -23,13 +23,29 @@ function clampAxis(center, mapPx, viewPx) {
 // 주인공을 가운데 두되 맵 밖은 보이지 않게 한다. 맵이 화면보다 작으면 가운데 놓는다.
 // view: 보이는 세계 크기 { w, h }. insetTop: 화면 위쪽 HUD가 덮는 세계 높이 — 맵과 주인공은 그 아래 영역의 가운데에 둔다
 // (맨 위로 걸어도 맵 윗부분이 HUD 밑으로 들어가지 않는다).
-export function cameraFor(map, pos, view = { w: BASE_W, h: BASE_H }, insetTop = 0) {
+// avoid: 화면을 덮는 부품(터치 십자·말하기 단추 등)의 사각형 목록 { x, y, w, h }(세계 단위, 화면 왼쪽 위 기준).
+// 주인공(칸 하나 폭, 키는 두 칸)이 그 밑에 들어가면 카메라를 옆으로 밀어 부품 바깥에 보이게 한다(맵 밖이 조금 보여도).
+// 왼쪽 반에 있는 부품은 오른쪽으로, 오른쪽 반에 있는 부품은 왼쪽으로 민다. 위아래로 겹친 만큼(키 한 칸에 걸쳐) 서서히 민다.
+export function cameraFor(map, pos, view = { w: BASE_W, h: BASE_H }, insetTop = 0, avoid = []) {
   const mapH = map.h * TILE;
   const heroY = pos.y * TILE + TILE / 2;
   const y = mapH <= view.h - insetTop
     ? (mapH - view.h - insetTop) / 2
     : Math.min(Math.max(heroY - (view.h + insetTop) / 2, 0 - insetTop), mapH - view.h);
-  return { x: clampAxis(pos.x * TILE + TILE / 2, map.w * TILE, view.w), y };
+  let x = clampAxis(pos.x * TILE + TILE / 2, map.w * TILE, view.w);
+  const top = pos.y * TILE - TILE - y; // 주인공 머리(화면 기준)
+  let toRight = 0; // 왼쪽 부품에서 주인공을 오른쪽으로 미는 양(카메라는 왼쪽으로)
+  let toLeft = 0; // 오른쪽 부품에서 주인공을 왼쪽으로 미는 양
+  const left = pos.x * TILE - x;
+  for (const z of avoid) {
+    const overlap = Math.min(top + 2 * TILE, z.y + z.h) - Math.max(top, z.y);
+    if (overlap <= 0) continue;
+    const t = Math.min(1, overlap / TILE);
+    if (z.x + z.w / 2 < view.w / 2) toRight = Math.max(toRight, Math.max(0, z.x + z.w - left) * t);
+    else toLeft = Math.max(toLeft, Math.max(0, left + TILE - z.x) * t);
+  }
+  x += toLeft - toRight;
+  return { x, y };
 }
 
 // 세계 좌표 점 p({x, y}, 칸 단위가 아니라 세계 픽셀)가 카메라가 보는 상자 안인지(HUD 밑은 가리지 않고 센다)
