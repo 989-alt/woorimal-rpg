@@ -6,3 +6,5 @@ project.local.yaml
 design/art/*/raw/
 __pycache__/
 design/art/ui/raw/
+design/audio/raw/
+design/audio/credits.tsv.lock

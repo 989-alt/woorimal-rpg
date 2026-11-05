@@ -103,7 +103,9 @@ function* entries(node, trail) {
   if (typeof node === 'string') yield [trail, node];
   else if (node && typeof node === 'object') for (const [k, v] of Object.entries(node)) yield* entries(v, `${trail}.${k}`);
 }
-const all = Object.keys(ASSETS).flatMap((group) => [...entries(ASSETS[group], group)].map(([where, path]) => ({ group, where, path })));
+// 그림만(소리 ASSETS.audio는 아래 '소리' 검사에서 따로 본다)
+const all = Object.keys(ASSETS).filter((g) => g !== 'audio').flatMap((group) => [...entries(ASSETS[group], group)].map(([where, path]) => ({ group, where, path })));
+const audioAll = [...entries(ASSETS.audio ?? {}, 'audio')].map(([where, path]) => ({ group: 'audio', where, path }));
 
 function filesUnder(dir) {
   if (!existsSync(abs(dir))) return [];
@@ -116,7 +118,7 @@ function filesUnder(dir) {
 test('그림 경로가 모두 실제 파일이고, assets/의 그림은 모두 데이터가 쓴다', () => {
   assert.ok(all.length > 30);
   for (const { where, path } of all) assert.ok(existsSync(abs(path)), `${where}: ${path} 없음`);
-  const used = new Set(all.map((a) => a.path));
+  const used = new Set([...all, ...audioAll].map((a) => a.path));
   // assets/fonts/는 CSS가 가리키는지로, OFL-*.txt(라이선스)는 짝이 되는 글꼴 파일이 있는지로 본다.
   const css = filesUnder('css').map((f) => readFileSync(abs(f), 'utf8')).join('\n');
   const fonts = filesUnder('assets/fonts');
@@ -135,7 +137,7 @@ test('그림 경로가 모두 실제 파일이고, assets/의 그림은 모두 �
 });
 
 test('갈래마다 크기·파일 상한이 아트 바이블 8절과 맞는다', () => {
-  for (const group of Object.keys(ASSETS)) assert.ok(SPEC[group], `규격 없는 갈래: ${group}`);
+  for (const group of Object.keys(ASSETS).filter((g) => g !== 'audio')) assert.ok(SPEC[group], `규격 없는 갈래: ${group}`);
   for (const { group, where, path } of all) {
     const spec = specFor(group, where);
     assert.ok(spec, `규격 없는 그림: ${where}`);
@@ -188,6 +190,8 @@ export function firstLoadPaths() {
     ASSETS.title, ASSETS.busts.hero_f.base, ASSETS.busts.hero_m.base,
     ASSETS.maps[ch.id], ASSETS.walk.f, ...ch.npcs.map((n) => ASSETS.npcs[n.id]),
     ...[...itemIds].map((id) => ASSETS.items[id]), ASSETS.small[act1.id], ASSETS.bossPixel[act1.id],
+    // 소리: 타이틀 음악과 효과음(첫 누름 뒤 한꺼번에 받는다). 다른 음악은 그 장면에 들어설 때 받는다.
+    ASSETS.audio?.music?.title, ...Object.values(ASSETS.audio?.sfx ?? {}),
   ];
   return [...code, ...art.filter(Boolean)];
 }
@@ -241,6 +245,47 @@ test(`5-2 + 엔딩 그림 미리 받기 ${CHAPTER_MAX / MB}MB 이하, 다른 모
     const other = avatar === 'f' ? 'hero_m' : 'hero_f';
     assert.deepEqual(paths.filter((p) => p.includes(other)), [], `5-2 ${avatar}: 다른 모습 주인공`);
   }
+});
+
+// ── 소리(ASSETS.audio) ──
+// MP3 머리: 첫 프레임 헤더에서 MPEG 판·표본률·채널. ID3 꼬리표가 앞에 있으면 건너뛴다.
+export function mp3Info(buf) {
+  let o = 0;
+  if (buf.toString('latin1', 0, 3) === 'ID3') o = 10 + ((buf[6] << 21) | (buf[7] << 14) | (buf[8] << 7) | buf[9]);
+  while (o + 4 <= buf.length && !(buf[o] === 0xff && (buf[o + 1] & 0xe0) === 0xe0)) o++;
+  assert.ok(o + 4 <= buf.length, 'MP3 프레임 헤더가 없다');
+  const version = (buf[o + 1] >> 3) & 3; // 3: MPEG-1, 2: MPEG-2, 0: MPEG-2.5
+  const layer = (buf[o + 1] >> 1) & 3; // 1: Layer III
+  const rates = { 3: [44100, 48000, 32000], 2: [22050, 24000, 16000], 0: [11025, 12000, 8000] }[version];
+  return { layer3: layer === 1, rate: rates?.[(buf[o + 2] >> 2) & 3] ?? 0, channels: ((buf[o + 3] >> 6) & 3) === 3 ? 1 : 2 };
+}
+const MUSIC_MAX = 1200 * KB; // 곡마다(설계: 1.2MB 이하)
+const SFX_MAX = 30 * KB; // 효과음마다
+const SFX_TOTAL_MAX = 200 * KB;
+const AUDIO_TOTAL_MAX = 10 * MB; // 저장소에 담는 소리 모두
+
+test('소리: 음악·효과음 파일이 있고 MP3이며 크기 상한 안이다', () => {
+  assert.ok(ASSETS.audio, 'ASSETS.audio 없음');
+  const music = Object.entries(ASSETS.audio.music);
+  assert.ok(music.length >= 10, `음악 ${music.length}곡`);
+  for (const key of ['title', 'act1', 'act2', 'act3', 'act4', 'act5', 'world', 'review', 'boss', 'final', 'ending']) assert.ok(ASSETS.audio.music[key], `음악 ${key}`);
+  for (const [key, path] of music) {
+    assert.ok(path && existsSync(abs(path)), `music.${key}: ${path} 없음`);
+    const info = mp3Info(head(path));
+    assert.ok(info.layer3 && info.rate >= 32000, `music.${key}: MP3(44.1/48kHz)여야 한다`);
+    assert.ok(bytes(path) <= MUSIC_MAX, `music.${key}: ${bytes(path)}B > ${MUSIC_MAX}B`);
+  }
+  let sfxTotal = 0;
+  for (const [key, path] of Object.entries(ASSETS.audio.sfx)) {
+    if (path === null) continue; // 코드로 만드는 소리
+    assert.ok(existsSync(abs(path)), `sfx.${key}: ${path} 없음`);
+    assert.ok(mp3Info(head(path)).layer3, `sfx.${key}: MP3여야 한다`);
+    assert.ok(bytes(path) <= SFX_MAX, `sfx.${key}: ${bytes(path)}B > ${SFX_MAX}B`);
+    sfxTotal += bytes(path);
+  }
+  console.log(`# audio sfx ${(sfxTotal / KB).toFixed(0)} KB, all ${mb(sum(audioAll.map((a) => a.path).filter(Boolean)))} MB`);
+  assert.ok(sfxTotal <= SFX_TOTAL_MAX, `효과음 합계 ${sfxTotal}B`);
+  assert.ok(sum(audioAll.map((a) => a.path).filter(Boolean)) <= AUDIO_TOTAL_MAX, '소리 합계');
 });
 
 test('헤더 읽기: 시험 그림(16×32 PNG)', () => {

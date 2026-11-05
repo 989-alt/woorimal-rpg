@@ -92,6 +92,42 @@ export const ASSETS = {
     coin: 'assets/ui/coin.v1.png',
     check: 'assets/ui/check.v1.png',
   },
+  // 소리(js/ui/audio.js). 음악은 장면마다 하나이고 파일 하나가 한 바퀴다(끝이 처음으로 이어진다). 장면에 들어설 때 받는다(타이틀 음악만 처음에).
+  // 효과음은 짧은 MP3이고, null이면 코드로 만든 소리(audio.js의 SYNTH)를 낸다. 만든 방법: design/audio/tracks.json, tools/audio-make.py
+  audio: {
+    music: {
+      title: 'assets/audio/music_title.v1.mp3',
+      act1: 'assets/audio/music_act1.v1.mp3', // 새벽골
+      act2: 'assets/audio/music_act2.v1.mp3', // 너울장
+      act3: 'assets/audio/music_act3.v1.mp3', // 윤슬내
+      act4: 'assets/audio/music_act4.v1.mp3', // 안개 고개
+      act5: 'assets/audio/music_act5.v1.mp3', // 잿빛 탑
+      world: 'assets/audio/music_world.v1.mp3', // 세계 지도
+      review: 'assets/audio/music_review.v1.mp3', // 복습전
+      boss: 'assets/audio/music_boss.v1.mp3', // 1~4막 보스전
+      final: 'assets/audio/music_final.v1.mp3', // 5막 보스전
+      ending: 'assets/audio/music_ending.v1.mp3',
+      quiz: 'assets/audio/music_quiz.v1.mp3', // 마무리 퀴즈
+    },
+    sfx: {
+      step: null, // 걸음(코드로, 잦게 내지 않는다)
+      talk: null, // 대사 넘김(코드로)
+      click: null, // 단추(코드로)
+      chime: 'assets/audio/sfx_chime.v1.mp3', // 낱말이 빛을 되찾음
+      card: 'assets/audio/sfx_card.v1.mp3', // 뜻풀이 카드
+      codex: 'assets/audio/sfx_codex.v1.mp3', // 도감 열기·닫기
+      accept: 'assets/audio/sfx_accept.v1.mp3', // 부탁 받음
+      done: 'assets/audio/sfx_done.v1.mp3', // 부탁 끝·클리어
+      correct: 'assets/audio/sfx_correct.v1.mp3', // 정답(전투·퀴즈)
+      wrong: 'assets/audio/sfx_wrong.v1.mp3', // 오답(전투·퀴즈)
+      hit: 'assets/audio/sfx_hit.v1.mp3', // 공격
+      streak: 'assets/audio/sfx_streak.v1.mp3', // 연속 정답 공격
+      defeat: 'assets/audio/sfx_defeat.v1.mp3', // 몬스터를 물리침
+      heart: 'assets/audio/sfx_heart.v1.mp3', // 하트를 잃음
+      exit: 'assets/audio/sfx_exit.v1.mp3', // 출구·안개 문이 열림
+      travel: 'assets/audio/sfx_travel.v1.mp3', // 세계 지도에서 길 떠나기
+    },
+  },
 };
 
 // UI 키트 부품마다 그림 크기(w×h, 그림 px)와 9조각 값. slice는 그림 px [위, 오른쪽, 아래, 왼쪽],
