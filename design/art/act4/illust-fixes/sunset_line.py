@@ -16,7 +16,7 @@ P = os.path.join(ROOT, 'assets/illust/monster_act4.webp')
 COLOR = np.array([212, 154, 134], np.float32)  # #D49A86, bg_ch4-2 노을 줄(#C79693)보다 조금 따뜻하게
 WIN = (600, 840)          # 틈을 찾을 가로 범위(1440 그림 좌표)
 Y0, Y1 = 470, 1325        # 줄의 위·아래(어깨 높이 ~ 금 간 땅 아래 끝)
-HALF = 3.0                # 줄 반폭(px)
+HALF = 6.0                # 줄 반폭(px)
 TAPER = 90                # 위아래 끝이 가늘어지는 길이(px)
 
 im = Image.open(P).convert('RGBA')
