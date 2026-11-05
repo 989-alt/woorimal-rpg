@@ -1,0 +1,8 @@
+{
+ "npcs": { "src": "npcs_a1_cut.png", "grid": [3, 2], "ids": ["narae", "woodcutter", "miru", "yeoul", "skygran", "ferryman"] },
+ "monsters": { "src": "monsters_a1_cut.png", "order": ["small", "boss"] },
+ "icons": { "src": "icons_a1_cut.png", "grid": [3, 1], "ids": ["trail-ribbon", "lunchbox", "rain-bowl"] },
+ "height": { "narae": 78, "woodcutter": 74, "miru": 62, "yeoul": 64, "skygran": 64, "ferryman": 72 },
+ "keep": { "narae": "narae" },
+ "outline": { "narae": "#5D7F8E" }
+}
