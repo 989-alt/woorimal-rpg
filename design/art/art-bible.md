@@ -344,7 +344,7 @@ holding its placeholder is incomplete; a later run fills only those.
 - iPad는 iPadOS 14 이상이어야 WebP를 연다. 학교 기기 버전을 확인한다.
 
 **캐시**
-- `vercel.json`에서 `/assets/(.*)`에 `Cache-Control: public, max-age=31536000, immutable`.
+- GitHub Pages가 캐시 머리말을 정한다(따로 설정 파일을 두지 않는다). 예전의 `vercel.json`(`immutable`)은 지웠다.
 - 그림을 바꿀 때는 파일 이름에 버전을 붙인다(`map_ch1_saebyeokgol.v2.png`). 데이터의 경로만 고친다.
 
 **글꼴**

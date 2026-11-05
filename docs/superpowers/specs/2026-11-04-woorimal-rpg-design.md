@@ -242,7 +242,7 @@
 
 ## 8. 코드 구조
 
-빌드 없는 정적 웹앱이다(HTML, CSS, 순수 JS 모듈). Vercel로 배포한다.
+빌드 없는 정적 웹앱이다(HTML, CSS, 순수 JS 모듈). GitHub Pages로 배포한다(https://989-alt.github.io/woorimal-rpg/).
 
 ```
 index.html
