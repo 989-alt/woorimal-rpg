@@ -50,7 +50,7 @@ export const ASSETS = {
     flower: { base: 'assets/illust/bust_flower_base.webp', joy: 'assets/illust/bust_flower_joy.webp' },
     northgate: { base: 'assets/illust/bust_northgate_base.webp' },
     // 3막
-    narae: { base: null, sad: null, surprise: null, light: null },
+    narae: { base: 'assets/illust/bust_narae_base.webp', sad: 'assets/illust/bust_narae_sad.webp', surprise: 'assets/illust/bust_narae_surprise.webp', light: null },
     woodcutter: { base: null, joy: null },
     miru: { base: null, joy: null },
     yeoul: { base: null, joy: null },

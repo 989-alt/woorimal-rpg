@@ -1,0 +1,24 @@
+{
+ "narae_base": {
+  "src": "bust_narae_base_a2",
+  "quality": 85
+ },
+ "narae_sad": {
+  "src": "bust_narae_sad_a1",
+  "quality": 85,
+  "iou_head": 0.9933,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0,
+  "color_match": "sky"
+ },
+ "narae_surprise": {
+  "src": "bust_narae_surprise_a1",
+  "quality": 85,
+  "iou_head": 0.9944,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0,
+  "color_match": "sky"
+ }
+}
