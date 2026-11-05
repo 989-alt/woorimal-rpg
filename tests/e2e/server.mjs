@@ -14,6 +14,7 @@ const TYPES = {
   '.svg': 'image/svg+xml',
   '.webp': 'image/webp',
   '.woff2': 'font/woff2',
+  '.mp3': 'audio/mpeg',
 };
 
 export function startServer(port = 0) {

@@ -15,6 +15,10 @@ import { formatLine } from '../rules/josa.js';
 import { TIP, dueHint } from '../rules/tutorial.js';
 import { nextGoal, leavingTooSoon, GUIDE, GUIDE_MS, isGuideId } from '../rules/guide.js';
 import { createHintLayer } from '../ui/hint.js';
+import { sfx, questSfx, gateOpened } from '../ui/audio.js';
+
+// 출구·안개 문이 마지막으로 본 때 열려 있었는가(장면을 떠났다 돌아와도 이어서 본다): 막 열린 때 소리를 낸다.
+let gatesSeen = null; // { chapter, exit, fog }
 
 const reducedMotion = () =>
   typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -42,6 +46,14 @@ export const explore = {
       return () => {};
     }
     let leaving = false;
+    // 출구·안개 문: 이 장면 밖(대화·전투)에서 열렸으면 돌아온 지금 소리를 낸다. leave: 떠나는 참이면 기억만 미룬다.
+    const gates = () => ({ chapter: chapter.id, exit: exitOpen(state, chapter), fog: fogOpen(state, chapter) });
+    const noteGates = (leave = false) => {
+      if (leave) return;
+      const now = gates();
+      if (gateOpened(gatesSeen, now)) sfx('exit');
+      gatesSeen = now;
+    };
 
     const el = document.createElement('section');
     el.dataset.scene = 'explore';
@@ -59,10 +71,13 @@ export const explore = {
     };
     // 상태를 바꾸고 HUD를 고친다. 장면을 떠날 참이면 check=false로 불러(떠나는 장면에서 안내를 띄우고 본 것으로 기록하지 않게) 부르는 쪽이 정한다.
     const update = (next, check = true) => {
+      const quest = questSfx(state, next);
+      if (quest) sfx(quest);
       state = next;
       ctx.setState(next);
       hud.update(state, chapter);
       trackGoal();
+      noteGates(!check);
       if (check) checkHint();
     };
 
@@ -93,6 +108,7 @@ export const explore = {
     stage.appendChild(canvas);
     el.append(hud.el, stage);
     hud.update(state, chapter);
+    noteGates();
     const toast = createToast(stage);
 
     const hints = createHintLayer(stage);
@@ -302,6 +318,7 @@ export const explore = {
       if (leaving || overlay) return;
       const r = step(map, state.pos, dir, opts());
       const moved = r.pos.x !== state.pos.x || r.pos.y !== state.pos.y;
+      if (moved) sfx('step');
       if (!still && moved) glide = nextGlide(glide, state.pos, r.pos, performance.now());
       const tooSoon = moved && leavingTooSoon(state, chapter, state.pos, r.pos, map);
       hints.done('move');

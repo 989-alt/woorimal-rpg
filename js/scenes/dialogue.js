@@ -13,6 +13,7 @@ import { ASSETS, bustFor } from '../../data/assets.js';
 import { setArt, preloadChapter } from '../ui/images.js';
 import { ribbonInk } from '../ui/ink.js';
 import { igniteWord, prefersReducedMotion } from '../ui/word-glow.js';
+import { sfx } from '../ui/audio.js';
 
 const HERO_COLOR = '#3B5BA5'; // 쪽빛
 const GUARD_MS = 200;
@@ -275,6 +276,7 @@ export const dialogue = {
       const pending = newWordsOf(raw, words, shownCards);
       if (pending.length === 0) { arrow.hidden = false; return; }
       busy = true;
+      sfx('chime'); // 낱말이 빛을 되찾는 순간
       const cards = [...pending];
       let ignited = false;
       for (const s of spans) if (s.hl?.classList.contains('word-dim')) { igniteWord(s.hl); ignited = true; }
@@ -318,7 +320,7 @@ export const dialogue = {
       hints.done('press');
       const r = tw.press();
       if (r === 'reveal') { render(); sentenceShown(); syncReady(); kick(); }
-      else if (r === 'next') advance();
+      else if (r === 'next') { sfx('talk'); advance(); }
     }
 
     function advance() {

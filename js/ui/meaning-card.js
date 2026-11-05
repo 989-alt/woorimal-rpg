@@ -1,6 +1,7 @@
 // 낱말 뜻풀이 카드. '확인'을 눌러야만 닫힌다.
 import { WORDS } from '../../data/words.js';
 import { igniteWord, prefersReducedMotion } from './word-glow.js';
+import { sfx } from './audio.js';
 
 // 카드가 열린 직후 연타로 닫히지 않도록, 키보드 확인은 이 시간 뒤부터 받는다.
 export const CARD_GUARD_MS = 300;
@@ -41,6 +42,7 @@ export function openMeaningCard(parent, wordId, onConfirm, now = () => performan
   card.append(el('p', 'word-card-title ribbon', '새 낱말을 찾았다!'), body);
   overlay.appendChild(card);
   parent.appendChild(overlay);
+  sfx('card');
   // 낱말이 빛을 되찾은 뒤 뜻이 아래에서 떠오른다. 움직임 줄이기에서는 처음부터 다 보인다.
   card.classList.toggle('lit', reduced);
   const lightTimer = reduced ? 0 : window.setTimeout(() => {

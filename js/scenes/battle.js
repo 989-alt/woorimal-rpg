@@ -14,7 +14,8 @@ import { attachJosa } from '../rules/josa.js';
 import {
   TYPE_LABEL, COLUMNS, buildFrame, layoutTail, drawFrame, renderPrompt, buildOptions, markOptions, moveFocus, feedbackPanel,
 } from '../ui/battle-layout.js';
-import { HIT_MS, playHit, playMiss } from '../ui/battle-fx.js';
+import { HIT_MS, COMBO_FROM, playHit, playMiss } from '../ui/battle-fx.js';
+import { sfx } from '../ui/audio.js';
 import { ASSETS } from '../../data/assets.js';
 import { setArt } from '../ui/images.js';
 
@@ -182,6 +183,8 @@ export const battle = {
     }
 
     function onHit() {
+      sfx('correct');
+      later(() => sfx(streak >= COMBO_FROM ? 'streak' : 'hit'), 180);
       blank.fill(q.options[q.answer]);
       const won = b ? b.result === 'win' : r.result === 'win';
       drawHud({ crackCell: true });
@@ -194,6 +197,8 @@ export const battle = {
     }
 
     function onMiss() {
+      sfx('wrong');
+      if (b) later(() => sfx('heart'), 250); // 보스전에서만 하트가 준다
       blank.fill(q.options[q.answer]);
       drawHud({ crackHeart: true });
       playMiss(f.fog, { monster: f.monster, review: !b });
@@ -213,6 +218,7 @@ export const battle = {
     }
 
     function win() {
+      sfx('defeat');
       if (b) {
         // 막 보스를 이겨도 막 클리어 화면은 바로 열지 않는다. 그 자리에 남아, 길이 열린 출구로 직접 걸어가야 열린다.
         state = finishAct(ctx.getState(), act, b.order);

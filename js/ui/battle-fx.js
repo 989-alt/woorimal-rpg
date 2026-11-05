@@ -12,7 +12,7 @@ export const reducedMotion = () =>
   typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const SPARKS = 14; // 기본 알갱이 수(12~16)
-const COMBO_FROM = 3; // 이 연속 정답부터 파동 2겹
+export const COMBO_FROM = 3; // 이 연속 정답부터 파동 2겹
 
 // 이번 정답의 연출 계획(순수 함수, 숫자는 모두 ms·px). 움직임 줄이기면 흔들림·날아가기 없이 서서히 나타나기만.
 export function hitPlan({ streak = 1, lastHit = false, still = false } = {}) {

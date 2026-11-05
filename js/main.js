@@ -17,6 +17,7 @@ import { reviewQuiz, reviewQuizProbe } from './scenes/review-quiz.js';
 import { ASSETS } from '../data/assets.js';
 import { loadImage, forgetFailed } from './ui/images.js';
 import { loadUiKit } from './ui/ui-kit.js';
+import { initAudio, playMusic, musicFor, sfx, soundPref, withSoundPref, useSavePref, useGlobalPref, toggleSound, isSoundKey, audioProbe } from './ui/audio.js';
 
 function safeLocalStorage() {
   try { return window.localStorage; } catch { return null; }
@@ -24,6 +25,29 @@ function safeLocalStorage() {
 
 let state = null;
 const store = createStore(safeLocalStorage());
+const testMode = new URLSearchParams(location.search).get('test') === '1';
+
+// 소리: 저장할 때마다 지금 소리 설정(켜기·끄기, 크기)을 학생 저장에 함께 남긴다.
+// 학생 저장을 처음 쓰는 장면에서 그 학생의 설정으로 바꾸고, 처음 화면에서는 기기 기본값으로 돌아간다.
+let soundFor = null; // 지금 소리 설정을 쓰는 학생(닉네임)
+const saveState = store.save;
+store.save = (s) => saveState(withSoundPref(s, soundPref()));
+initAudio({
+  storage: safeLocalStorage(),
+  test: testMode,
+  onChange: () => { if (state && state.nickname === soundFor) store.save(state); }, // 게임 중에 켜고 끄면 바로 저장
+});
+// M 키: 어디서든 소리를 켜고 끈다(글을 쓰는 칸 빼고)
+window.addEventListener('keydown', (e) => {
+  if (!isSoundKey(e)) return;
+  e.preventDefault();
+  toggleSound();
+});
+// 단추 누름 소리(UI 키트 단추만. 보기·퀴즈 확인처럼 정답·오답 소리가 따로 나는 단추는 빼고)
+document.addEventListener('click', (e) => {
+  const b = e.target.closest?.('button.btn');
+  if (b && !b.disabled && !b.classList.contains('quiz-submit')) sfx('click');
+}, true);
 const getState = () => state;
 const setState = (next) => { state = next; };
 
@@ -33,10 +57,16 @@ const router = createRouter(document.getElementById('app'), { store, getState, s
 // 앞 장면에서 못 받은 그림은 새 장면에서 한 번 더 받아 본다(UI 그림 틀도 같다. 첫 화면도 이 감싼 곳을 지나므로 시작할 때 불러온다).
 const show = router.show;
 router.show = (name, params) => {
+  if (name !== 'title' && state && state.nickname !== soundFor) { // 학생 저장을 처음 쓰는 장면: 그 학생의 소리 설정(저장 전에)
+    soundFor = state.nickname;
+    useSavePref(state);
+  }
   if (state) store.save(state);
+  if (name === 'title') { soundFor = null; useGlobalPref(); }
   forgetFailed();
   loadUiKit(); // 앞서 못 받은 UI 그림도 한 번 더 받아 본다(받으면 그때부터 그림 틀)
   show(name, params);
+  playMusic(musicFor(name, params, state)); // 장면의 음악(같은 곡이면 이어서, 다른 곡이면 겹쳐 바뀜). 그 곡은 이때 받는다.
 };
 // 창을 닫거나 다른 탭으로 갈 때도 걸어 온 자리를 남긴다.
 const saveNow = () => { if (state) store.save(state); };
@@ -88,8 +118,10 @@ router.register('ending', ending);
 router.register('review-quiz', reviewQuiz);
 
 // 검사용 도움 기능: 주소에 ?test=1이 있을 때만 만든다.
-if (new URLSearchParams(location.search).get('test') === '1') {
+if (testMode) {
   window.__test = {
+    // 소리 요청 기록(검사에서는 소리를 내지 않는다): { mode, on, volume, want, music: [키…], sfx: [키…], toggles: [켬/끔…] }
+    audio: () => audioProbe(),
     state: () => state,
     newGame: (nickname, avatar) => startNew(nickname, avatar),
     acquire(wordIds, from) {

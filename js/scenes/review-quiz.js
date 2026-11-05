@@ -7,6 +7,7 @@ import { buildQuiz, checkChosung, QUIZ_SIZE } from '../rules/review-quiz.js';
 import { makeRng } from '../rules/rng.js';
 import { buildOptions, markOptions, moveFocus, renderPrompt } from '../ui/battle-layout.js';
 import { shouldSubmit } from './select.js';
+import { sfx } from '../ui/audio.js';
 
 const TYPE_LABEL = { meaning: '뜻 고르기', chosung: '초성 퀴즈', situation: '알맞은 낱말 넣기' };
 const OPTION_LAYOUT = { meaning: 'meaning', situation: 'blank' }; // 보기 모양: 뜻 카드, 낱말 카드(퀴즈에서는 둘 다 2×2로 놓는다)
@@ -102,6 +103,7 @@ export const reviewQuiz = {
 
       const finish = (ok, typed) => {
         answered = true;
+        sfx(ok ? 'correct' : 'wrong');
         scene.dataset.phase = 'feedback';
         results.push({ word: q.word, ok, typed });
         fill?.(q.fill);

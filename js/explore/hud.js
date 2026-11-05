@@ -1,4 +1,4 @@
-// 탐험 HUD: 메달·할 일 두루마리, 낱말 n/5와 가방 3칸 명판, 도감·할 일 아이콘 단추, 토스트.
+// 탐험 HUD: 메달·할 일 두루마리, 낱말 n/5와 가방 3칸 명판, 도감·할 일·소리 아이콘 단추, 토스트.
 import { ACTS } from '../../data/acts/index.js';
 import { acquiredCount, chapterWords, wordsLeftText } from '../rules/game.js';
 import { nextGoal } from '../rules/guide.js';
@@ -6,6 +6,7 @@ import { visibleNpcs } from '../rules/quests.js';
 import { ASSETS, bustFor } from '../../data/assets.js';
 import { setArt } from '../ui/images.js';
 import { blockColor, initial, labelBlockEl, textOn } from '../ui/placeholder.js';
+import { createSoundButton } from '../ui/audio.js';
 
 export const BAG_SLOTS = 3;
 
@@ -126,7 +127,8 @@ export function createHud({ onCodex, onTasks, avatar = 'f' }) {
 
   const codexButton = button('도감', 'E', 'icon-book', onCodex);
   const tasksButton = button('할 일', 'Q', 'icon-scroll', onTasks);
-  el.append(medallion, companions, task, words, codexButton, tasksButton);
+  const soundButton = createSoundButton('hud-button hud-sound');
+  el.append(medallion, companions, task, words, codexButton, tasksButton, soundButton);
 
   let bagKey = null;
   let companionKey = null;
@@ -136,6 +138,7 @@ export function createHud({ onCodex, onTasks, avatar = 'f' }) {
     el,
     codexButton,
     tasksButton,
+    soundButton,
     setTaskText,
     update(state, chapter) {
       setTaskText(nextGoal(state, chapter).text);

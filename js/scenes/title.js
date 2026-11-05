@@ -2,6 +2,7 @@
 import { ASSETS } from '../../data/assets.js';
 import { ACTS } from '../../data/acts/index.js';
 import { setArt } from '../ui/images.js';
+import { createSoundButton } from '../ui/audio.js';
 
 // 엔딩을 본 저장(마지막 막을 마침)이 하나라도 있는가. 엔딩은 따로 기록하지 않고 clearedActs로 본다(설계 6절).
 export function hasEndingSave(store) {
@@ -51,7 +52,7 @@ export const title = {
       next?.focus();
     });
 
-    main.append(h1, menu);
+    main.append(h1, menu, createSoundButton('title-sound')); // 오른쪽 위 스피커 단추
     if (!store.available) {
       main.append(el('p', { className: 'title-notice frame-plate', textContent: '이 창에서는 저장되지 않아요' }));
     }

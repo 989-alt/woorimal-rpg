@@ -284,6 +284,15 @@
 :root.ui-icon-scroll .icon-scroll { border: 0; background: var(--ui-icon-scroll) center / contain no-repeat; }
 :root.ui-check .icon-check { background: var(--ui-check) center / contain no-repeat; }
 :root.ui-check .icon-check::before { display: none; }
+/* 스피커(소리 켜기·끄기): 그림 없이 SVG. 켜면 소리 물결, 끄면 빨간 ×. 도감·할 일 아이콘처럼 나무색 테두리 + 한지 */
+.icon-sound { display: grid; place-items: center; }
+.icon-sound .sound-icon { width: 44px; height: 44px; overflow: visible; }
+.sound-icon path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.sound-icon .body { fill: var(--parchment); stroke: var(--wood-dark); stroke-width: 3.5px; }
+.sound-icon .wave { stroke: var(--wood-dark); stroke-width: 4px; }
+.sound-icon .cross { stroke: var(--heart); stroke-width: 5px; display: none; }
+.sound-toggle[aria-pressed='false'] .sound-icon .wave { display: none; }
+.sound-toggle[aria-pressed='false'] .sound-icon .cross { display: inline; }
 
 /* ── 하트 32px · HP 칸 32×20 ────────────── */
 :root.ui-heart-full .heart.full,

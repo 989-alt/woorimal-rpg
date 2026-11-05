@@ -5,6 +5,7 @@ import { ASSETS } from '../../data/assets.js';
 import { setArt } from '../ui/images.js';
 import { chapterOf, chapterWords, actWords, enterNextChapter } from '../rules/game.js';
 import { travelOf } from '../rules/world.js';
+import { sfx } from '../ui/audio.js';
 
 const el = (tag, className, text) => {
   const e = document.createElement(tag);
@@ -74,6 +75,7 @@ export const clear = {
     panel.appendChild(body);
     scene.appendChild(panel);
     root.appendChild(scene);
+    sfx('done');
     btn.focus();
 
     return () => {

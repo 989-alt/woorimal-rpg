@@ -61,6 +61,8 @@ canvas, img {
   display: grid; gap: 16px; width: 340px; max-width: 94%;
 }
 .title-menu .btn { width: 100%; }
+/* 오른쪽 위 스피커 단추(72×80, HUD의 소리 단추와 같은 모양) */
+.title-sound { position: absolute; top: 16px; right: 16px; z-index: 1; filter: drop-shadow(0 3px 2px rgba(20, 10, 0, .4)); }
 .title-notice { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); margin: 0; width: max-content; max-width: 94%; font-size: 18px; text-align: center; }
 
 /* ── 이름·모습 고르기 ───────────────────── */
@@ -336,6 +338,12 @@ canvas, img {
 .hud-button:hover:not(:disabled) { filter: drop-shadow(0 3px 2px rgba(20, 10, 0, .4)) brightness(1.08); }
 .hud-button:active:not(:disabled) { filter: drop-shadow(0 1px 1px rgba(20, 10, 0, .4)) brightness(.94); }
 .hud-button + .hud-button { margin-left: 0; }
+/* 소리 단추: 넓은 화면은 도감·할 일 옆. 좁은 화면(1180 이하)은 줄에서 빼서 HUD 바로 아래 오른쪽에 작게(56×56, 이름 없이)
+   두어 할 일 두루마리 글 자리를 그대로 남긴다. */
+@media (max-width: 1180px) {
+  .hud-sound { position: absolute; top: 96px; right: 12px; width: 56px; height: 56px; }
+  .hud-sound > .name { display: none; }
+}
 
 .explore-stage { position: absolute; inset: 0; }
 .explore-stage:focus { outline: none; }

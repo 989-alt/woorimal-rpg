@@ -7,6 +7,7 @@ import { ASSETS } from '../../data/assets.js';
 import { setArt } from '../ui/images.js';
 import { prefersReducedMotion } from '../ui/word-glow.js';
 import { chapterOf, enterNextAct } from '../rules/game.js';
+import { sfx } from '../ui/audio.js';
 import { travelOf, worldMarks } from '../rules/world.js';
 
 const WALK_MS = 1200;
@@ -137,6 +138,7 @@ export const worldmap = {
       leaving = true;
       const now = ctx.getState();
       if (!travelOf(now)) { ctx.router.show('explore'); return; } // 이미 떠났다
+      sfx('travel');
       const next = enterNextAct(now);
       ctx.setState(next);
       const first = chapterOf(ACTS.find((a) => a.id === next.act), next.chapter);
