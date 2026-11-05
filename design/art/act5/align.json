@@ -1,0 +1,14 @@
+{
+ "greykid_base": {
+  "src": "bust_greykid_base_a1",
+  "quality": 85
+ },
+ "greykid_joy": {
+  "src": "bust_greykid_joy_a1",
+  "quality": 85,
+  "iou_head": 0.9947,
+  "scale": 1.0,
+  "dx": 0,
+  "dy": 0
+ }
+}

@@ -1,0 +1,5 @@
+{
+ "greyUnmix": ["greykid"],
+ "fit": { "greykid": 0.86 },
+ "lift": { "greykid": 0.14 }
+}
