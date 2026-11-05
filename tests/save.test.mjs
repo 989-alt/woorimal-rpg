@@ -202,3 +202,16 @@ test('닫힌 출구 칸에 선 저장은 그 자리 그대로 불러온다', () 
   assert.equal(exitOpen(r.state, ch), false);
   assert.deepEqual(r.state.pos, { x: ch.exit.x, y: ch.exit.y });
 });
+
+test('장 시작 이야기 표시(introPending)는 저장을 거쳐 남고, 없는 옛 저장도 그대로 불러온다', () => {
+  const st = fakeStorage();
+  const store = createStore(st);
+  const g = { ...newGame({ nickname: '이야기', avatar: 'f' }), introPending: '1-1' };
+  store.save(g);
+  assert.equal(createStore(st).load('이야기').state.introPending, '1-1');
+  const { introPending, ...old } = g;
+  st.setItem('malbit:save:옛', JSON.stringify(old));
+  const r = createStore(st).load('옛');
+  assert.equal(r.ok, true);
+  assert.equal(r.state.introPending, undefined);
+});

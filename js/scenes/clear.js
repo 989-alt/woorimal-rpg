@@ -3,7 +3,7 @@ import { WORDS } from '../../data/words.js';
 import { actOfChapter } from '../../data/acts/index.js';
 import { ASSETS } from '../../data/assets.js';
 import { setArt } from '../ui/images.js';
-import { chapterOf, chapterWords, actWords, enterNextChapter } from '../rules/game.js';
+import { chapterOf, chapterWords, actWords, enterNextChapter, startIntro } from '../rules/game.js';
 import { travelOf } from '../rules/world.js';
 import { sfx } from '../ui/audio.js';
 
@@ -64,10 +64,10 @@ export const clear = {
       btn.addEventListener('click', () => {
         if (leaving) return;
         leaving = true;
-        const next = enterNextChapter(ctx.getState(), act);
+        const next = startIntro(enterNextChapter(ctx.getState(), act));
         ctx.setState(next);
         const nextChapter = chapterOf(act, next.chapter);
-        ctx.router.show('dialogue', { script: nextChapter.intro, words: [], from: '', next: 'explore' });
+        ctx.router.show('dialogue', { script: nextChapter.intro, words: [], from: '', next: 'explore', nextParams: { introSeen: next.chapter } });
       });
     }
     actions.appendChild(btn);

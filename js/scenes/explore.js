@@ -7,7 +7,7 @@ import { drawExplore, cameraFor, animKey, inViewWorld } from '../explore/render.
 import { nextGlide, drawnPos, glideEnd } from '../explore/motion.js';
 import { onImageLoaded, preloadChapter } from '../ui/images.js';
 import { createHud, createToast, fogMessage, HUD_INSET } from '../explore/hud.js';
-import { chapterOf, fogOpen, bossGone, exitOpen, exitBlockedText, stepOffOpenExit, setPos, markTip, takeWords, afterBossKey, afterBossDue, markSceneSeen } from '../rules/game.js';
+import { chapterOf, fogOpen, bossGone, exitOpen, exitBlockedText, stepOffOpenExit, setPos, markTip, takeWords, afterBossKey, afterBossDue, markSceneSeen, introDue, finishIntro } from '../rules/game.js';
 import { talkTo, inspect, fightGate, visibleNpcs } from '../rules/quests.js';
 import { openCodex } from './codex.js';
 import { openTasks } from './quests.js';
@@ -37,6 +37,18 @@ export const explore = {
       state = markSceneSeen(state, params.sceneSeen);
       ctx.setState(state);
       ctx.store?.save?.(state);
+    }
+    // 장 시작 이야기: 끝까지 봤으면 표시를 지우고 저장한다. 이야기 도중 새로 고침해 이어 하면 이야기를 다시 연다.
+    if (params?.introSeen) {
+      state = finishIntro(state, params.introSeen);
+      ctx.setState(state);
+      ctx.store?.save?.(state);
+    }
+    if (introDue(state, chapter)) {
+      queueMicrotask(() => ctx.router.show('dialogue', {
+        script: chapter.intro, words: [], from: '', next: 'explore', nextParams: { introSeen: chapter.id },
+      }));
+      return () => {};
     }
     if (afterBossDue(state, chapter)) {
       const key = afterBossKey(chapter);

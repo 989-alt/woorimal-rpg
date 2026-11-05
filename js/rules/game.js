@@ -221,6 +221,7 @@ export function fastForward(state, chapterId) {
     clearedActs,
     askedWordIds,
     seenScenes,
+    introPending: null,
   };
 }
 
@@ -231,6 +232,21 @@ export const afterBossKey = (chapter) => `${chapter.id}:afterBoss`;
 export function afterBossDue(state, chapter) {
   if (!chapter.afterBoss || !bossGone(state, chapter)) return false;
   return !(state.seenScenes ?? []).includes(afterBossKey(chapter));
+}
+
+// 장 시작 이야기(chapter.intro): 이야기를 열 때 introPending에 그 장 id를 적고, 끝까지 보면 지운다.
+// 이야기 도중 새로 고침하면 저장에 남은 표시를 보고 다시 보여 준다. 옛 저장에는 이 필드가 없다: 없으면 다 본 것으로 본다.
+export function startIntro(state) {
+  return { ...state, introPending: state.chapter };
+}
+
+export function introDue(state, chapter) {
+  return state.introPending === chapter.id && Array.isArray(chapter.intro) && chapter.intro.length > 0;
+}
+
+export function finishIntro(state, chapterId) {
+  if (state.introPending !== chapterId) return state;
+  return { ...state, introPending: null };
 }
 
 export function markSceneSeen(state, key) {

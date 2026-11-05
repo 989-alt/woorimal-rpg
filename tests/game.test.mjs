@@ -7,7 +7,7 @@ import {
   newGame, chapterOf, chapterWords, actWords, acquireWords, takeWords, acquiredCount,
   fogOpen, chapterComplete, enterNextChapter, finishAct, setPos, markTip, extractWords, wordMark,
   exitOpen, exitBlockedText, bossGone, enterNextAct, nextChapterOf, fastForward,
-  afterBossKey, afterBossDue, markSceneSeen, stepOffOpenExit,
+  afterBossKey, afterBossDue, markSceneSeen, stepOffOpenExit, startIntro, introDue, finishIntro,
 } from '../js/rules/game.js';
 import { isWalkable } from '../js/explore/grid.js';
 
@@ -295,4 +295,24 @@ test('afterBossDue: 보스를 이기고 아직 안 봤을 때만, markSceneSeen 
   // 받은 상태를 바꾸지 않는다
   const frozen = deepFreeze({ ...won });
   markSceneSeen(frozen, '4-2:afterBoss');
+});
+
+test('장 시작 이야기: startIntro로 표시하고 끝까지 보면 finishIntro로 지운다. 옛 상태(필드 없음)는 다 본 것으로 본다', () => {
+  const s = newGame({ nickname: '하늘', avatar: 'f' });
+  const ch = ACTS[0].chapters[0];
+  assert.equal(introDue(s, ch), false, '새 게임 상태만으로는 이야기를 열지 않는다(여는 쪽이 표시한다)');
+  const opened = startIntro(s);
+  assert.equal(opened.introPending, '1-1');
+  assert.equal(introDue(opened, ch), true);
+  assert.equal(introDue(opened, ACTS[0].chapters[1]), false, '다른 장에서는 열지 않는다');
+  const done = finishIntro(opened, '1-1');
+  assert.equal(done.introPending, null);
+  assert.equal(introDue(done, ch), false);
+  assert.equal(finishIntro(opened, '1-2'), opened, '다른 장 id로는 지우지 않는다');
+  const next = startIntro(enterNextChapter(done, ACTS[0]));
+  assert.equal(next.introPending, '1-2');
+  assert.equal(introDue(next, ACTS[0].chapters[1]), true);
+  const frozen = Object.freeze({ ...opened });
+  finishIntro(frozen, '1-1');
+  startIntro(frozen);
 });

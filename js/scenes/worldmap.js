@@ -6,7 +6,7 @@ import { WORLD } from '../../data/world.js';
 import { ASSETS } from '../../data/assets.js';
 import { setArt } from '../ui/images.js';
 import { prefersReducedMotion } from '../ui/word-glow.js';
-import { chapterOf, enterNextAct } from '../rules/game.js';
+import { chapterOf, enterNextAct, startIntro } from '../rules/game.js';
 import { sfx } from '../ui/audio.js';
 import { travelOf, worldMarks } from '../rules/world.js';
 
@@ -139,10 +139,10 @@ export const worldmap = {
       const now = ctx.getState();
       if (!travelOf(now)) { ctx.router.show('explore'); return; } // 이미 떠났다
       sfx('travel');
-      const next = enterNextAct(now);
+      const next = startIntro(enterNextAct(now));
       ctx.setState(next);
       const first = chapterOf(ACTS.find((a) => a.id === next.act), next.chapter);
-      ctx.router.show('dialogue', { script: first.intro, words: [], from: '', next: 'explore' });
+      ctx.router.show('dialogue', { script: first.intro, words: [], from: '', next: 'explore', nextParams: { introSeen: next.chapter } });
     });
     go.focus();
 

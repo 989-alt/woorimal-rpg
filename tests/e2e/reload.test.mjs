@@ -2,7 +2,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startServer } from './server.mjs';
-import { launchBrowser, collectErrors, finishDialogue, startFromTitle } from './browser.mjs';
+import { launchBrowser, collectErrors, finishDialogue, startFromTitle, dialogueStep } from './browser.mjs';
 
 let server, browser;
 before(async () => {
@@ -94,6 +94,42 @@ test('대화에서는 이번에 얻은 낱말마다 카드가 한 번씩 뜬다(
   const s = await state(page);
   assert.ok('어스름' in s.acquired && '아침나절' in s.acquired);
   assert.deepEqual(await finishDialogue(page), ['어스름', '아침나절']);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('장 시작 이야기 도중 새로 고침하면 이어 할 때 이야기가 처음부터 다시 나오고, 끝까지 보면 다시 나오지 않는다', async () => {
+  const page = await browser.newPage({ viewport: { width: 1366, height: 768 } });
+  const errors = collectErrors(page);
+  await page.goto(server.url + '/?test=1');
+  await page.waitForFunction(() => window.__test);
+  await page.evaluate(() => window.__test.fastText(true));
+  const line = async () => {
+    await page.waitForFunction(() => document.querySelector('.dialogue-text')?.textContent.length > 3);
+    return page.locator('.dialogue-text').innerText();
+  };
+  await startFromTitle(page, { name: '이야기', mode: 'new' });
+  await page.waitForSelector('[data-scene="dialogue"]');
+  const first = await line();
+  assert.match(first, /새벽골의 작은 집에서 눈을 떴다/);
+  await dialogueStep(page);
+  assert.notEqual(await line(), first);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('malbit:save:이야기')));
+  assert.equal(saved.introPending, '1-1', '이야기를 여는 순간 저장에 남는다');
+  await page.reload();
+  await page.waitForFunction(() => window.__test);
+  await page.evaluate(() => window.__test.fastText(true));
+  await startFromTitle(page, { name: '이야기', mode: 'continue' });
+  await page.waitForSelector('[data-scene="dialogue"]');
+  assert.equal(await line(), first, '이야기가 처음부터 다시 나온다');
+  await finishDialogue(page);
+  await page.waitForSelector('[data-scene="explore"] .hud');
+  assert.equal((await state(page)).introPending, null);
+  await page.reload();
+  await page.waitForFunction(() => window.__test);
+  await continueAs(page, '이야기');
+  await page.waitForTimeout(400);
+  assert.equal(await page.locator('[data-scene="dialogue"]').count(), 0, '다 본 이야기는 다시 나오지 않는다');
   assert.deepEqual(errors, []);
   await page.close();
 });

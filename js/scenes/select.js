@@ -1,7 +1,7 @@
 // 이름·모습 고르기 장면. params = { mode: 'new' | 'continue', name?: string }
 // 처음부터(new): 이름 + 모습 카드 → 시작하기. 이어하기(continue): 이름(저장된 이름 단추) → 이어하기.
 import { validateNickname } from '../rules/josa.js';
-import { newGame, chapterOf } from '../rules/game.js';
+import { newGame, chapterOf, startIntro } from '../rules/game.js';
 import { actOfChapter } from '../../data/acts/index.js';
 import { blockColor, labelBlockEl } from '../ui/placeholder.js';
 import { bustFor } from '../../data/assets.js';
@@ -152,12 +152,14 @@ export const select = {
       yes.focus();
     }
 
+    // 새 게임은 첫 장 이야기부터. 이어 하기는 탐험으로 가고, 이야기 도중에 저장된 때는 탐험이 이야기를 다시 연다.
     function begin(state, fresh) {
-      setState(state);
       if (fresh) {
         const chapter = chapterOf(actOfChapter(state.chapter), state.chapter);
-        router.show('dialogue', { script: chapter.intro, words: [], from: '', next: 'explore' });
+        setState(startIntro(state));
+        router.show('dialogue', { script: chapter.intro, words: [], from: '', next: 'explore', nextParams: { introSeen: chapter.id } });
       } else {
+        setState(state);
         router.show('explore');
       }
     }
