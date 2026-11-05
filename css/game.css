@@ -64,7 +64,8 @@ canvas, img {
 /* 그림이 붙으면 글자는 눈에만 안 보이게(읽어 주는 프로그램에는 남는다) */
 .title-logo.has-art .logo-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 /* 그림이 없을 때: 금빛 채움 + 먹갈 6px + 나무색 12px 윤곽(층 셋) */
-.logo-text { position: relative; display: inline-block; color: transparent; background: linear-gradient(#FFF3B8 0%, #F2C14E 55%, #D99A2B 100%); -webkit-background-clip: text; background-clip: text; }
+/* 그림이 없을 때의 글자 로고: 로고 그림처럼 양피지색 글자에 먹갈·나무 테(말빛 금은 낱말에만 쓴다) */
+.logo-text { position: relative; display: inline-block; color: transparent; background: linear-gradient(var(--parchment) 0%, var(--parchment) 55%, var(--parchment-deep) 100%); -webkit-background-clip: text; background-clip: text; }
 .logo-text::before, .logo-text::after { content: attr(data-text); position: absolute; inset: 0; z-index: -1; }
 .logo-text::before { color: var(--wood); -webkit-text-stroke: 12px var(--wood); paint-order: stroke fill; }
 .logo-text::after { color: var(--line); -webkit-text-stroke: 6px var(--line); paint-order: stroke fill; }
