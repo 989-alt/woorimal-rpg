@@ -116,6 +116,7 @@ const ENDING = {
   credits: [
     { title: '이야기와 낱말', lines: ['고유어 50개의 뜻은 표준국어대사전을 바탕으로 쉽게 풀었어요.'] },
     { title: '그림', lines: ['인공지능으로 그린 뒤 사람이 하나하나 다듬었어요.'] },
+    { title: '음악과 효과음', lines: ['KIE.AI Suno로 만든 뒤 사람이 골라 다듬었어요.', '걸음·대사 넘김·단추 소리는 코드로 만들었어요.'] },
     { title: '글꼴', lines: ['고운돋움, 주아 (SIL 오픈 폰트 라이선스)'] },
     { title: '만든 도구', lines: ['Claude Code', 'Claude-Code-Game-Studios (MIT)', 'sprite-gen (Apache-2.0)'] },
     { title: '함께한 사람', lines: ['우리 반 선생님', '끝까지 길을 걸은 {이름}'] },

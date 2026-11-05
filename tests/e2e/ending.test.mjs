@@ -159,6 +159,7 @@ test('5-2 출구 → 엔딩 보기 → 장면 8개 → 마지막 말 → 말빛 
   await page.waitForSelector('[data-scene="ending"][data-part="credits"]');
   const credits = await page.locator('[data-part="credits"]').innerText();
   assert.match(credits, /고운돋움, 주아 \(SIL 오픈 폰트 라이선스\)/);
+  assert.match(credits, /KIE\.AI Suno로 만든 뒤 사람이 골라 다듬었어요/);
   assert.match(credits, /끝까지 길을 걸은 하늘/);
   assert.equal(await page.locator('.credits h3').count(), ENDING.credits.length);
   assert.equal(await page.locator('p.ending-thanks').textContent(), '하늘아, 끝까지 함께해 줘서 고마워!');
